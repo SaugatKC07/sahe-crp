@@ -4,6 +4,8 @@ crispy-bootstrap5==2024.2
 django-crispy-forms==2.1
 django-allauth[socialaccount]>=65.3,<66
 whitenoise>=6.9,<7
+psycopg[binary]>=3.2,<4
+dj-database-url>=2.2,<3
 
 # PDF Generation
 reportlab==4.0.7

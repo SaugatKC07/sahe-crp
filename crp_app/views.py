@@ -318,6 +318,24 @@ def trainer_course_detail(request, course_id):
         ).distinct(),
         id=course_id,
     )
+    return _render_trainer_course_detail(request, course)
+
+
+@role_required('trainer')
+def trainer_course_detail_slug(request, course_slug):
+    """Show an assigned course using its readable name-based URL."""
+    course = get_object_or_404(
+        Course.objects.select_related('department', 'instructor__user').filter(
+            Q(instructor=request.user.instructor_profile)
+            | Q(trainers=request.user.instructor_profile)
+        ).distinct(),
+        slug=course_slug,
+    )
+    return _render_trainer_course_detail(request, course)
+
+
+def _render_trainer_course_detail(request, course):
+    """Build the trainer course workspace for an already-authorized course."""
 
     registrations = Registration.objects.filter(course=course, status='approved').select_related('student').order_by('student__last_name', 'student__first_name')
     students = []

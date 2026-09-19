@@ -26,7 +26,7 @@
                         <li><strong>Department:</strong> {{ course.department.code|default:'N/A' }}</li>
                         <li><strong>Credits:</strong> {{ course.credits }}</li>
                     </ul>
-                    <a href="{% url 'crp:trainer_course_detail' course.id %}" class="btn btn-primary btn-sm">Open course</a>
+                    <a href="{% url 'crp:trainer_course_detail_slug' course.slug %}" class="btn btn-primary btn-sm">Open course</a>
                 </div>
             </div>
         </div>

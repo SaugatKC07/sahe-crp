@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils.text import slugify
 from django.utils import timezone
 import os
 
@@ -102,6 +103,7 @@ class Course(models.Model):
 
     code = models.CharField(max_length=20, unique=True)
     name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True, blank=True, null=True)
     description = models.TextField()
     credits = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(12)])
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES)
@@ -125,6 +127,19 @@ class Course(models.Model):
 
     def __str__(self):
         return f"{self.code} - {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name) or slugify(self.code)
+            candidate = base_slug
+            if self.pk:
+                conflict = Course.objects.filter(slug=candidate).exclude(pk=self.pk).exists()
+            else:
+                conflict = Course.objects.filter(slug=candidate).exists()
+            if conflict:
+                candidate = f"{base_slug}-{slugify(self.code)}"
+            self.slug = candidate
+        super().save(*args, **kwargs)
 
     def enroll_student(self, student):
         if self.current_enrollment < self.max_capacity and self.status == 'active':

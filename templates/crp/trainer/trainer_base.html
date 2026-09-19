@@ -126,7 +126,7 @@
                 <a href="{% url 'crp:trainer_students' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_students' or request.resolver_match.url_name == 'trainer_student_detail' %}active{% endif %}">
                     <i class="bi bi-people"></i><span>My Students</span>
                 </a>
-                <a href="{% url 'crp:trainer_courses' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_courses' or request.resolver_match.url_name == 'trainer_course_detail' %}active{% endif %}">
+                <a href="{% url 'crp:trainer_courses' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_courses' or request.resolver_match.url_name == 'trainer_course_detail' or request.resolver_match.url_name == 'trainer_course_detail_slug' %}active{% endif %}">
                     <i class="bi bi-book"></i><span>My Courses</span>
                 </a>
                 <a href="{% url 'crp:trainer_learning_content' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_learning_content' %}active{% endif %}">

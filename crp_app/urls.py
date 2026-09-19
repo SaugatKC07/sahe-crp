@@ -15,6 +15,7 @@ urlpatterns = [
     path('trainer/', views.trainer_dashboard, name='trainer_dashboard'),
     path('trainer/courses/', views.trainer_courses, name='trainer_courses'),
     path('trainer/courses/<int:course_id>/', views.trainer_course_detail, name='trainer_course_detail'),
+    path('trainer/courses/<slug:course_slug>/', views.trainer_course_detail_slug, name='trainer_course_detail_slug'),
     path('trainer/students/', views.trainer_students, name='trainer_students'),
     path('trainer/students/<int:student_id>/', views.trainer_student_detail, name='trainer_student_detail'),
     path('trainer/assessments/', views.trainer_assessments, name='trainer_assessments'),

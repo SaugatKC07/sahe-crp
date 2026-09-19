@@ -1,0 +1,64 @@
+{% extends 'crp/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create Announcement - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'crp:announcement_list' %}">Announcements</a></li>
+                <li class="breadcrumb-item active">Create Announcement</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus me-2"></i>Create New Announcement
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% crispy form %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Announcement Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-sahe">Priority Levels</h6>
+                <ul class="small text-muted">
+                    <li><strong>Low:</strong> Routine information</li>
+                    <li><strong>Normal:</strong> Standard announcements</li>
+                    <li><strong>High:</strong> Important updates</li>
+                    <li><strong>Urgent:</strong> Critical information requiring immediate attention</li>
+                </ul>
+                
+                <h6 class="text-sahe">Best Practices</h6>
+                <ul class="small text-muted">
+                    <li>Use clear, descriptive titles</li>
+                    <li>Include relevant dates and deadlines</li>
+                    <li>Keep content concise and focused</li>
+                    <li>Link to related courses when applicable</li>
+                    <li>Review before publishing</li>
+                </ul>
+                
+                <h6 class="text-sahe">Course Association</h6>
+                <p class="small text-muted">Link announcements to specific courses when the information only applies to students enrolled in those courses.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

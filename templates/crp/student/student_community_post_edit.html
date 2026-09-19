@@ -1,0 +1,32 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Edit Community Post - SAHE CRP{% endblock %}
+{% block page_title %}Edit Post{% endblock %}
+
+{% block content %}
+<div style="max-width:800px; margin:0 auto; background:var(--color-surface); border:1px solid var(--color-divider); border-radius:16px; padding:24px; box-shadow:var(--shadow-sm);">
+    <div style="margin-bottom:16px;">
+        <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Student community</div>
+        <h3 style="margin:8px 0 0;">Edit post</h3>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" value="{{ post.title }}" required>
+            </div>
+            <div>
+                <label class="form-label">Content</label>
+                <textarea name="content" class="form-control" rows="6" required>{{ post.content }}</textarea>
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <a href="{% url 'crp:student_community' %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save changes</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

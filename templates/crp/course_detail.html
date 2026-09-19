@@ -1,0 +1,210 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}{{ course.code }} - {{ course.name }} - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'crp:course_list' %}">Courses</a></li>
+                <li class="breadcrumb-item active">{{ course.code }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Course Information -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0">{{ course.code }} - {{ course.name }}</h4>
+                    <small class="text-white">{{ course.get_level_display }}</small>
+                </div>
+                <span class="badge bg-white text-sahe fs-6">{{ course.get_status_display }}</span>
+            </div>
+            <div class="card-body">
+                <h5 class="mb-3">Course Description</h5>
+                <p>{{ course.description }}</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6 class="text-sahe"><i class="fas fa-info-circle me-2"></i>Course Details</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Course Code:</strong></td>
+                                <td>{{ course.code }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Credits:</strong></td>
+                                <td>{{ course.credits }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Level:</strong></td>
+                                <td>{{ course.get_level_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Department:</strong></td>
+                                <td>{{ course.department.name|default:"Not Assigned" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Instructor:</strong></td>
+                                <td>{{ course.instructor.user.get_full_name|default:"To Be Announced" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-sahe"><i class="fas fa-calendar-alt me-2"></i>Timeline</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Start Date:</strong></td>
+                                <td>{{ course.start_date|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>End Date:</strong></td>
+                                <td>{{ course.end_date|date:"F d, Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Duration:</strong></td>
+                                <td>{{ course.start_date|timesince:course.end_date }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Prerequisites -->
+                {% if course.prerequisites.exists %}
+                    <div class="mt-4">
+                        <h6 class="text-sahe"><i class="fas fa-list-ol me-2"></i>Prerequisites</h6>
+                        <div class="row">
+                            {% for prereq in course.prerequisites.all %}
+                                <div class="col-md-6 mb-2">
+                                    <a href="{% url 'crp:course_detail' prereq.id %}" class="text-decoration-none">
+                                        <span class="badge badge-sahe-light">{{ prereq.code }} - {{ prereq.name }}</span>
+                                    </a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Course Schedule -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-week me-2"></i>Course Schedule</h5>
+            </div>
+            <div class="card-body">
+                {% if schedules %}
+                    <div class="table-responsive">
+                        <table class="table table-sahe">
+                            <thead>
+                                <tr>
+                                    <th>Day</th>
+                                    <th>Time</th>
+                                    <th>Room</th>
+                                    <th>Building</th>
+                                    <th>Instructor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in schedules %}
+                                    <tr>
+                                        <td><strong>{{ schedule.get_day_display }}</strong></td>
+                                        <td>{{ schedule.time_slot.start_time }} - {{ schedule.time_slot.end_time }}</td>
+                                        <td>{{ schedule.room.name }}</td>
+                                        <td>{{ schedule.room.building }}</td>
+                                        <td>{{ schedule.instructor.user.get_full_name|default:"TBA" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-alt fa-2x text-muted mb-2"></i>
+                        <p class="text-muted">Schedule not yet available.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Registration Panel -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-user-plus me-2"></i>Registration</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="capacity-indicator mb-2" style="height: 20px;">
+                        <div class="capacity-bar {% if course.current_enrollment|floatformat:0 < course.max_capacity|floatformat:0 %}capacity-low{% else %}capacity-high{% endif %}" 
+                             style="width: {% widthratio course.current_enrollment course.max_capacity 100 %}%"></div>
+                    </div>
+                    <h4>{{ course.current_enrollment }} / {{ course.max_capacity }}</h4>
+                    <p class="text-muted">Students Enrolled</p>
+                </div>
+                
+                {% if is_registered %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-check-circle me-2"></i>You are already registered for this course.
+                    </div>
+                    <a href="{% url 'crp:my_registrations' %}" class="btn btn-outline-sahe w-100">
+                        <i class="fas fa-list me-2"></i>View My Registrations
+                    </a>
+                {% elif course.status == 'active' and course.current_enrollment < course.max_capacity %}
+                    <form method="post" action="{% url 'crp:register_for_course' course.id %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="semester" class="form-label">Semester</label>
+                            <select name="semester" id="semester" class="form-select" required>
+                                <option value="">Select Semester</option>
+                                <option value="Fall 2026">Fall 2026</option>
+                                <option value="Spring 2027">Spring 2027</option>
+                                <option value="Summer 2027">Summer 2027</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sahe w-100">
+                            <i class="fas fa-plus me-2"></i>Register for Course
+                        </button>
+                    </form>
+                {% elif course.status == 'full' %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>This course is currently full.
+                    </div>
+                    <button class="btn btn-outline-secondary w-100" disabled>
+                        <i class="fas fa-ban me-2"></i>Course Full
+                    </button>
+                {% else %}
+                    <div class="alert alert-secondary">
+                        <i class="fas fa-info-circle me-2"></i>Registration is not currently available for this course.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Course Actions -->
+        {% if user.is_superuser or user.is_staff %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Course Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'crp:course_update' course.id %}" class="btn btn-outline-sahe">
+                            <i class="fas fa-edit me-2"></i>Edit Course
+                        </a>
+                        <a href="/admin/crp/course/{{ course.id }}/" class="btn btn-outline-secondary">
+                            <i class="fas fa-cogs me-2"></i>Admin Panel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Notes - SAHE CRP{% endblock %}
+{% block page_title %}Notes{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto;">
+    <div style="border-bottom:1px solid var(--color-divider); padding-bottom:16px; margin-bottom:24px;">
+        <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Student notes</div>
+        <h3 style="margin:8px 0 0;">Notes</h3>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:14px;">
+        {% for note in notes %}
+        <div style="border:1px solid var(--color-divider); border-radius:16px; background:var(--color-surface); padding:20px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;">
+                <h5 style="margin:0;">{{ note.title }}</h5>
+                {% if note.is_read %}<span class="tag tag-neutral">Read</span>{% else %}<span class="tag tag-danger">New</span>{% endif %}
+            </div>
+            <div style="font-size:12px; color:var(--gray-500); margin-bottom:10px;">{{ note.author.get_full_name|default:note.author.username }} · {{ note.created_at|date:'d M Y' }}</div>
+            <div style="line-height:1.7; color:var(--gray-700);">{{ note.content }}</div>
+        </div>
+        {% empty %}
+        <div style="padding:22px; border:1px dashed var(--color-divider); border-radius:16px; background:var(--color-surface); color:var(--gray-500);">
+            No notes are available yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

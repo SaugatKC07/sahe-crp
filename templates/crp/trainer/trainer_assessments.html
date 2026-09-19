@@ -1,0 +1,64 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Assessments - Trainer Portal{% endblock %}
+{% block page_title %}Assessments{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Course Assessments</h2>
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <h3 class="h5 mb-3">Create assignment</h3>
+            {% if weeks %}
+            <form method="post" action="{% url 'crp:assessment_create' %}" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-6">
+                    <label class="form-label">Course week</label>
+                    <select class="form-select" name="week" id="assignment-week" required>
+                        <option value="">Select an assigned course week</option>
+                        {% for week in weeks %}<option value="{{ week.id }}" data-course-code="{{ week.course.code }}">{{ week.course.code }} · Week {{ week.week_number }} · {{ week.title }}</option>{% endfor %}
+                    </select>
+                    <input type="hidden" name="course_code" id="assignment-course-code">
+                </div>
+                <div class="col-md-6"><label class="form-label">Title</label><input class="form-control" name="title" required></div>
+                <div class="col-md-4"><label class="form-label">Type</label><select class="form-select" name="assessment_type">{% for value,label in assessment_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                <div class="col-md-4"><label class="form-label">Due date</label><input class="form-control" type="datetime-local" name="due_date" required></div>
+                <div class="col-md-2"><label class="form-label">Maximum marks</label><input class="form-control" type="number" name="max_marks" value="100" min="1" required></div>
+                <div class="col-md-2"><label class="form-label">Weight %</label><input class="form-control" type="number" name="weight_percentage" value="10" min="0" max="100"></div>
+                <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Save assignment as draft</button></div>
+            </form>
+            {% else %}
+            <div class="alert alert-info mb-0">No learning weeks exist for your assigned courses. Ask an administrator to create the course week first.</div>
+            {% endif %}
+        </div>
+    </div>
+    {% if assessments %}
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr><th>Course</th><th>Assessment</th><th>Type</th><th>Due</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+                {% for assessment in assessments %}
+                <tr>
+                    <td>{{ assessment.course_code }}</td>
+                    <td>{{ assessment.title }}</td>
+                    <td>{{ assessment.get_assessment_type_display }}</td>
+                    <td>{{ assessment.due_date }}</td>
+                    <td><a href="{% url 'crp:trainer_assessment_detail' assessment.id %}" class="btn btn-sm btn-primary">Review</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No assessments are currently assigned to your courses.</div>
+    {% endif %}
+</div>
+<script>
+document.getElementById('assignment-week')?.addEventListener('change', function () {
+    const option = this.options[this.selectedIndex];
+    document.getElementById('assignment-course-code').value = option.dataset.courseCode || '';
+});
+</script>
+{% endblock %}

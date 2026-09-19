@@ -1,0 +1,44 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Messages - SAHE CRP{% endblock %}
+{% block page_title %}Messages{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto;">
+    <div style="border-bottom:1px solid var(--color-divider); padding-bottom:16px; margin-bottom:24px;">
+        <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Student support</div>
+        <h3 style="margin:8px 0 0;">Messages</h3>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px;">
+        <form method="post" style="border:1px solid var(--color-divider); border-radius:16px; padding:18px; background:var(--color-surface);">
+            {% csrf_token %}
+            <h4>Start a conversation</h4>
+            <div class="field"><label for="trainer-id">Trainer</label><select class="input" id="trainer-id" name="trainer_id" required><option value="">Choose a trainer</option>{% for trainer in trainers %}<option value="{{ trainer.id }}">{{ trainer.get_full_name|default:trainer.username }}</option>{% endfor %}</select></div>
+            <div class="field"><label for="message-title">Subject</label><input class="input" id="message-title" name="title" required></div>
+            <div class="field"><label for="message-content">Message</label><textarea class="input" id="message-content" name="content" required></textarea></div>
+            <button type="submit" class="btn btn-primary">Send message</button>
+        </form>
+        {% for thread in threads %}
+        <a href="{% url 'crp:student_message_thread' thread.id %}" style="display:block; text-decoration:none; color:inherit; border:1px solid var(--color-divider); border-radius:16px; background:var(--color-surface); padding:18px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+                <div>
+                    <div style="font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--gray-500);">{{ thread.trainer_name }}</div>
+                    <div style="font-family:var(--font-heading); font-weight:800; font-size:20px; margin-top:4px;">{{ thread.title }}</div>
+                </div>
+                {% if thread.unread_count %}
+                <span class="tag tag-danger">{{ thread.unread_count }} unread</span>
+                {% endif %}
+            </div>
+            <div style="margin-top:10px; color:var(--gray-600);">{{ thread.last_message }}</div>
+            <div style="margin-top:8px; font-size:12px; color:var(--gray-500);">{{ thread.last_sent }}</div>
+        </a>
+        {% empty %}
+        <div style="padding:22px; border:1px dashed var(--color-divider); border-radius:16px; background:var(--color-surface); color:var(--gray-500);">
+            No conversations yet.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

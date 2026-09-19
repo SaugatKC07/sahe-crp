@@ -1,0 +1,57 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}Revenue Analytics - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-3">Revenue analytics</h2>
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total invoiced</div>
+                    <h3>${{ total_invoiced|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total paid</div>
+                    <h3>${{ total_paid|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Outstanding</div>
+                    <h3>${{ outstanding_total|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>Invoice</th><th>Student</th><th>Amount</th><th>Outstanding</th></tr>
+                </thead>
+                <tbody>
+                    {% for invoice in invoices %}
+                    <tr>
+                        <td>{{ invoice.invoice_number }}</td>
+                        <td>{{ invoice.student.get_full_name|default:invoice.student.email }}</td>
+                        <td>${{ invoice.amount }}</td>
+                        <td>${{ invoice.outstanding }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">No invoices available.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

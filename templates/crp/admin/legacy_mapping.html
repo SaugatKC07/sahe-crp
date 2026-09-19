@@ -1,0 +1,11 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}Legacy Mapping{% endblock %}
+{% block title %}Legacy Content Mapping{% endblock %}
+{% block content %}
+<h1>Legacy Content Mapping</h1><p class="text-muted">Only unlinked records are shown. Assign them explicitly; no automatic mapping is performed.</p>
+<div class="table-responsive"><table class="table"><thead><tr><th>Type</th><th>Item</th><th>Current context</th><th>Assign course</th></tr></thead><tbody>
+{% for week in weeks %}<tr><td>Learning week</td><td>Week {{ week.week_number }} - {{ week.title }}</td><td>{{ week.materials.count }} materials{% if week.quiz %}, quiz{% endif %}</td><td><form method="post" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="content_type" value="week"><input type="hidden" name="object_id" value="{{ week.id }}"><select name="course_id" class="form-select">{% for course in courses %}<option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>{% endfor %}</select><button class="btn btn-primary">Assign</button></form></td></tr>{% endfor %}
+{% for assessment in assessments %}<tr><td>Assessment</td><td>{{ assessment.title }}</td><td>{{ assessment.course_code }}</td><td><form method="post" class="d-flex gap-2">{% csrf_token %}<input type="hidden" name="content_type" value="assessment"><input type="hidden" name="object_id" value="{{ assessment.id }}"><select name="course_id" class="form-select">{% for course in courses %}<option value="{{ course.id }}">{{ course.code }} - {{ course.name }}</option>{% endfor %}</select><button class="btn btn-primary">Assign</button></form></td></tr>{% endfor %}
+{% if not weeks and not assessments %}<tr><td colspan="4">All existing weeks and assessments are linked to courses.</td></tr>{% endif %}
+</tbody></table></div>
+{% endblock %}

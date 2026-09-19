@@ -1,0 +1,594 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SAHE CRP - Student Portal{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Archivo & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/crp.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sahe-ui.css' %}?v=20260913-3">
+    <link rel="stylesheet" href="{% static 'css/base-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cards-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/badges.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ticketing-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/robotics-ui.css' %}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    
+    {% block extra_head %}{% endblock %}
+    
+    <style>
+        /* CRP Student Portal Sidebar Layout */
+        .crp-layout {
+            display: flex;
+            min-height: 100vh;
+            background: var(--bg-secondary);
+        }
+        
+        .crp-sidebar {
+            width: 260px;
+            background: #ffffff;
+            border-right: 1px solid var(--gray-200);
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform var(--transition-normal);
+        }
+        
+        .crp-sidebar-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .crp-sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+        }
+        
+        .crp-sidebar-brand img {
+            height: 32px;
+            width: auto;
+        }
+        
+        .crp-sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
+        }
+        
+        .crp-sidebar-brand-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            letter-spacing: -0.02em;
+            color: var(--gray-900);
+        }
+        
+        .crp-sidebar-brand-subtitle {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--gray-400);
+            letter-spacing: 0.07em;
+            text-transform: uppercase;
+        }
+        
+        .crp-role-badge {
+            background: var(--sahe-blue-50);
+            color: var(--sahe-blue-700);
+            padding: 0.25rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        
+        .crp-sidebar-nav {
+            padding: 1rem 0;
+        }
+        
+        .crp-sidebar-section {
+            padding: 0.75rem 1.5rem 0.5rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--gray-400);
+        }
+        
+        .crp-sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 1.5rem;
+            color: var(--gray-600);
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            font-size: 0.875rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+        }
+        
+        .crp-sidebar-item:hover {
+            background: var(--gray-50);
+            color: var(--gray-900);
+        }
+        
+        .crp-sidebar-item.active {
+            background: var(--sahe-blue-50);
+            color: var(--sahe-blue-700);
+            border-left-color: var(--sahe-blue-600);
+        }
+        
+        .crp-sidebar-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+        
+        .crp-main {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .crp-topbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        
+        .crp-topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .crp-page-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin: 0;
+        }
+        
+        .crp-topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .crp-search {
+            position: relative;
+        }
+        
+        .crp-search input {
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border: 1px solid var(--gray-200);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            width: 280px;
+            background: var(--gray-50);
+        }
+        
+        .crp-search input:focus {
+            outline: none;
+            border-color: var(--sahe-blue-500);
+            background: #ffffff;
+        }
+        
+        .crp-search i {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray-400);
+            font-size: 0.875rem;
+        }
+        
+        .crp-notification {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gray-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .crp-notification:hover {
+            background: var(--gray-200);
+            color: var(--gray-900);
+        }
+        
+        .crp-notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .crp-user-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border: 1px solid transparent;
+        }
+        
+        .crp-user-menu:hover {
+            background: var(--gray-100);
+            border-color: var(--gray-200);
+        }
+        
+        .crp-user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--sahe-blue-600);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .crp-user-info {
+            text-align: left;
+        }
+        
+        .crp-user-name {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .crp-user-role {
+            font-size: 0.65rem;
+            color: var(--gray-400);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .crp-content {
+            flex: 1;
+            padding: 2rem;
+            background: var(--bg-secondary);
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 991.98px) {
+            .crp-sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .crp-sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .crp-main {
+                margin-left: 0;
+            }
+            
+            .crp-topbar {
+                padding: 1rem;
+            }
+            
+            .crp-search input {
+                width: 200px;
+            }
+            
+            .crp-content {
+                padding: 1rem;
+            }
+        }
+        
+        /* Scrollbar Styles */
+        .crp-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .crp-sidebar::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+        
+        .crp-sidebar::-webkit-scrollbar-thumb {
+            background: var(--gray-300);
+            border-radius: var(--radius-full);
+        }
+        
+        .crp-sidebar::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-400);
+        }
+    </style>
+    
+</head>
+<body class="ticketing-shell">
+    {% if not request.htmx %}
+    <div class="crp-layout">
+        <!-- Sidebar -->
+        <aside class="crp-sidebar" id="crpSidebar">
+            <div class="crp-sidebar-header">
+                <a href="{% url 'crp:student_portal' %}" class="crp-sidebar-brand">
+                    <img src="{% static 'images/sahe-logo.svg' %}" alt="SAHE Logo" onerror="this.style.display='none'">
+                </a>
+            </div>
+            
+            <div class="crp-sidebar-nav"
+                 hx-boost="true" hx-target="#portal-content" hx-select="#portal-content"
+                 hx-swap="outerHTML transition:true" hx-push-url="true"
+                 hx-indicator="#htmx-indicator">
+                <div class="crp-sidebar-section">Learning</div>
+                <a href="{% url 'crp:student_portal' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_portal' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'crp:student_learning' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_learning' %}active{% endif %}">
+                    <i class="bi bi-book"></i>
+                    <span>Learning</span>
+                </a>
+                <a href="{% url 'crp:student_quiz' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_quiz' %}active{% endif %}">
+                    <i class="bi bi-question-circle"></i>
+                    <span>Quizzes</span>
+                </a>
+                <a href="{% url 'crp:student_assessments' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_assessments' %}active{% endif %}">
+                    <i class="bi bi-clipboard-check"></i>
+                    <span>Assessments</span>
+                </a>
+                <a href="{% url 'crp:student_assessments' %}" class="crp-sidebar-item"><i class="bi bi-upload"></i><span>Submit Work</span></a>
+                <a href="{% url 'crp:student_groups' %}" class="crp-sidebar-item"><i class="bi bi-people"></i><span>My Group</span></a>
+                
+                <div class="crp-sidebar-section">Career</div>
+                <a href="{% url 'crp:student_jobs' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_jobs' or request.resolver_match.url_name == 'student_job_detail' %}active{% endif %}">
+                    <i class="bi bi-briefcase"></i>
+                    <span>Job Board</span>
+                </a>
+                <a href="{% url 'crp:student_resume' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_resume' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-person"></i>
+                    <span>Resume Builder</span>
+                </a>
+                <a href="{% url 'crp:student_interview' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_interview' or request.resolver_match.url_name == 'student_interview_session' %}active{% endif %}">
+                    <i class="bi bi-camera-video"></i>
+                    <span>Interview Prep</span>
+                </a>
+                <a href="{% url 'crp:student_linkedin' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_linkedin' %}active{% endif %}">
+                    <i class="bi bi-linkedin"></i>
+                    <span>LinkedIn Profile</span>
+                </a>
+                <a href="{% url 'crp:student_achievements' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_achievements' %}active{% endif %}">
+                    <i class="bi bi-trophy"></i>
+                    <span>Achievements</span>
+                </a>
+                
+                <div class="crp-sidebar-section">Productivity</div>
+                <a href="{% url 'crp:student_tasks' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_tasks' or request.resolver_match.url_name == 'student_task_edit' or request.resolver_match.url_name == 'student_task_delete' %}active{% endif %}">
+                    <i class="bi bi-list-check"></i>
+                    <span>Tasks</span>
+                </a>
+                <a href="{% url 'crp:student_messages' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_messages' or request.resolver_match.url_name == 'student_message_thread' %}active{% endif %}">
+                    <i class="bi bi-chat"></i>
+                    <span>Messages</span>
+                </a>
+                <a href="{% url 'crp:student_notes' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_notes' %}active{% endif %}">
+                    <i class="bi bi-sticky"></i>
+                    <span>Notes</span>
+                </a>
+                <a href="{% url 'crp:student_calendar' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_calendar' or request.resolver_match.url_name == 'student_calendar_event_edit' %}active{% endif %}">
+                    <i class="bi bi-calendar"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="{% url 'crp:student_live_sessions' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_live_sessions' %}active{% endif %}">
+                    <i class="bi bi-camera-video"></i>
+                    <span>Live Sessions</span>
+                </a>
+                <a href="{% url 'crp:student_requests' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_requests' %}active{% endif %}">
+                    <i class="bi bi-life-preserver"></i>
+                    <span>Requests</span>
+                </a>
+                <a href="{% url 'crp:support_tickets' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'support_tickets' %}active{% endif %}">
+                    <i class="bi bi-life-preserver"></i><span>Support</span>
+                </a>
+                <a href="{% url 'crp:student_groups' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_groups' or request.resolver_match.url_name == 'student_group_detail' %}active{% endif %}">
+                    <i class="bi bi-people"></i>
+                    <span>Groups</span>
+                </a>
+                
+                <div class="crp-sidebar-section">Community</div>
+                <a href="{% url 'crp:student_community' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_community' or request.resolver_match.url_name == 'student_community_post_detail' or request.resolver_match.url_name == 'student_community_post_edit' %}active{% endif %}">
+                    <i class="bi bi-megaphone"></i>
+                    <span>Community</span>
+                </a>
+                <a href="{% url 'crp:student_announcements' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_announcements' %}active{% endif %}">
+                    <i class="bi bi-bell"></i>
+                    <span>Announcements</span>
+                </a>
+                <a href="{% url 'crp:student_calendar' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_calendar' or request.resolver_match.url_name == 'student_calendar_event_edit' %}active{% endif %}">
+                    <i class="bi bi-broadcast"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="{% url 'crp:student_messages' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_messages' or request.resolver_match.url_name == 'student_message_thread' %}active{% endif %}">
+                    <i class="bi bi-inbox"></i>
+                    <span>Support messages</span>
+                </a>
+                
+                <div class="crp-sidebar-section">Account</div>
+                <a href="{% url 'crp:student_settings' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_settings' or request.resolver_match.url_name == 'student_settings_by_id' %}active{% endif %}">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+                <a href="{% url 'crp:logout' %}" class="crp-sidebar-item">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+            <div class="student-sidebar-profile">
+                <button type="button" id="saheSidebarUserButton" aria-controls="saheUserMenu" aria-label="Open account menu">
+                    <span class="student-sidebar-avatar">{{ user.get_full_name|first|default:user.email|first|upper }}</span>
+                    <span class="student-sidebar-copy"><strong>{{ user.get_full_name|default:user.email }}</strong><small>{{ user.student_profile.get_specialisation_display|default:"Student" }} · {{ user.student_profile.cohort }}</small></span>
+                    <i class="bi bi-arrow-down-up"></i>
+                </button>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="crp-main">
+            <!-- Topbar -->
+            <header class="crp-topbar">
+                <div class="crp-topbar-left">
+                    <button class="sahe-sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                    <div>
+                        <h1 class="crp-page-title" id="portal-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <div class="crp-page-subtitle">{% block page_subtitle %}Student portal · Career Ready Program{% endblock %}</div>
+                    </div>
+                </div>
+                <div class="crp-topbar-right">
+                    <button type="button" class="crp-search" id="saheSearchButton" aria-label="Search student portal">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search anything…  Ctrl K" tabindex="-1" readonly>
+                    </button>
+                    <div class="sahe-xp-pill d-none d-xl-flex" title="Student progress">
+                        <span class="sahe-xp-level"><i class="bi bi-lightning-fill"></i></span>
+                        <div><div class="sahe-xp-copy">{{ student_shell_readiness }} readiness · {{ student_shell_streak }} day streak</div><div class="sahe-xp-track"><span style="width: {{ student_shell_readiness }}%;"></span></div></div>
+                    </div>
+                    <button type="button" class="crp-notification sahe-topbar-pill sahe-alert-pill" id="saheNotificationButton" aria-label="Open notifications" aria-controls="saheNotifications" aria-expanded="false">
+                        <span>Alerts</span>{% if student_shell_alerts %}<span class="crp-notification-badge">{{ student_shell_alerts }}</span>{% endif %}
+                    </button>
+                    <button type="button" class="sahe-theme-toggle sahe-topbar-pill" data-theme-label aria-label="Use dark theme">Dark</button>
+                    <button type="button" class="sahe-tour-button sahe-topbar-pill" id="saheTourButton">Tour</button>
+                    <button type="button" class="crp-user-menu" id="saheUserButton" aria-label="Open account menu" aria-controls="saheUserMenu" aria-expanded="false">
+                        <div class="crp-user-avatar">{{ user.get_full_name|first|default:user.email|first|upper }}</div>
+                        <div class="crp-user-info">
+                            <div class="crp-user-name">{{ user.get_full_name|default:user.email }}</div>
+                            <div class="crp-user-role">Student</div>
+                        </div>
+                        <i class="bi bi-chevron-down small"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Content -->
+            {% endif %}
+            <div id="htmx-indicator" class="htmx-indicator" aria-live="polite">Loading…</div>
+            <div id="portal-content" class="crp-content">
+                {% block extra_css %}{% endblock %}
+                {% if messages %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                
+                {% block content %}{% endblock %}
+                {% block extra_js %}{% endblock %}
+            </div>
+            {% if not request.htmx %}
+        </main>
+    </div>
+
+    <div class="sahe-sidebar-overlay" id="saheSidebarOverlay" aria-hidden="true"></div>
+
+    <aside class="sahe-popover" id="saheNotifications" aria-label="Notifications">
+        <div class="sahe-popover-head"><h2 class="sahe-popover-title">Notifications</h2><span class="tag tag-success">{{ student_shell_alerts }} unread</span></div>
+        {% for notification in student_shell_notifications %}
+        <a class="sahe-popover-item" href="{% if notification.target_url %}{{ notification.target_url }}{% else %}{% url 'crp:student_notifications' %}{% endif %}">
+            <span class="sahe-popover-dot"></span><span><strong>{{ notification.title }}</strong><small>{{ notification.message|default:"Open notifications for details." }}</small></span>
+        </a>
+        {% empty %}
+        <div class="sahe-popover-item text-muted">No notifications.</div>
+        {% endfor %}
+        <a class="sahe-popover-item" href="{% url 'crp:student_notifications' %}"><span><strong>View all notifications</strong></span></a>
+    </aside>
+
+    <aside class="sahe-popover sahe-user-popover" id="saheUserMenu" aria-label="Account menu">
+        <div class="sahe-popover-head"><div><h2 class="sahe-popover-title">{{ user.get_full_name|default:user.email }}</h2><small class="text-muted">{{ user.email }}</small></div></div>
+        <a class="sahe-popover-item" href="{% url 'crp:student_settings' %}"><i class="bi bi-gear"></i><span><strong>Settings</strong><small>Profile, privacy and appearance</small></span></a>
+        <a class="sahe-popover-item" href="{% url 'crp:student_achievements' %}"><i class="bi bi-trophy"></i><span><strong>Achievements</strong><small>Badges, streaks and leaderboard</small></span></a>
+        <a class="sahe-popover-item" href="{% url 'crp:logout' %}" style="color:var(--sahe-coral)"><i class="bi bi-box-arrow-right"></i><span><strong>Sign out</strong></span></a>
+    </aside>
+
+    <div class="sahe-command-backdrop" id="saheCommand" aria-hidden="true">
+        <div class="sahe-command" role="dialog" aria-modal="true" aria-labelledby="saheCommandTitle">
+            <div class="sahe-command-input-wrap"><i class="bi bi-search"></i><label class="visually-hidden" id="saheCommandTitle" for="saheCommandInput">Search student portal</label><input class="sahe-command-input" id="saheCommandInput" type="search" placeholder="Search pages and tools…"><kbd>Esc</kbd></div>
+            <div class="sahe-command-results" id="saheCommandResults"></div>
+        </div>
+    </div>
+
+    <div class="sahe-command-backdrop" id="saheTour" aria-hidden="true">
+        <div class="sahe-tour-card" role="dialog" aria-modal="true" aria-labelledby="saheTourTitle">
+            <div class="sahe-chart-kicker">Tour · Student portal</div>
+            <h2 id="saheTourTitle">Everything you need, in one place.</h2>
+            <p>Use the sidebar for program and career tools, Ctrl+K to jump anywhere, Alerts for priority work, and the theme control for light or dark mode.</p>
+            <div class="d-flex justify-content-end gap-2"><button type="button" class="btn btn-secondary" id="saheTourClose">Close</button><a href="{% url 'crp:student_learning' %}" class="btn btn-primary">Explore learning</a></div>
+        </div>
+        {% endif %}
+    </div>
+    
+    {% if not request.htmx %}
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/sahe-ui.js' %}?v=student-20260913-1"></script>
+    <script src="{% static 'js/student-portal.js' %}?v=student-20260913-1"></script>
+    
+    <script>
+        // Student shell behavior lives in student-portal.js.
+    </script>
+    
+    {% endif %}
+</body>
+</html>

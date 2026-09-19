@@ -1,0 +1,765 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Resume - SAHE CRP{% endblock %}
+
+{% block page_title %}Resume Builder{% endblock %}
+
+{% block extra_css %}
+<style>
+.resume-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.resume-editor {
+    data-print-hide;
+}
+
+.resume-editor-header {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+}
+
+.resume-preview {
+    data-print-doc;
+}
+
+.resume-preview-header {
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.resume-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding-top: 16px;
+}
+
+.form-field {
+    margin-bottom: 10px;
+}
+
+.form-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+}
+
+.form-field textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.skills-list {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.skill-tag {
+    background: var(--gray-100);
+    padding: 6px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    cursor: pointer;
+    border: none;
+}
+
+.skill-tag:hover {
+    background: var(--gray-200);
+}
+
+.ai-review-card {
+    border: 1px solid color-mix(in srgb, var(--c-1) 34%, transparent);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-top: 24px;
+    background: color-mix(in srgb, var(--sahe-blue-600) 6%, transparent);
+}
+
+.ai-review-header {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sahe-blue-700);
+    margin-bottom: 14px;
+}
+
+.ai-score {
+    font-size: 24px;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    color: var(--sahe-blue-600);
+}
+
+.ai-score-item {
+    padding: 10px 0;
+    border-top: 1px solid color-mix(in srgb, var(--sahe-blue-600) 30%, transparent);
+}
+
+.ai-score-item-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-score-label {
+    flex: 1;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.ai-score-bar {
+    flex: 1;
+    height: 6px;
+    background: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.ai-score-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--c-1), var(--c-6));
+}
+
+.ai-score-value {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13px;
+    width: 34px;
+    text-align: right;
+}
+
+.ai-score-note {
+    font-size: 11.5px;
+    color: var(--gray-400);
+    margin-top: 4px;
+}
+
+.resume-preview-content {
+    background: #ffffff;
+    color: #201e1d;
+    padding: 40px;
+    margin-top: 16px;
+    box-shadow: var(--shadow-md);
+    font-size: 12.5px;
+    line-height: 1.6;
+}
+
+.resume-preview-name {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+}
+
+.resume-preview-headline {
+    font-size: 13px;
+    color: #0f7a5a;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.resume-preview-contact {
+    font-size: 11.5px;
+    color: #666;
+    margin-top: 6px;
+}
+
+.resume-preview-section {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #0f7a5a;
+    margin-bottom: 6px;
+    margin-top: 18px;
+}
+
+.resume-preview-text {
+    margin: 0 0 18px;
+}
+
+.resume-preview-item {
+    margin-bottom: 14px;
+}
+
+.resume-preview-item-title {
+    font-weight: 700;
+}
+
+.resume-preview-item-meta {
+    font-size: 11.5px;
+    color: #666;
+}
+
+.resume-preview-bullet {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.completeness-indicator {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.completeness-indicator.saving {
+    color: var(--sahe-blue-600);
+}
+
+.experience-item,
+.education-item {
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    margin-bottom: 12px;
+    background: var(--color-surface);
+}
+
+.experience-header,
+.education-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.bullets-list {
+    margin-top: 12px;
+}
+
+.bullet-item {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+    border-top: 1px solid var(--color-divider);
+}
+
+.tailoring-card {
+    border: 1px solid var(--sahe-blue-600);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    margin-bottom: 24px;
+    background: color-mix(in srgb, var(--sahe-blue-600) 6%, transparent);
+}
+
+.tailoring-header {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sahe-blue-700);
+    margin-bottom: 12px;
+}
+
+.skill-match {
+    padding: 4px 8px;
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    margin: 4px;
+}
+
+.skill-match.matching {
+    background: var(--sahe-blue-50);
+    color: var(--sahe-blue-700);
+}
+
+.skill-match.missing {
+    background: var(--danger);
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block extra_head %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+{% endblock %}
+
+{% block content %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+<div class="resume-container">
+    {% csrf_token %}
+    <div class="resume-editor">
+        {% if is_tailoring %}
+            <div class="tailoring-card">
+                <div class="tailoring-header">Tailoring for {{ job.title }} at {{ job.company }}</div>
+                <p style="font-size: 13.5px; line-height: 1.65; margin: 0 0 12px;">
+                    Compare your resume with this job's requirements and make targeted improvements.
+                </p>
+                <div style="margin-bottom: 12px;">
+                    <strong>Job Skills:</strong>
+                    {% for skill in job.skills %}
+                        <span class="skill-match">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        
+        <div class="resume-editor-header">
+            <h4 style="margin: 0; font-size: 15px; flex: 1;">Content</h4>
+            <div class="completeness-indicator" id="autosave-status">Autosaved</div>
+        </div>
+        
+        <div class="resume-form-section">
+            <div class="form-field">
+                <label>Headline</label>
+                <input type="text" name="headline" value="{{ resume.headline }}" placeholder="e.g., AI/ML Engineer | Python Expert" onchange="autosaveField('headline', this.value)">
+            </div>
+            
+            <div class="form-field">
+                <label>Professional summary</label>
+                <textarea name="summary" placeholder="Brief overview of your professional background and goals" onchange="autosaveField('summary', this.value)">{{ resume.summary }}</textarea>
+            </div>
+            
+            <div>
+                <label style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-400); margin-bottom: 8px;">Skills — click to remove</label>
+                <div class="skills-list" id="skills-container">
+                    {% for skill in resume.skills %}
+                        <button class="skill-tag" onclick="removeSkill('{{ skill }}')">{{ skill }} ✕</button>
+                    {% empty %}
+                        <span style="color: var(--gray-400); font-size: 12px;">No skills added yet</span>
+                    {% endfor %}
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 10px;">
+                    <input type="text" id="skill-input" placeholder="Add a skill and press Enter" style="max-width: 240px;" onkeydown="handleSkillKey(event)">
+                    <button class="btn btn-secondary" onclick="addSkill()">Add</button>
+                </div>
+            </div>
+            
+            <div>
+                <label style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gray-400); margin: 6px 0 8px;">Contact information</label>
+                <div class="form-field">
+                    <label>Email</label>
+                    <input type="email" name="email" value="{{ resume.contact_email }}" onchange="autosaveField('email', this.value)">
+                </div>
+                <div class="form-field">
+                    <label>Phone</label>
+                    <input type="text" name="phone" value="{{ resume.contact_phone }}" onchange="autosaveField('phone', this.value)">
+                </div>
+                <div class="form-field">
+                    <label>Location</label>
+                    <input type="text" name="location" value="{{ resume.contact_location }}" onchange="autosaveField('location', this.value)">
+                </div>
+            </div>
+        </div>
+        
+        <div style="border-bottom: 1px solid var(--color-divider); padding-bottom: 10px; margin-top: 24px;">
+            <h4 style="margin: 0; font-size: 15px;">Experience</h4>
+        </div>
+        
+        <div id="experience-container">
+            {% for exp in experience %}
+                <div class="experience-item" data-exp-id="{{ exp.id }}">
+                    <div class="experience-header">
+                        <strong>{{ exp.role }} at {{ exp.company }}</strong>
+                        <div>
+                            <button class="btn btn-ghost" style="font-size: 11px;" onclick="editExperience({{ exp.id }})">Edit</button>
+                            <button class="btn btn-ghost" style="font-size: 11px;" onclick="deleteExperience({{ exp.id }})">Delete</button>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 8px;">
+                        {{ exp.start_date|date:"M Y" }} {% if exp.is_current %}— Present{% else %}— {{ exp.end_date|date:"M Y" }}{% endif %}
+                    </div>
+                    <div class="bullets-list">
+                        {% for bullet in exp.bullets %}
+                            <div class="bullet-item">
+                                <span style="color: var(--sahe-blue-600);">▪</span>
+                                <span style="flex: 1;">{{ bullet }}</span>
+                                <button class="btn btn-ghost" style="font-size: 10px;" onclick="editBullet({{ exp.id }}, {{ forloop.counter0 }})">Edit</button>
+                                <button class="btn btn-ghost" style="font-size: 10px;" onclick="deleteBullet({{ exp.id }}, {{ forloop.counter0 }})">✕</button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div style="display: flex; gap: 8px; margin-top: 8px;">
+                        <input type="text" placeholder="Add achievement (start with verb, end with number)" style="flex: 1; font-size: 12px;" onkeydown="handleBulletKey(event, {{ exp.id }})">
+                        <button class="btn btn-secondary" style="font-size: 11px;" onclick="addBullet({{ exp.id }})">Add</button>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="addExperience()">+ Add Experience</button>
+        
+        <div style="border-bottom: 1px solid var(--color-divider); padding-bottom: 10px; margin-top: 24px;">
+            <h4 style="margin: 0; font-size: 15px;">Education</h4>
+        </div>
+        
+        <div id="education-container">
+            {% for edu in education %}
+                <div class="education-item" data-edu-id="{{ edu.id }}">
+                    <div class="education-header">
+                        <strong>{{ edu.degree }} from {{ edu.institution }}</strong>
+                        <div>
+                            <button class="btn btn-ghost" style="font-size: 11px;" onclick="editEducation({{ edu.id }})">Edit</button>
+                            <button class="btn btn-ghost" style="font-size: 11px;" onclick="deleteEducation({{ edu.id }})">Delete</button>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--gray-500);">
+                        {{ edu.start_date|date:"M Y" }} {% if edu.is_current %}— Present{% else %}— {{ edu.end_date|date:"M Y" }}{% endif %}
+                        {{ edu.details|default:"" }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        
+        <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="addEducation()">+ Add Education</button>
+        
+        <div class="ai-review-card">
+            <div class="ai-review-header">AI resume review · score {{ ai_score }}</div>
+            {% for score_item in ai_feedback %}
+                <div class="ai-score-item">
+                    <div class="ai-score-item-header">
+                        <div class="ai-score-label">{{ score_item.label }}</div>
+                        <div class="ai-score-bar">
+                            <div class="ai-score-bar-fill" style="width: {{ score_item.value }}%;"></div>
+                        </div>
+                        <div class="ai-score-value">{{ score_item.value }}</div>
+                    </div>
+                    <div class="ai-score-note">{{ score_item.note }}</div>
+                </div>
+            {% endfor %}
+            <button class="btn btn-primary btn-block" style="margin-top: 16px;" onclick="rerunAI()">Re-run AI review</button>
+        </div>
+    </div>
+    
+    <div class="resume-preview">
+        <div class="resume-preview-header">
+            <h4 style="margin: 0; font-size: 15px; flex: 1;">Preview</h4>
+            <a href="{% url 'crp:student_export_resume' %}" class="btn btn-secondary">Download .md</a>
+            <button class="btn btn-primary" onclick="window.print()">Print / PDF</button>
+        </div>
+        
+        <div class="resume-preview-content">
+            <div class="resume-preview-name">{{ student.user.get_full_name }}</div>
+            <div class="resume-preview-headline">{{ resume.headline|default:"Professional Title" }}</div>
+            <div class="resume-preview-contact">
+                {{ resume.contact_email|default:student.user.email }} · 
+                {{ resume.contact_phone|default:"Phone" }} · 
+                {{ resume.contact_location|default:"Location" }}
+            </div>
+            
+            <div style="height: 2px; background: #201e1d; margin: 18px 0;"></div>
+            
+            <div class="resume-preview-section">Summary</div>
+            <p class="resume-preview-text">{{ resume.summary|default:"Professional summary goes here" }}</p>
+            
+            <div class="resume-preview-section">Skills</div>
+            <div>{{ resume.skills|join:" · " }}</div>
+            
+            {% if experience %}
+                <div class="resume-preview-section">Experience</div>
+                {% for exp in experience %}
+                    <div class="resume-preview-item">
+                        <div class="resume-preview-item-title">{{ exp.role }}</div>
+                        <div class="resume-preview-item-meta">{{ exp.company }} · {{ exp.start_date|date:"M Y" }} {% if exp.is_current %}— Present{% else %}— {{ exp.end_date|date:"M Y" }}{% endif %}</div>
+                        {% for bullet in exp.bullets %}
+                            <div class="resume-preview-bullet">
+                                <span>▪</span><span>{{ bullet }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            {% if education %}
+                <div class="resume-preview-section">Education</div>
+                {% for edu in education %}
+                    <div class="resume-preview-item">
+                        <div class="resume-preview-item-title">{{ edu.degree }}</div>
+                        <div class="resume-preview-item-meta">{{ edu.institution }} · {{ edu.start_date|date:"M Y" }} {% if edu.is_current %}— Present{% else %}— {{ edu.end_date|date:"M Y" }}{% endif %}</div>
+                        {% if edu.details %}
+                            <div style="font-size: 11.5px; color: #666;">{{ edu.details }}</div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+const BASE_URLS = {
+    resume_autosave: '{% url "crp:resume_autosave" %}',
+    resume_add_skill: '{% url "crp:resume_add_skill" %}',
+    resume_remove_skill: '{% url "crp:resume_remove_skill" %}',
+    resume_add_experience: '{% url "crp:resume_add_experience" %}',
+    resume_delete_experience: '{% url "crp:resume_delete_experience" 0 %}',
+    resume_add_bullet: '{% url "crp:resume_add_bullet" 0 %}',
+    resume_add_education: '{% url "crp:resume_add_education" %}',
+    resume_delete_education: '{% url "crp:resume_delete_education" 0 %}',
+    resume_rerun_ai: '{% url "crp:resume_rerun_ai" %}'
+};
+
+const getCSRFToken = () => {
+    return getCSRFToken();
+};
+
+let autosaveTimeout;
+
+function showSaving() {
+    document.getElementById('autosave-status').textContent = 'Saving...';
+    document.getElementById('autosave-status').classList.add('saving');
+}
+
+function showAutosaved() {
+    document.getElementById('autosave-status').textContent = 'Autosaved';
+    document.getElementById('autosave-status').classList.remove('saving');
+}
+
+function autosaveField(field, value) {
+    clearTimeout(autosaveTimeout);
+    showSaving();
+    
+    const formData = new FormData();
+    formData.append(field, value);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(BASE_URLS.resume_autosave, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAutosaved();
+        }
+    })
+    .catch(error => {
+        console.error('Autosave failed:', error);
+        document.getElementById('autosave-status').textContent = 'Save failed';
+    });
+}
+
+function addSkill() {
+    const skillInput = document.getElementById('skill-input');
+    const skill = skillInput.value.trim();
+    
+    if (!skill) return;
+    
+    const formData = new FormData();
+    formData.append('skill', skill);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(BASE_URLS.resume_add_skill, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSkillsDisplay(data.skills);
+            skillInput.value = '';
+        }
+    });
+}
+
+function removeSkill(skill) {
+    const formData = new FormData();
+    formData.append('skill', skill);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(BASE_URLS.resume_remove_skill, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            updateSkillsDisplay(data.skills);
+        }
+    });
+}
+
+function updateSkillsDisplay(skills) {
+    const container = document.getElementById('skills-container');
+    if (skills.length === 0) {
+        container.innerHTML = '<span style="color: var(--gray-400); font-size: 12px;">No skills added yet</span>';
+    } else {
+        container.innerHTML = skills.map(skill => 
+            `<button class="skill-tag" onclick="removeSkill('${skill}')">${skill} ✕</button>`
+        ).join('');
+    }
+}
+
+function handleSkillKey(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        addSkill();
+    }
+}
+
+function addExperience() {
+    const role = prompt('Role/Title:');
+    const company = prompt('Company:');
+    const startDate = prompt('Start Date (YYYY-MM-DD):');
+    
+    if (!role || !company) return;
+    
+    const formData = new FormData();
+    formData.append('role', role);
+    formData.append('company', company);
+    formData.append('start_date', startDate);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(BASE_URLS.resume_add_experience, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteExperience(expId) {
+    if (!confirm('Delete this experience?')) return;
+    
+    const url = BASE_URLS.resume_delete_experience.replace('0', expId);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function addBullet(expId) {
+    const input = event.target.previousElementSibling;
+    const bullet = input.value.trim();
+    
+    if (!bullet) return;
+    
+    const formData = new FormData();
+    formData.append('bullet', bullet);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    const url = BASE_URLS.resume_add_bullet.replace('0', expId);
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function handleBulletKey(event, expId) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        addBullet(expId);
+    }
+}
+
+function addEducation() {
+    const degree = prompt('Degree:');
+    const institution = prompt('Institution:');
+    const startDate = prompt('Start Date (YYYY-MM-DD):');
+    
+    if (!degree || !institution) return;
+    
+    const formData = new FormData();
+    formData.append('degree', degree);
+    formData.append('institution', institution);
+    formData.append('start_date', startDate);
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(BASE_URLS.resume_add_education, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function deleteEducation(eduId) {
+    if (!confirm('Delete this education?')) return;
+    
+    const url = BASE_URLS.resume_delete_education.replace('0', eduId);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function rerunAI() {
+    fetch(BASE_URLS.resume_rerun_ai, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': getCSRFToken()
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}Payment Risk - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-3">Payment risk</h2>
+    <div class="card border-0 shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th>Invoice</th><th>Student</th><th>Outstanding</th><th>Days overdue</th></tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.invoice.invoice_number }}</td>
+                        <td>{{ item.invoice.student.get_full_name|default:item.invoice.student.email }}</td>
+                        <td>${{ item.outstanding }}</td>
+                        <td>{{ item.days_overdue }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">No risk items found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

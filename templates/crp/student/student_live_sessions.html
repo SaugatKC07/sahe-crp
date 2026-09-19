@@ -1,0 +1,25 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Live Sessions - SAHE CRP{% endblock %}
+{% block page_title %}Live Sessions{% endblock %}
+{% block content %}
+<div style="max-width: 900px;">
+    <div style="margin-bottom: 24px;">
+        <h3>Live sessions</h3>
+        <p>Published sessions for your assigned program and cohort.</p>
+    </div>
+    {% for session in sessions %}
+    <article style="padding: 18px 0; border-top: 1px solid var(--color-divider);">
+        <div style="display:flex; gap:16px; align-items:flex-start;">
+            <div style="flex:1;">
+                <h4>{{ session.title }}</h4>
+                <div style="font-size:12px;">{{ session.starts_at|date:"d M Y, H:i" }}{% if session.ends_at %} – {{ session.ends_at|date:"H:i" }}{% endif %}</div>
+                {% if session.description %}<p>{{ session.description }}</p>{% endif %}
+            </div>
+            {% if session.meeting_url %}<a class="btn btn-primary" href="{{ session.meeting_url }}" target="_blank" rel="noopener">Join session</a>{% endif %}
+        </div>
+    </article>
+    {% empty %}
+    <div class="empty-state">No upcoming live sessions are available.</div>
+    {% endfor %}
+</div>
+{% endblock %}

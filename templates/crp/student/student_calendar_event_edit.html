@@ -1,0 +1,52 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Edit Event - SAHE CRP{% endblock %}
+{% block page_title %}Edit Event{% endblock %}
+
+{% block content %}
+<div style="max-width:760px; margin:0 auto; border:1px solid var(--color-divider); border-radius:18px; background:var(--color-surface); padding:28px; box-shadow:var(--shadow-md);">
+    <h3 style="margin-top:0;">Edit event</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" value="{{ event.title }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Type</label>
+            <select name="event_type" class="form-select">
+                <option value="class" {% if event.event_type == 'class' %}selected{% endif %}>Class</option>
+                <option value="workshop" {% if event.event_type == 'workshop' %}selected{% endif %}>Workshop</option>
+                <option value="deadline" {% if event.event_type == 'deadline' %}selected{% endif %}>Deadline</option>
+                <option value="appointment" {% if event.event_type == 'appointment' %}selected{% endif %}>Appointment</option>
+                <option value="coaching" {% if event.event_type == 'coaching' %}selected{% endif %}>Career Coaching</option>
+                <option value="interview" {% if event.event_type == 'interview' %}selected{% endif %}>Mock Interview</option>
+                <option value="other" {% if event.event_type == 'other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="4">{{ event.description }}</textarea>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Date</label>
+                <input type="date" name="date" class="form-control" value="{{ event.date|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Time</label>
+                <input type="time" name="time" class="form-control" value="{% if event.time %}{{ event.time|time:'H:i' }}{% endif %}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Location</label>
+                <input type="text" name="location" class="form-control" value="{{ event.location }}">
+            </div>
+        </div>
+        <div class="mt-4" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <a href="{% url 'crp:student_calendar' %}" class="btn btn-secondary">Back to calendar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

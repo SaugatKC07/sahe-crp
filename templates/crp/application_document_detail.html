@@ -1,0 +1,41 @@
+{% extends 'crp/admissions_finance_base.html' %}
+
+{% block title %}Application Document - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Application document</h2>
+            <p class="text-muted mb-0">{{ registration.student.get_full_name|default:registration.student.email }} - {{ registration.course.code }}</p>
+        </div>
+        <a href="{% url 'crp:admissions_application_detail' registration.id %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-6"><strong>Document:</strong> {{ document.document_name }}</div>
+                <div class="col-md-6"><strong>Type:</strong> {{ document.document_type }}</div>
+                <div class="col-md-4"><strong>Status:</strong> {{ document.status }}</div>
+                <div class="col-md-4"><strong>Requested by:</strong> {{ document.requested_by.get_full_name|default:document.requested_by.username }}</div>
+                <div class="col-md-4"><strong>Verified by:</strong> {{ document.verified_by.get_full_name|default:document.verified_by.username|default:'Not verified' }}</div>
+            </div>
+            <p><strong>Notes:</strong> {{ document.notes|default:'No notes provided.' }}</p>
+
+            {% if document.status != 'verified' %}
+            <form method="post" action="{% url 'crp:application_document_verify' registration.id document.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Verification notes</label>
+                    <textarea class="form-control" name="verification_notes" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Verify document</button>
+            </form>
+            {% else %}
+            <div class="alert alert-success mb-0">Document verified on {{ document.verified_at|date:'Y-m-d H:i' }}.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,182 @@
+{% extends 'crp/admissions_finance_base.html' %}
+{% load humanize %}
+
+{% block title %}Admissions & Finance Portal - SAHE CRP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Intake and money overview · Admissions &amp; Finance{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Admissions & Finance</h2>
+            <p class="text-muted mb-0">Shared intake, offer, and finance workflow</p>
+        </div>
+        <div class="btn-group" role="group">
+            <a href="{% url 'crp:admissions_applications' %}" class="btn btn-primary">Applications</a>
+            <a href="{% url 'crp:finance_invoices' %}" class="btn btn-outline-primary">Invoices</a>
+            <a href="{% url 'crp:revenue_analytics' %}" class="btn btn-outline-primary">Revenue</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Applications</div>
+                    <h3 class="mt-2 mb-0">{{ applications|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Contracts</div>
+                    <h3 class="mt-2 mb-0">{{ contract_count }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Offers</div>
+                    <h3 class="mt-2 mb-0">{{ offers_out|length }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Outstanding</div>
+                    <h3 class="mt-2 mb-0">${{ outstanding_total|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <section class="card sahe-chart-panel h-100" aria-labelledby="pipeline-chart-title">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div><h5 id="pipeline-chart-title" class="mb-1">Admissions pipeline</h5><p class="text-muted small mb-0">Current records by workflow stage</p></div>
+                    <span class="badge" style="background: var(--sahe-primary-soft); color: var(--sahe-primary-dark);">{{ conversion_rate }}% conversion</span>
+                </div>
+                <canvas id="pipelineChart" aria-label="Admissions pipeline chart" role="img"></canvas>
+            </section>
+        </div>
+        <div class="col-lg-4">
+            <section class="card sahe-chart-panel h-100" aria-labelledby="finance-chart-title">
+                <div><h5 id="finance-chart-title" class="mb-1">Revenue position</h5><p class="text-muted small mb-0">Collected versus outstanding</p></div>
+                <canvas id="financeChart" aria-label="Revenue position chart" role="img"></canvas>
+            </section>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Payment Risk</strong></div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between"><span>Overdue</span><strong>{{ overdue_count }}</strong></div>
+                    <div class="d-flex justify-content-between"><span>At risk</span><strong>{{ payment_risk_count }}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Documents</strong></div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between"><span>Missing docs</span><strong>{{ documents_required_count }}</strong></div>
+                    <div class="d-flex justify-content-between"><span>Pending apps</span><strong>{{ pending_applications|length }}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white"><strong>Revenue</strong></div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between"><span>Collected</span><strong>${{ total_paid|floatformat:2 }}</strong></div>
+                    <div class="d-flex justify-content-between"><span>Target</span><strong>${{ total_invoiced|floatformat:2 }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>Recent applications</strong>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Course</th>
+                                <th>Status</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in applications %}
+                            <tr>
+                                <td>{{ app.student.get_full_name|default:app.student.email }}</td>
+                                <td>{{ app.course.code }}</td>
+                                <td><span class="badge bg-light text-dark">{{ app.workflow_status|title }}</span></td>
+                                <td>{{ app.registration_date|date:'d M Y' }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No applications found.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <strong>Finance summary</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2"><span>Total invoiced</span><strong>${{ total_invoiced|floatformat:2 }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Total paid</span><strong>${{ total_paid|floatformat:2 }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Overdue</span><strong>{{ overdue_count }}</strong></div>
+                    <div class="d-flex justify-content-between"><span>Payment risk</span><strong>{{ payment_risk_count }}</strong></div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <strong>Action queue</strong>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2"><span>Pending apps</span><strong>{{ pending_applications|length }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Docs required</span><strong>{{ documents_required|length }}</strong></div>
+                    <div class="d-flex justify-content-between mb-2"><span>Offers out</span><strong>{{ offers_out|length }}</strong></div>
+                    <div class="d-flex justify-content-between"><span>Finance issues</span><strong>{{ finance_items_needing_action }}</strong></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ pipeline_chart|json_script:"pipeline-chart-data" }}
+{{ finance_chart|json_script:"finance-chart-data" }}
+<script>
+(function () {
+    if (!window.Chart) return;
+    const pipeline = JSON.parse(document.getElementById('pipeline-chart-data').textContent);
+    const finance = JSON.parse(document.getElementById('finance-chart-data').textContent);
+    const ink = getComputedStyle(document.documentElement).getPropertyValue('--sahe-ink').trim();
+    const grid = getComputedStyle(document.documentElement).getPropertyValue('--sahe-border').trim();
+    const common = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: ink, usePointStyle: true } } } };
+    new Chart(document.getElementById('pipelineChart'), { type: 'bar', data: { labels: pipeline.labels, datasets: [{ label: 'Applications', data: pipeline.values, backgroundColor: ['#2f6df6', '#e39411', '#7b5cf0', '#0f7a5a'], borderRadius: 8 }] }, options: { ...common, scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink, precision: 0 }, grid: { color: grid } } } } });
+    new Chart(document.getElementById('financeChart'), { type: 'doughnut', data: { labels: finance.labels, datasets: [{ data: finance.values, backgroundColor: ['#0f7a5a', '#e2553d'], borderWidth: 0, hoverOffset: 6 }] }, options: { ...common, cutout: '72%' } });
+})();
+</script>
+{% endblock %}

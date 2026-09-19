@@ -1,0 +1,290 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Achievements - SAHE CRP{% endblock %}
+
+{% block page_title %}Achievements{% endblock %}
+
+{% block extra_css %}
+<style>
+.achievements-container {
+    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.achievements-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.achievement-stat-card {
+    padding: 18px 20px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--c-1) 8%, var(--color-surface));
+    box-shadow: inset 0 3px 0 var(--c-1), var(--shadow-sm);
+}
+
+.achievement-stat-label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.achievement-stat-value {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 30px;
+    margin-top: 8px;
+}
+
+.achievements-content-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    margin-top: 24px;
+}
+
+.badges-section {
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+}
+
+.badges-section-title {
+    margin: 0;
+    font-size: 15px;
+}
+
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    padding-top: 16px;
+}
+
+.badge-card {
+    padding: 18px;
+    border-radius: var(--radius-md);
+    background: color-mix(in srgb, var(--color-text) 3%, transparent);
+    box-shadow: none;
+    cursor: default;
+}
+
+.badge-card.earned {
+    background: color-mix(in srgb, var(--c-1) 7%, var(--color-surface));
+    box-shadow: var(--shadow-sm);
+}
+
+.badge-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 16px;
+    background: color-mix(in srgb, var(--color-text) 7%, transparent);
+    color: var(--gray-400);
+}
+
+.badge-card.earned .badge-icon {
+    background: linear-gradient(140deg, var(--c-1), color-mix(in srgb, var(--c-1) 55%, var(--c-3)));
+    color: #fff;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--c-1) 32%, transparent);
+}
+
+.badge-name {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13.5px;
+    margin-top: 10px;
+}
+
+.badge-description {
+    font-size: 11.5px;
+    color: var(--gray-400);
+    margin-top: 3px;
+}
+
+.streak-section {
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+    margin-top: 28px;
+}
+
+.streak-section-title {
+    margin: 0;
+    font-size: 15px;
+}
+
+.streak-days-grid {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+}
+
+.streak-day {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--color-text) 8%, transparent);
+}
+
+.streak-day.active {
+    background: linear-gradient(140deg, var(--c-1), var(--c-6));
+}
+
+.streak-note {
+    font-size: 11.5px;
+    color: var(--gray-400);
+    margin-top: 10px;
+}
+
+.leaderboard-section {
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.leaderboard-section-title {
+    margin: 0;
+    font-size: 15px;
+    flex: 1;
+}
+
+.leaderboard-cohort {
+    font-size: 11.5px;
+    color: var(--gray-400);
+}
+
+.leaderboard-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 12px;
+    margin-bottom: 4px;
+    border-radius: var(--radius-md);
+    background: transparent;
+}
+
+.leaderboard-item.current-user {
+    background: color-mix(in srgb, var(--c-1) 10%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-1) 30%, transparent);
+}
+
+.leaderboard-item.top-3 {
+    background: color-mix(in srgb, var(--c-3) 7%, transparent);
+}
+
+.leaderboard-rank {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13px;
+    width: 28px;
+    color: var(--sahe-blue-600);
+}
+
+.leaderboard-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.leaderboard-meta {
+    font-size: 11px;
+    color: var(--gray-400);
+}
+
+.leaderboard-bar {
+    width: 80px;
+    height: 6px;
+    background: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.leaderboard-bar-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--c-3), var(--c-4));
+}
+
+.leaderboard-score {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 13px;
+    width: 44px;
+    text-align: right;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="achievements-container">
+    <div class="achievements-stats-grid">
+        {% for stat in ach_stats %}
+            <div class="achievement-stat-card">
+                <div class="achievement-stat-label">{{ stat.label }}</div>
+                <div class="achievement-stat-value">{{ stat.value }}</div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="achievements-content-grid">
+        <div>
+            <div class="badges-section">
+                <h4 class="badges-section-title">Badges</h4>
+            </div>
+            
+            <div class="badges-grid">
+                {% for badge in badge_rows %}
+                    <div class="badge-card {% if badge.is_earned %}earned{% endif %}">
+                        <div class="badge-icon">{{ badge.mark }}</div>
+                        <div class="badge-name">{{ badge.name }}</div>
+                        <div class="badge-description">{{ badge.description }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="streak-section">
+                <h4 class="streak-section-title">21-day streak</h4>
+            </div>
+            
+            <div class="streak-days-grid">
+                {% for day in streak_days %}
+                    <div class="streak-day {% if day.is_active %}active{% endif %}" title="{{ day.title }}"></div>
+                {% endfor %}
+            </div>
+            
+            <div class="streak-note">{{ streak_note }}</div>
+        </div>
+        
+        <div>
+            <div class="leaderboard-section">
+                <h4 class="leaderboard-section-title">Cohort leaderboard</h4>
+                <div class="leaderboard-cohort">{{ cohort }}</div>
+            </div>
+            
+            {% for entry in leaderboard %}
+                <div class="leaderboard-item {% if entry.is_current_user %}current-user{% endif %} {% if forloop.counter <= 3 and not entry.is_current_user %}top-3{% endif %}">
+                    <div class="leaderboard-rank">{{ entry.rank }}</div>
+                    <div class="leaderboard-name">{{ entry.name }}</div>
+                    <div class="leaderboard-meta">{{ entry.spec }} · {{ entry.streak }}-day streak</div>
+                    <div class="leaderboard-bar">
+                        <div class="leaderboard-bar-fill" style="width: {{ entry.score }};"></div>
+                    </div>
+                    <div class="leaderboard-score">{{ entry.score }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

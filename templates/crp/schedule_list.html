@@ -1,0 +1,53 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}Course Schedule - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <h1><i class="fas fa-calendar-alt me-2"></i>Course Schedule</h1>
+        <p class="text-muted">View class schedules and time allocations</p>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if schedules %}
+                    <div class="schedule-grid">
+                        {% for schedule in schedules %}
+                            <div class="schedule-item">
+                                <span class="day-badge">{{ schedule.get_day_display }}</span>
+                                <h6 class="mt-2">{{ schedule.course.code }} - {{ schedule.course.name }}</h6>
+                                <p class="text-muted mb-1">
+                                    <i class="far fa-clock me-1"></i>
+                                    {{ schedule.time_slot.start_time }} - {{ schedule.time_slot.end_time }}
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    {{ schedule.room.building }} - {{ schedule.room.name }}
+                                </p>
+                                <p class="text-muted mb-1">
+                                    <i class="fas fa-user me-1"></i>
+                                    {{ schedule.instructor.user.get_full_name|default:"TBA" }}
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-layer-group me-1"></i>
+                                    {{ schedule.semester }}
+                                </p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-calendar-alt fa-3x text-muted mb-3"></i>
+                        <h3>No Schedule Available</h3>
+                        <p class="text-muted">Course schedules will be published here once available.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

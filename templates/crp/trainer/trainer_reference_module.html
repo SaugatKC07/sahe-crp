@@ -1,0 +1,186 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}{{ module_title }} - Trainer Portal{% endblock %}
+{% block page_title %}{{ module_title }}{% endblock %}
+{% block page_subtitle %}{{ module_subtitle }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .reference-module { max-width: 1440px; margin: 0 auto; }
+    .reference-hero { display:flex; align-items:flex-end; justify-content:space-between; gap:20px; margin-bottom:22px; }
+    .reference-eyebrow { color:var(--sahe-primary); font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .reference-title { margin:4px 0 5px; font-size:30px; font-weight:800; }
+    .reference-subtitle { color:var(--sahe-muted); margin:0; }
+    .reference-actions { display:flex; gap:8px; }
+    .reference-kpis { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:12px; margin-bottom:22px; }
+    .reference-kpi { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:14px; padding:18px; box-shadow:var(--sahe-shadow-sm); }
+    .reference-kpi-value { font:800 25px var(--font-heading); color:var(--sahe-ink); }
+    .reference-kpi-label { color:var(--sahe-muted); font-size:12px; margin-top:2px; }
+    .reference-panel { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:16px; box-shadow:var(--sahe-shadow-sm); overflow:hidden; }
+    .reference-panel-head { display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid var(--sahe-border); }
+    .reference-panel-title { margin:0; font-size:17px; font-weight:800; }
+    .reference-panel-note { color:var(--sahe-muted); font-size:12px; }
+    .reference-row { display:grid; grid-template-columns:minmax(0, 1.5fr) minmax(0, 2fr) auto auto; align-items:center; gap:18px; padding:16px 20px; border-bottom:1px solid var(--sahe-border); }
+    .reference-row:last-child { border-bottom:0; }
+    .reference-row:hover { background:var(--sahe-surface-soft); }
+    .reference-label { font-weight:800; color:var(--sahe-ink); }
+    .reference-meta { color:var(--sahe-muted); font-size:12px; margin-top:3px; }
+    .reference-value { color:var(--sahe-ink); font-size:13px; font-weight:700; white-space:nowrap; }
+    .reference-progress { min-width:120px; }
+    .reference-progress-bar { height:6px; background:var(--sahe-surface-soft); border-radius:99px; overflow:hidden; margin-top:6px; }
+    .reference-progress-bar span { display:block; height:100%; background:var(--sahe-primary); border-radius:inherit; }
+    .reference-status { border-radius:99px; padding:5px 9px; font-size:11px; font-weight:800; white-space:nowrap; }
+    .reference-status-success { color:#08734e; background:#e8f7ef; }
+    .reference-status-warning { color:#966200; background:#fff4d6; }
+    .reference-status-danger { color:#aa3026; background:#ffebe8; }
+    .reference-status-info { color:#195a9b; background:#e9f3ff; }
+    @media (max-width: 800px) {
+        .reference-hero { align-items:flex-start; flex-direction:column; }
+        .reference-kpis { grid-template-columns:1fr; }
+        .reference-row { grid-template-columns:1fr auto; gap:8px; }
+        .reference-row > :nth-child(2) { grid-column:1 / -1; }
+        .reference-row > :nth-child(3) { grid-column:2; grid-row:1; }
+        .reference-row > :nth-child(4) { grid-column:1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reference-module">
+    <div class="reference-hero">
+        <div>
+            <div class="reference-eyebrow">Trainer workspace</div>
+            <h2 class="reference-title">{{ module_title }}</h2>
+            <p class="reference-subtitle">{{ module_subtitle }}</p>
+        </div>
+        <div class="reference-actions">
+        </div>
+    </div>
+    {% if module == 'operations' and operation == 'tasks' %}
+    <form method="post" class="reference-panel p-3 mb-3">
+        {% csrf_token %}<input type="hidden" name="action" value="create">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3"><label class="small text-muted">Students (Ctrl/Cmd-select)</label>
+                <select class="form-select" name="student_ids" multiple required>{% for student in students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% endfor %}</select></div>
+            <div class="col-md-3"><label class="small text-muted">Task title</label><input class="form-control" name="title" required></div>
+            <div class="col-md-2"><label class="small text-muted">Due date</label><input class="form-control" type="date" name="due_date"></div>
+            <div class="col-md"><label class="small text-muted">Description</label><input class="form-control" name="description"></div>
+            <div class="col-auto"><button class="btn btn-primary" type="submit">Assign</button></div>
+        </div>
+    </form>
+    {% elif module == 'requests' %}
+    <div class="reference-panel p-3 mb-3">
+        <h3 class="h6">Review requests</h3>
+        <p class="small text-muted">Only requests from students in your assigned courses are shown.</p>
+    </div>
+    {% elif module == 'operations' and operation == 'attendance' %}
+    <form method="get" class="reference-panel p-3 mb-3">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2"><label class="small text-muted">Course</label><select class="form-select" name="course_id" required><option value="">Select course</option>{% for course in courses %}<option value="{{ course.id }}" {% if selected_course and selected_course.id == course.id %}selected{% endif %}>{{ course.code }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="small text-muted">Cohort</label><select class="form-select" name="cohort_id"><option value="">All cohorts</option>{% for cohort in cohorts %}<option value="{{ cohort.id }}" {% if selected_cohort == cohort.id|stringformat:"s" %}selected{% endif %}>{{ cohort }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="small text-muted">Student</label><select class="form-select" name="student_id"><option value="">All students</option>{% for student in students %}<option value="{{ student.id }}" {% if selected_student == student.id|stringformat:"s" %}selected{% endif %}>{{ student.user.get_full_name }}</option>{% endfor %}</select></div>
+            <div class="col-md-2"><label class="small text-muted">From</label><input class="form-control" type="date" name="start_date" value="{{ start_date }}"></div>
+            <div class="col-md-2"><label class="small text-muted">To</label><input class="form-control" type="date" name="end_date" value="{{ end_date }}"></div>
+            <div class="col-md-2"><label class="small text-muted">Status</label><select class="form-select" name="status"><option value="">All statuses</option><option value="present" {% if selected_status == 'present' %}selected{% endif %}>Present</option><option value="late" {% if selected_status == 'late' %}selected{% endif %}>Late</option><option value="absent" {% if selected_status == 'absent' %}selected{% endif %}>Absent</option><option value="excused" {% if selected_status == 'excused' %}selected{% endif %}>Excused</option></select></div>
+            <div class="col-auto"><button class="btn btn-outline-primary" type="submit">Filter</button></div>
+        </div>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+            <a class="btn btn-sm btn-success" href="{% url 'crp:trainer_export_attendance' %}?cohort_id={{ selected_cohort }}&student_id={{ selected_student }}&start_date={{ start_date }}&end_date={{ end_date }}&status={{ selected_status }}"><i class="bi bi-file-earmark-excel"></i> Export filtered attendance</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:trainer_export_tasks' %}">Task completion</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:trainer_export_assessments' %}">Assessment results</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:trainer_export_progress' %}">Student progress</a>
+            <a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:trainer_export_cohort_summary' %}">Cohort summary</a>
+        </div>
+    </form>
+    <form method="post" class="reference-panel p-3 mb-3">
+        {% csrf_token %}<input type="hidden" name="session_date" value="{{ session_date }}"><input type="hidden" name="course_id" value="{{ selected_course.id }}">
+        <div class="row g-2 mb-3"><div class="col-md-4"><label class="small text-muted">Scheduled session</label>
+            <select class="form-select" name="schedule_id"><option value="">Ad-hoc roll</option>{% for schedule in schedules %}<option value="{{ schedule.id }}">{{ schedule.course.code }} · {{ schedule.get_day_display }}</option>{% endfor %}</select></div></div>
+        {% for student in students %}<div class="row g-2 align-items-center mb-2"><div class="col-md-4">{{ student.user.get_full_name }}</div>
+            <div class="col-md-3"><select class="form-select" name="status_{{ student.id }}"><option value="present">Present</option><option value="late">Late</option><option value="absent">Absent</option><option value="excused">Excused</option></select></div></div>{% endfor %}
+        <button class="btn btn-primary" type="submit">Save roll</button>
+    </form>
+    {% elif module == 'operations' and operation == 'risk' %}
+    <form method="post" class="reference-panel p-3 mb-3"><div class="row g-2 align-items-end">{% csrf_token %}
+        <div class="col-md-3"><label class="small text-muted">Student</label><select class="form-select" name="student_id" required>{% for student in at_risk_students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><input class="form-control" name="subject" placeholder="Intervention subject" required></div>
+        <div class="col-md"><input class="form-control" name="description" placeholder="Action or follow-up"></div>
+        <div class="col-auto"><button class="btn btn-primary" type="submit">Log intervention</button></div>
+    </div></form>
+    {% elif module == 'operations' and operation == 'comms' %}
+    <form method="post" class="reference-panel p-3 mb-3"><div class="row g-2 align-items-end">{% csrf_token %}
+        <div class="col-md-2"><select class="form-select" name="audience"><option value="cohort">Cohort</option><option value="course">Course</option></select></div>
+        <div class="col-md-3"><select class="form-select" name="cohort_id">{% for cohort in cohorts %}<option value="{{ cohort.id }}">{{ cohort }}</option>{% endfor %}</select></div>
+        <div class="col-md-3"><select class="form-select" name="course_id">{% for course in courses %}<option value="{{ course.id }}">{{ course.code }} · {{ course.name }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><select class="form-select" name="channel"><option value="announcement">Announcement</option><option value="message">Direct message</option></select></div>
+        <div class="col-md-2"><input class="form-control" name="title" placeholder="Subject" required></div><div class="col"><input class="form-control" name="content" placeholder="Message" required></div>
+        <div class="col-auto"><button class="btn btn-primary" type="submit">Send</button></div>
+    </div></form>
+    {% endif %}
+    {% if module == 'tasks' or module == 'notes' or module == 'messages' or module == 'groups' or module == 'live' or module == 'calendar' %}
+    <form method="post" class="reference-panel p-3 mb-3">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="{% if module == 'tasks' %}create_task{% elif module == 'notes' %}create_note{% elif module == 'messages' %}send_message{% elif module == 'groups' %}create_group{% elif module == 'live' %}create_live_session{% else %}create_event{% endif %}">
+        <div class="row g-2 align-items-end">
+            {% if module == 'groups' or module == 'live' %}
+            <div class="col-md-3"><label class="small text-muted">Cohort</label><select class="form-select" name="cohort" required>{% for cohort in cohorts %}<option value="{{ cohort.id }}">{{ cohort }}</option>{% empty %}<option value="">No assigned cohorts</option>{% endfor %}</select></div>
+            {% else %}
+            <div class="col-md-3"><label class="small text-muted">Student</label><select class="form-select" name="student" required>{% for student in students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% empty %}<option value="">No assigned students</option>{% endfor %}</select></div>
+            {% endif %}
+            <div class="col-md-3"><label class="small text-muted">{% if module == 'messages' %}Subject{% else %}Title / name{% endif %}</label><input class="form-control" name="title" required></div>
+            {% if module == 'tasks' %}<div class="col-md-2"><label class="small text-muted">Due date</label><input class="form-control" type="date" name="due_date"></div>{% endif %}
+            {% if module == 'live' %}<div class="col-md-2"><label class="small text-muted">Starts</label><input class="form-control" type="datetime-local" name="starts_at" required></div>{% endif %}
+            {% if module == 'calendar' %}<div class="col-md-2"><label class="small text-muted">Date</label><input class="form-control" type="date" name="date" required></div>{% endif %}
+            <div class="col-md"><label class="small text-muted">Description / message</label><input class="form-control" name="{% if module == 'messages' or module == 'notes' %}content{% else %}description{% endif %}" required></div>
+            {% if module == 'live' %}<div class="col-md-2"><label class="small text-muted">Meeting URL</label><input class="form-control" type="url" name="meeting_url"></div>{% endif %}
+            {% if module == 'notes' or module == 'live' %}<div class="col-auto"><label class="small text-muted d-block">Published</label><input type="checkbox" name="published"></div>{% endif %}
+            <div class="col-auto"><button class="btn btn-primary" type="submit">Save</button></div>
+        </div>
+    </form>
+    {% endif %}
+
+    <div class="reference-kpis">
+        {% for value, label in summary_cards %}
+        <div class="reference-kpi">
+            <div class="reference-kpi-value">{{ value }}</div>
+            <div class="reference-kpi-label">{{ label }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <section class="reference-panel">
+        <div class="reference-panel-head">
+            <div>
+                <h3 class="reference-panel-title">{{ module_title }}</h3>
+                <div class="reference-panel-note">Records available in your assigned scope</div>
+            </div>
+            <span class="tag tag-neutral">{{ records|length }} items</span>
+        </div>
+        {% for record in records %}
+        <div class="reference-row">
+            <div>
+                <div class="reference-label">{{ record.label }}</div>
+                <div class="reference-meta">{{ record.meta }}</div>
+            </div>
+            <div class="reference-progress">
+                {% if record.progress %}
+                <div class="reference-meta">{{ record.progress }}% complete</div>
+                <div class="reference-progress-bar"><span style="width:{{ record.progress }}%"></span></div>
+                {% endif %}
+            </div>
+            <div class="reference-value">{{ record.value }}</div>
+            <span class="reference-status reference-status-{{ record.status_class }}">{{ record.status }}</span>
+            {% if module == 'notes' and record.id %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_note"><input type="hidden" name="note_id" value="{{ record.id }}"><button class="btn btn-sm btn-outline-danger" type="submit">Delete</button></form>{% endif %}
+            {% if module == 'groups' and record.id %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_group"><input type="hidden" name="group_id" value="{{ record.id }}"><button class="btn btn-sm btn-outline-danger" type="submit">Delete</button></form>{% endif %}
+            {% if module == 'live' and record.id %}<form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_live_session"><input type="hidden" name="session_id" value="{{ record.id }}"><button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button></form>{% endif %}
+            {% if module == 'groups' and record.id %}<form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="action" value="add_group_member"><input type="hidden" name="group_id" value="{{ record.id }}"><select name="student_id" class="form-select form-select-sm">{% for student in group_students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-primary" type="submit">Add</button></form>{% endif %}
+            {% if module == 'groups' and record.id %}<form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="action" value="set_group_leader"><input type="hidden" name="group_id" value="{{ record.id }}"><select name="student_id" class="form-select form-select-sm">{% for student in group_students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-primary" type="submit">Set leader</button></form>{% endif %}
+            {% if module == 'groups' and record.id %}<form method="post" class="d-flex gap-1">{% csrf_token %}<input type="hidden" name="action" value="remove_group_member"><input type="hidden" name="group_id" value="{{ record.id }}"><select name="student_id" class="form-select form-select-sm">{% for student in group_students %}<option value="{{ student.id }}">{{ student.user.get_full_name }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-warning" type="submit">Remove</button></form>{% endif %}
+            {% if module == 'live' and record.id %}<form method="post" class="row g-1 mt-2">{% csrf_token %}<input type="hidden" name="action" value="edit_live_session"><input type="hidden" name="session_id" value="{{ record.id }}"><input class="form-control form-control-sm" name="title" value="{{ record.label }}" required><input class="form-control form-control-sm" type="datetime-local" name="starts_at" value="{{ record.starts_at|date:'Y-m-d\\TH:i' }}" required><input class="form-control form-control-sm" type="url" name="meeting_url" value="{{ record.meeting_url }}"><input class="form-control form-control-sm" type="url" name="recording_url" value="{{ record.recording_url }}"><button class="btn btn-sm btn-outline-primary" type="submit">Update session</button></form>{% endif %}
+            {% if module == 'requests' and record.id %}<form method="post" class="row g-1 mt-2">{% csrf_token %}<input type="hidden" name="action" value="update_request"><input type="hidden" name="request_id" value="{{ record.id }}"><select class="form-select form-select-sm" name="status"><option value="in_progress">In progress</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="resolved">Resolved</option></select><input class="form-control form-control-sm" name="response" placeholder="Response or decision reason"><button class="btn btn-sm btn-outline-primary" type="submit">Save decision</button></form>{% endif %}
+        </div>
+        {% empty %}
+        <div class="p-4 text-muted">No records are available for this module yet.</div>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

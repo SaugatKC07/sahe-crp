@@ -1,0 +1,31 @@
+Django==5.2.4
+python-dotenv==1.1.1
+crispy-bootstrap5==2024.2
+django-crispy-forms==2.1
+django-allauth[socialaccount]>=65.3,<66
+whitenoise>=6.9,<7
+
+# PDF Generation
+reportlab==4.0.7
+xhtml2pdf==0.2.17
+
+# Excel Export
+openpyxl==3.1.2
+xlsxwriter==3.1.9
+
+# Image Processing
+Pillow==10.1.0
+
+# Cloud Storage (Cloudflare R2/S3 compatible)
+boto3==1.35.74
+django-storages==1.14.4
+
+# Email (optional - for production email functionality)
+# django-templated-mail==1.1.1
+
+# Phone Validation (optional)
+# django-phonenumber-field==7.2.0
+# phonenumbers==8.13.26
+
+# Testing (optional)
+# faker==20.1.0

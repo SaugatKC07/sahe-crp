@@ -1,0 +1,17 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Announcements - SAHE CRP{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block content %}
+<div style="max-width:900px;">
+    <div style="margin-bottom:24px;"><h3>Announcements</h3><p>Published updates from the SAHE team.</p></div>
+    {% for announcement in announcements %}
+    <article style="padding:18px 0; border-top:1px solid var(--color-divider);">
+        <div style="display:flex; justify-content:space-between; gap:16px;"><h4>{{ announcement.title }}</h4><span class="tag tag-neutral">{{ announcement.get_priority_display }}</span></div>
+        <div style="font-size:12px;">{{ announcement.created_at|date:"d M Y, H:i" }}</div>
+        <p>{{ announcement.content }}</p>
+    </article>
+    {% empty %}
+    <div class="empty-state">No announcements are available.</div>
+    {% endfor %}
+</div>
+{% endblock %}

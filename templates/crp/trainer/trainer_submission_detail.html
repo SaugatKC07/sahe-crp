@@ -1,0 +1,59 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Submission Review - Trainer Portal{% endblock %}
+{% block page_title %}Submission Review{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">{{ submission.student.user.get_full_name }}</h2>
+            <p class="text-muted mb-0">{{ submission.assessment.title }}</p>
+        </div>
+        <a href="{% url 'crp:trainer_assessment_detail' submission.assessment.id %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">Submission details</h5>
+                    <p><strong>Status:</strong> {{ submission.get_status_display }}</p>
+                    <p><strong>Submitted:</strong> {{ submission.submitted_at }}</p>
+                    <p><strong>Feedback:</strong></p>
+                    <div class="border rounded p-3 bg-light">{{ submission.feedback|default:'No feedback yet.' }}</div>
+                    {% if files %}
+                    <div class="mt-3">
+                        <h6>Files</h6>
+                        <ul class="mb-0">
+                            {% for file in files %}
+                            <li><a href="{{ file.file.url }}" target="_blank">{{ file.file_name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">Grade submission</h5>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="grade" />
+                        <div class="mb-3">
+                            <label for="marks_awarded" class="form-label">Marks</label>
+                            <input type="number" class="form-control" id="marks_awarded" name="marks_awarded" value="{{ submission.marks_awarded|default:'' }}" min="0" max="{{ submission.assessment.max_marks }}">
+                        </div>
+                        <div class="mb-3">
+                            <label for="feedback" class="form-label">Feedback</label>
+                            <textarea class="form-control" id="feedback" name="feedback" rows="5">{{ submission.feedback }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save grade</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

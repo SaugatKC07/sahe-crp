@@ -1,0 +1,44 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Assessment Review - Trainer Portal{% endblock %}
+{% block page_title %}Assessment Review{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">{{ assessment.title }}</h2>
+            <p class="text-muted mb-0">{{ assessment.course_code }} · {{ assessment.get_assessment_type_display }}</p>
+        </div>
+        <a href="{% url 'crp:trainer_assessments' %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <p>{{ assessment.description }}</p>
+            <ul class="list-unstyled mb-0">
+                <li><strong>Due:</strong> {{ assessment.due_date }}</li>
+                <li><strong>Max marks:</strong> {{ assessment.max_marks }}</li>
+                <li><strong>Weight:</strong> {{ assessment.weight_percentage }}%</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h5 class="card-title">Submissions</h5>
+            {% if submissions %}
+            <div class="list-group">
+                {% for submission in submissions %}
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:trainer_submission_detail' submission.id %}">
+                    {{ submission.student.user.get_full_name }}
+                    <span class="float-end text-muted">{{ submission.status }}{% if submission.marks_awarded is not None %} · {{ submission.marks_awarded }}{% endif %}</span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-muted mb-0">No submissions yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

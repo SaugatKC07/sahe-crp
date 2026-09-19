@@ -1,0 +1,28 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Requests - SAHE CRP{% endblock %}
+{% block page_title %}Requests{% endblock %}
+{% block content %}
+<div style="max-width: 900px;">
+    <div style="margin-bottom:24px;"><h3>Support requests</h3><p>Ask the team for help and track responses.</p></div>
+    <form method="post" style="padding:18px; border:1px solid var(--color-divider); border-radius:var(--radius-md); margin-bottom:24px;">
+        {% csrf_token %}
+        <div class="field"><label for="request-type">Type</label><select class="input" id="request-type" name="request_type"><option value="academic">Academic support</option><option value="technical">Technical support</option><option value="career">Career support</option><option value="wellbeing">Wellbeing support</option><option value="other">Other</option></select></div>
+        <div class="field"><label for="request-subject">Subject</label><input class="input" id="request-subject" name="subject" required></div>
+        <div class="field"><label for="request-assessment">Assignment (optional)</label><select class="input" id="request-assessment" name="assessment_id"><option value="">General support request</option>{% for assessment in eligible_assessments %}<option value="{{ assessment.id }}">{{ assessment.title }} · due {{ assessment.due_date|date:"d M Y" }}</option>{% endfor %}</select></div>
+        <div class="field"><label for="request-date">Requested date (optional)</label><input class="input" id="request-date" type="date" name="requested_date"></div>
+        <div class="field"><label for="request-description">Description</label><textarea class="input" id="request-description" name="description" required></textarea></div>
+        <button type="submit" class="btn btn-primary">Submit request</button>
+    </form>
+    {% for item in requests %}
+    <article style="padding:16px 0; border-top:1px solid var(--color-divider);">
+        <div style="display:flex; justify-content:space-between; gap:16px;"><strong>{{ item.subject }}</strong><span class="tag tag-neutral">{{ item.get_status_display }}</span></div>
+        <div style="font-size:12px;">{{ item.get_request_type_display }} · {{ item.created_at|date:"d M Y, H:i" }}{% if item.assessment %} · {{ item.assessment.title }}{% endif %}</div>
+        <p>{{ item.description }}</p>
+        {% if item.requested_date %}<div class="text-muted">Requested date: {{ item.requested_date|date:"d M Y" }}</div>{% endif %}
+        {% if item.response %}<div><strong>Response</strong><p>{{ item.response }}</p></div>{% endif %}
+    </article>
+    {% empty %}
+    <div class="empty-state">No support requests yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}

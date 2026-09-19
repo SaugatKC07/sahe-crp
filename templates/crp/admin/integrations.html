@@ -1,0 +1,3 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block title %}Integrations · Admin{% endblock %}{% block page_title %}Integrations{% endblock %}
+{% block content %}<div class="row g-3">{% for label,configured in integration_rows %}<div class="col-md-4"><div class="card card-body"><strong>{{ label }}</strong><span class="text-muted">{% if configured %}Configured{% else %}Not configured{% endif %}</span></div></div>{% empty %}<div class="col-12"><div class="card card-body"><p class="mb-0 text-muted">No external integrations are configured.</p></div></div>{% endfor %}</div>{% endblock %}

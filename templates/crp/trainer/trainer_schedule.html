@@ -1,0 +1,30 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Schedule - Trainer Portal{% endblock %}
+{% block page_title %}Schedule{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">My Schedule</h2>
+    {% if schedules %}
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr><th>Day</th><th>Course</th><th>Time</th><th>Room</th></tr>
+            </thead>
+            <tbody>
+                {% for schedule in schedules %}
+                <tr>
+                    <td>{{ schedule.get_day_display }}</td>
+                    <td>{{ schedule.course.code }} - {{ schedule.course.name }}</td>
+                    <td>{{ schedule.time_slot.start_time }} - {{ schedule.time_slot.end_time }}</td>
+                    <td>{{ schedule.room.name }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No scheduled sessions are assigned to you.</div>
+    {% endif %}
+</div>
+{% endblock %}

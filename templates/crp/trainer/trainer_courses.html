@@ -1,0 +1,39 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% load static %}
+
+{% block title %}My Courses - Trainer Portal{% endblock %}
+{% block page_title %}My Courses{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Assigned Courses</h2>
+    </div>
+    {% if courses %}
+    <div class="row g-4">
+        {% for course in courses %}
+        <div class="col-md-6 col-xl-4">
+            <div class="card h-100 shadow-sm border-0">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-success-subtle text-success">{{ course.code }}</span>
+                        <span class="badge bg-light text-dark">{{ course.get_status_display }}</span>
+                    </div>
+                    <h5 class="card-title">{{ course.name }}</h5>
+                    <p class="text-muted small mb-3">{{ course.description|truncatewords:20 }}</p>
+                    <ul class="list-unstyled small mb-3">
+                        <li><strong>Students:</strong> {{ course.student_count }}</li>
+                        <li><strong>Department:</strong> {{ course.department.code|default:'N/A' }}</li>
+                        <li><strong>Credits:</strong> {{ course.credits }}</li>
+                    </ul>
+                    <a href="{% url 'crp:trainer_course_detail' course.id %}" class="btn btn-primary btn-sm">Open course</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">No courses are currently assigned to you.</div>
+    {% endif %}
+</div>
+{% endblock %}

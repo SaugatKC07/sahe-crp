@@ -1,0 +1,190 @@
+{% extends 'crp/base.html' %}
+{% load humanize %}
+
+{% block title %}Marketing Dashboard - SAHE CRP{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-megaphone"></i>
+                    <h2>Marketing Portal</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Welcome back, <span>{{ marketing_profile.user.get_full_name }}</span>! Manage campaigns and metrics.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="/admin/" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> New Campaign
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid animate-fade-in-up">
+        <div class="stat-card-extended primary stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-megaphone"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_campaigns }}</div>
+                <div class="stat-card-title">Total Campaigns</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-play-circle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ active_campaigns }}</div>
+                <div class="stat-card-title">Active</div>
+            </div>
+        </div>
+        <div class="stat-card-extended info stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ completed_campaigns }}</div>
+                <div class="stat-card-title">Completed</div>
+            </div>
+        </div>
+        <div class="stat-card-extended warning stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-eye"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_impressions|intcomma }}</div>
+                <div class="stat-card-title">Total Impressions</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Campaigns + Quick Actions -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-megaphone"></i> Recent Campaigns</h5>
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> View All
+                </a>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if recent_campaigns %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Campaign Name</th>
+                                    <th>Status</th>
+                                    <th>Budget</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for campaign in recent_campaigns %}
+                                    <tr>
+                                        <td><span class="fw-medium">{{ campaign.name }}</span></td>
+                                        <td><span class="badge status-{{ campaign.status }}">{{ campaign.get_status_display }}</span></td>
+                                        <td>${{ campaign.budget }}</td>
+                                        <td>{{ campaign.start_date|date:"M d, Y" }}</td>
+                                        <td>{{ campaign.end_date|date:"M d, Y" }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-megaphone"></i></div>
+                        <div class="empty-state-title">No campaigns yet</div>
+                        <div class="empty-state-text">Create campaigns to get started.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Profile Information -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-person"></i> Profile Information</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="text-center mb-4">
+                        <div class="requester-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                            {{ marketing_profile.user.get_full_name|first|upper }}
+                        </div>
+                        <h6 class="mb-1">{{ marketing_profile.user.get_full_name }}</h6>
+                        <p class="text-muted small mb-0">{{ marketing_profile.employee_id }}</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Department</small>
+                            <span class="fw-medium">{{ marketing_profile.department.name|default:"Not Assigned" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Status</small>
+                            <span class="badge status-{{ marketing_profile.status }}">{{ marketing_profile.get_status_display }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Specialization</small>
+                            <span class="fw-medium">{{ marketing_profile.specialization|default:"Not Specified" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Email</small>
+                            <span class="fw-medium small">{{ marketing_profile.user.email }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="#" class="quick-action-btn">
+                            <i class="bi bi-plus-circle"></i><span>New Campaign</span>
+                        </a>
+                        <a href="#" class="quick-action-btn">
+                            <i class="bi bi-bar-chart"></i><span>View Analytics</span>
+                        </a>
+                        <a href="/admin/" class="quick-action-btn">
+                            <i class="bi bi-gear"></i><span>Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

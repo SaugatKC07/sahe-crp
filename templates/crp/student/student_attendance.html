@@ -1,0 +1,29 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Attendance · Student{% endblock %}
+{% block page_title %}Attendance{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-4">
+        <section class="card h-100"><div class="card-body">
+            <p class="eyebrow">Current record</p>
+            <div class="display-4 fw-bold">{{ attendance_percentage }}%</div>
+            <p class="text-muted mb-0">Calculated from your recorded sessions.</p>
+        </div></section>
+    </div>
+    <div class="col-md-8">
+        <section class="card"><div class="card-body">
+            <h2 class="h5">Session history</h2>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Date</th><th>Course</th><th>Status</th><th>Notes</th></tr></thead>
+                    <tbody>
+                    {% for record in records %}
+                    <tr><td>{{ record.session_date }}</td><td>{{ record.schedule.course.code|default:"Session" }}</td><td>{{ record.get_status_display }}</td><td>{{ record.notes|default:"—" }}</td></tr>
+                    {% empty %}<tr><td colspan="4" class="text-muted text-center py-4">No attendance records yet.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div></section>
+    </div>
+</div>
+{% endblock %}

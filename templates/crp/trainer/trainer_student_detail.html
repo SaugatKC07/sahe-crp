@@ -1,0 +1,80 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Student Detail - Trainer Portal{% endblock %}
+{% block page_title %}Student Detail{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">{{ student.user.get_full_name }}</h2>
+            <p class="text-muted mb-0">{{ student.student_id }}</p>
+        </div>
+        <a href="{% url 'crp:trainer_students' %}" class="btn btn-outline-secondary">Back to roster</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Profile</h5>
+                    <ul class="list-unstyled mb-0">
+                        <li><strong>Email:</strong> {{ student.user.email }}</li>
+                        <li><strong>Phone:</strong> {{ student.phone|default:'Not provided' }}</li>
+                        <li><strong>Cohort:</strong> {{ student.cohort }}</li>
+                        <li><strong>Attendance:</strong> {{ student.attendance_percentage }}%</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Assigned courses</h5>
+                    <ul class="list-group list-group-flush">
+                        {% for reg in registrations %}
+                        <li class="list-group-item px-0">
+                            {{ reg.course.code }} · {{ reg.course.name }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Assessment submissions</h5>
+                    {% if submissions %}
+                        <ul class="list-group list-group-flush">
+                            {% for sub in submissions %}
+                            <li class="list-group-item px-0">
+                                <a href="{% url 'crp:trainer_submission_detail' sub.id %}">{{ sub.assessment.title }}</a>
+                                <span class="float-end text-muted">{{ sub.status }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No assessment submissions available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h5 class="card-title">Quiz results</h5>
+                    {% if quiz_attempts %}
+                        <ul class="list-group list-group-flush">
+                            {% for attempt in quiz_attempts %}
+                            <li class="list-group-item px-0">
+                                {{ attempt.quiz.title }} <span class="float-end">{{ attempt.score|default:'—' }}%</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">No quiz attempts available.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

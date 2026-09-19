@@ -1,0 +1,10 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block title %}Enrollment Review{% endblock %}
+{% block content %}
+<a href="{% url 'crp:admin_enrollments' %}">&larr; All enrollments</a>
+<div class="card mt-3"><div class="card-body">
+ <h1>{{ registration.course.code }} - {{ registration.course.name }}</h1>
+ <dl class="row"><dt class="col-sm-3">Student</dt><dd class="col-sm-9">{{ registration.student.get_full_name|default:registration.student.username }} ({{ registration.student.email }})</dd><dt class="col-sm-3">Requested</dt><dd class="col-sm-9">{{ registration.registration_date|date:"d M Y H:i" }}</dd><dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ registration.get_status_display }}</dd><dt class="col-sm-3">Reviewed</dt><dd class="col-sm-9">{{ registration.approval_date|date:"d M Y H:i"|default:"Not reviewed" }}</dd><dt class="col-sm-3">Review notes</dt><dd class="col-sm-9">{{ registration.notes|default:"None" }}</dd></dl>
+ {% if registration.status == 'pending' %}<div class="d-flex gap-2"><form method="post" action="{% url 'crp:admin_enrollment_action' registration.id 'approve' %}">{% csrf_token %}<button class="btn btn-success">Approve</button></form><form method="post" action="{% url 'crp:admin_enrollment_action' registration.id 'reject' %}">{% csrf_token %}<input name="reason" class="form-control d-inline-block" placeholder="Rejection reason"><button class="btn btn-danger mt-2">Reject</button></form></div>{% endif %}
+</div></div>
+{% endblock %}

@@ -1,0 +1,430 @@
+/* ============================================
+   SAHE Ticket Management - Form Styles
+   ============================================ */
+
+/* Form Controls */
+.form-control,
+.form-select {
+    border: 1.5px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    background-color: var(--bg-primary);
+    color: var(--gray-800);
+    box-shadow: none;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(56, 116, 196, 0.12);
+    outline: none;
+}
+
+.form-control:hover:not(:focus),
+.form-select:hover:not(:focus) {
+    border-color: var(--gray-300);
+}
+
+.form-control::placeholder {
+    color: var(--gray-400);
+}
+
+/* Labels */
+.form-label {
+    font-weight: 600;
+    color: var(--gray-700);
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-label .required {
+    color: var(--danger);
+}
+
+/* Text Area */
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* Select */
+.form-select {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-size: 1.5rem;
+    background-position: right 0.75rem center;
+}
+
+/* Checkbox & Radio */
+.form-check {
+    padding-left: 1.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-check-input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-left: -1.75rem;
+    margin-top: 0.125rem;
+    border: 2px solid var(--gray-300);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-600);
+    border-color: var(--primary-600);
+}
+
+.form-check-input:focus {
+    box-shadow: 0 0 0 4px rgba(26, 95, 180, 0.15);
+}
+
+.form-check-label {
+    cursor: pointer;
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+/* Input Groups */
+.input-group {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.input-group .form-control {
+    border-radius: 0;
+}
+
+.input-group .form-control:first-child {
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.input-group .form-control:last-child {
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+.input-group-text {
+    background: var(--gray-50);
+    border: 1.5px solid var(--gray-200);
+    color: var(--gray-500);
+    padding: 0.625rem 0.875rem;
+}
+
+/* Buttons */
+.btn {
+    font-weight: 600;
+    padding: 0.6rem 1.25rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    letter-spacing: 0.01em;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn i {
+    font-size: 1rem;
+}
+
+/* Primary Button */
+.btn-primary {
+    background: var(--primary-600);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(43, 90, 167, 0.3), 0 0 0 1px rgba(43, 90, 167, 0.5) inset;
+}
+
+.btn-primary:hover {
+    background: var(--primary-500);
+    box-shadow: 0 4px 10px rgba(43, 90, 167, 0.25);
+    color: #fff;
+}
+
+/* SAHE Orange Button */
+.btn-orange,
+.btn-sahe {
+    background: var(--secondary-500);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(250, 92, 58, 0.3), 0 0 0 1px rgba(250, 92, 58, 0.5) inset;
+}
+
+.btn-orange:hover,
+.btn-sahe:hover {
+    background: var(--secondary-600);
+    box-shadow: 0 4px 10px rgba(250, 92, 58, 0.25);
+    color: #fff;
+}
+
+/* Secondary Button - light neutral, good for filter/cancel actions */
+.btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-200);
+    box-shadow: none;
+}
+
+.btn-secondary:hover {
+    background: var(--gray-200);
+    color: var(--gray-800);
+    border-color: var(--gray-300);
+}
+
+/* Success Button */
+.btn-success {
+    background: var(--success);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+
+.btn-success:hover {
+    background: #059669;
+    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);
+    color: #fff;
+}
+
+/* Info Button */
+.btn-info {
+    background: var(--info);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(14, 165, 233, 0.3);
+}
+
+.btn-info:hover {
+    background: #0284c7;
+    box-shadow: 0 4px 10px rgba(14, 165, 233, 0.25);
+    color: #fff;
+}
+
+/* Warning Button */
+.btn-warning {
+    background: var(--warning);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+}
+
+.btn-warning:hover {
+    background: #d97706;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.25);
+    color: #fff;
+}
+
+/* Danger Button */
+.btn-danger {
+    background: var(--danger);
+    color: #fff;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+    box-shadow: 0 4px 10px rgba(239, 68, 68, 0.25);
+    color: #fff;
+}
+
+/* Outline Buttons */
+.btn-outline-primary {
+    background: transparent;
+    color: var(--primary-600);
+    border: 2px solid var(--primary-600);
+    box-shadow: none;
+}
+
+.btn-outline-primary:hover {
+    background: var(--primary-600);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+}
+
+.btn-outline-secondary {
+    background: transparent;
+    color: var(--gray-600);
+    border: 2px solid var(--gray-300);
+    box-shadow: none;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border-color: var(--gray-400);
+}
+
+.btn-outline-success {
+    background: transparent;
+    color: var(--success);
+    border: 2px solid var(--success);
+    box-shadow: none;
+}
+
+.btn-outline-success:hover {
+    background: var(--success);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
+}
+
+.btn-outline-info {
+    background: transparent;
+    color: var(--info);
+    border: 2px solid var(--info);
+    box-shadow: none;
+}
+
+.btn-outline-info:hover {
+    background: var(--info);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.25);
+}
+
+.btn-outline-warning {
+    background: transparent;
+    color: var(--warning);
+    border: 2px solid var(--warning);
+    box-shadow: none;
+}
+
+.btn-outline-warning:hover {
+    background: var(--warning);
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+
+/* Button Sizes */
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1rem;
+}
+
+/* Form Validation */
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--danger);
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+}
+
+.invalid-feedback {
+    color: var(--danger);
+    font-size: 0.813rem;
+    margin-top: 0.375rem;
+}
+
+.text-danger {
+    color: var(--danger) !important;
+    font-size: 0.813rem;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section-title {
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--gray-200);
+}
+
+/* Search Input */
+.search-input {
+    position: relative;
+}
+
+.search-input .form-control {
+    padding-left: 2.75rem;
+}
+
+.search-input i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+}
+
+/* Filter Form */
+.filter-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.filter-form .form-group {
+    flex: 1;
+    min-width: 150px;
+}
+
+.filter-form .form-group label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.813rem;
+    font-weight: 600;
+    color: var(--gray-600);
+}
+
+/* ============================================
+   Responsive Form Styles
+   ============================================ */
+
+@media (max-width: 767.98px) {
+    .form-control,
+    .form-select {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.875rem;
+    }
+    
+    .form-label {
+        font-size: 0.8125rem;
+    }
+    
+    textarea.form-control {
+        min-height: 100px;
+    }
+    
+    .filter-form {
+        gap: 0.75rem;
+    }
+    
+    .filter-form .form-group {
+        min-width: 100%;
+    }
+    
+    /* Stack form rows on mobile */
+    .row.g-3 > [class*="col-md"],
+    .row.g-3 > [class*="col-lg"] {
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn-lg {
+        padding: 0.625rem 1.25rem;
+    }
+}

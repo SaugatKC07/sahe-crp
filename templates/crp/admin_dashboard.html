@@ -1,0 +1,308 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}Dashboard{% endblock %}
+{% load humanize %}
+
+{% block title %}Admin Dashboard - SAHE CRP{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-grid-6 {
+    grid-template-columns: repeat(6, 1fr);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-gear"></i>
+                    <h2>Administration Portal</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Full system overview and management controls.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="{% url 'crp:export_courses' %}" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-file-earmark-excel"></i> Export Data
+                </a>
+                <a href="/admin/" class="btn btn-sm btn-primary">
+                    <i class="bi bi-speedometer2"></i> Django Admin
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid stats-grid-6 animate-fade-in-up">
+        <div class="stat-card-extended primary stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_students }}</div>
+                <div class="stat-card-title">Total Students</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-person-video2"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_instructors }}</div>
+                <div class="stat-card-title">Active Instructors</div>
+            </div>
+        </div>
+        <div class="stat-card-extended info stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-book"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_courses }}</div>
+                <div class="stat-card-title">Total Courses</div>
+            </div>
+        </div>
+        <div class="stat-card-extended warning stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-clock-history"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ pending_registrations }}</div>
+                <div class="stat-card-title">Pending Registrations</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-5">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-play-circle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ active_courses }}</div>
+                <div class="stat-card-title">Active Courses</div>
+            </div>
+        </div>
+        <div class="stat-card-extended secondary stagger-6">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-bar-chart"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ course_capacity_stats|length }}</div>
+                <div class="stat-card-title">Capacity Data</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Activity + Quick Actions -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-activity"></i> Recent System Activity</h5>
+                <a href="{% url 'crp:admin_enrollments' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> View All
+                </a>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if recent_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Course</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registration in recent_activity %}
+                                    <tr onclick="window.location='{% url 'crp:course_detail' registration.course.id %}'">
+                                        <td>
+                                            <span class="fw-medium">{{ registration.student.get_full_name|default:registration.student.email }}</span><br>
+                                            <small class="text-muted">{{ registration.student.email }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-medium">{{ registration.course.code }}</span><br>
+                                            <small class="text-muted">{{ registration.course.name|truncatewords:3 }}</small>
+                                        </td>
+                                        <td><span class="badge status-{{ registration.status }}">{{ registration.status|title }}</span></td>
+                                        <td><span class="text-muted">{{ registration.registration_date|naturaltime }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-activity"></i></div>
+                        <div class="empty-state-title">No recent activity</div>
+                        <div class="empty-state-text">System activity will appear here.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Quick Actions -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="{% url 'crp:course_create' %}" class="quick-action-btn">
+                            <i class="bi bi-plus-circle"></i><span>Create New Course</span>
+                        </a>
+                        <a href="{% url 'crp:course_list' %}" class="quick-action-btn">
+                            <i class="bi bi-book"></i><span>Manage Courses</span>
+                        </a>
+                        <a href="{% url 'crp:admin_enrollments' %}" class="quick-action-btn">
+                            <i class="bi bi-shield-check"></i><span>Review Registrations</span>
+                        </a>
+                        <a href="{% url 'crp:export_courses' %}" class="quick-action-btn">
+                            <i class="bi bi-file-earmark-excel"></i><span>Export Data</span>
+                        </a>
+                        <a href="{% url 'crp:announcement_create' %}" class="quick-action-btn">
+                            <i class="bi bi-megaphone"></i><span>Create Announcement</span>
+                        </a>
+                        <a href="/admin/" class="quick-action-btn">
+                            <i class="bi bi-gear"></i><span>Django Admin</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-heart-pulse"></i> System Health</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded bg-light">
+                                <i class="bi bi-database text-success fs-4 mb-2"></i>
+                                <div class="small fw-medium">Database</div>
+                                <div class="text-success small"><i class="bi bi-check-circle"></i> Connected</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded bg-light">
+                                <i class="bi bi-envelope text-success fs-4 mb-2"></i>
+                                <div class="small fw-medium">Email</div>
+                                <div class="text-success small"><i class="bi bi-check-circle"></i> Configured</div>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-center p-3 rounded bg-light">
+                                <i class="bi bi-file-earmark-pdf text-success fs-4 mb-2"></i>
+                                <div class="small fw-medium">PDF</div>
+                                <div class="text-success small"><i class="bi bi-check-circle"></i> Available</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Course Capacity Overview -->
+    <div class="dashboard-section animate-fade-in-up mb-4">
+        <div class="dashboard-section-header">
+            <div><h5 class="dashboard-section-title mb-1"><i class="bi bi-graph-up"></i> Capacity analytics</h5><small class="text-muted">Enrolment against available course capacity</small></div>
+        </div>
+        <div class="sahe-chart-panel"><canvas id="capacityChart" aria-label="Course capacity chart" role="img"></canvas></div>
+    </div>
+
+    <div class="dashboard-section animate-fade-in-up">
+        <div class="dashboard-section-header">
+            <h5 class="dashboard-section-title"><i class="bi bi-bar-chart"></i> Course Capacity Overview</h5>
+            <a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-right"></i> View All Courses
+            </a>
+        </div>
+        <div class="dashboard-section-body p-0">
+            {% if course_capacity_stats %}
+                <div class="table-responsive">
+                    <table class="table table-clickable mb-0">
+                        <thead>
+                            <tr>
+                                <th>Course Code</th>
+                                <th>Course Name</th>
+                                <th>Level</th>
+                                <th>Max Capacity</th>
+                                <th>Enrolled</th>
+                                <th>Availability</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in course_capacity_stats %}
+                                <tr onclick="window.location='{% url 'crp:course_detail' course.id %}'">
+                                    <td><span class="fw-medium">{{ course.code }}</span></td>
+                                    <td>{{ course.name|truncatewords:4 }}</td>
+                                    <td>{{ course.get_level_display }}</td>
+                                    <td>{{ course.max_capacity }}</td>
+                                    <td>{{ course.enrolled }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ course.max_capacity }} total</span>
+                                            <div class="capacity-indicator" style="width: 100px;">
+                                                <div class="capacity-bar {% if course.enrolled|floatformat:0 < course.max_capacity|floatformat:0 %}capacity-low{% else %}capacity-high{% endif %}" 
+                                                     style="width: {% widthratio course.enrolled course.max_capacity 100 %}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge status-{{ course.status }}">{{ course.get_status_display }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon"><i class="bi bi-bar-chart"></i></div>
+                    <div class="empty-state-title">No capacity data</div>
+                    <div class="empty-state-text">Course capacity information will appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ capacity_chart|json_script:"capacity-chart-data" }}
+<script>
+(function () {
+    if (!window.Chart) return;
+    const data = JSON.parse(document.getElementById('capacity-chart-data').textContent);
+    const styles = getComputedStyle(document.documentElement);
+    const ink = styles.getPropertyValue('--sahe-ink').trim();
+    const grid = styles.getPropertyValue('--sahe-border').trim();
+    new Chart(document.getElementById('capacityChart'), {
+        type: 'bar',
+        data: { labels: data.labels, datasets: [
+            { label: 'Enrolled', data: data.enrolled, backgroundColor: '#0f7a5a', borderRadius: 7 },
+            { label: 'Capacity', data: data.capacity, backgroundColor: '#d9d5cf', borderRadius: 7 }
+        ] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: ink, usePointStyle: true } } }, scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink, precision: 0 }, grid: { color: grid } } } }
+    });
+})();
+</script>
+{% endblock %}

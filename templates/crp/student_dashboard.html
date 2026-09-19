@@ -1,0 +1,237 @@
+{% extends 'crp/base.html' %}
+{% load humanize %}
+
+{% block title %}Student Dashboard - SAHE CRP{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.chart-container { position: relative; width: 100%; }
+.chart-container.chart-sm { height: 260px; }
+.chart-container.chart-md { height: 320px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-person-video3"></i>
+                    <h2>Student Dashboard</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Welcome back, <span>{{ user.get_full_name }}</span>! Here's your academic overview at a glance.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-book"></i> Browse Courses
+                    {% if available_courses.count %}<span class="badge bg-primary ms-1">{{ available_courses.count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'crp:my_registrations' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-list-check"></i> My Registrations
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid animate-fade-in-up">
+        <div class="stat-card-extended primary stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-book"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ user_registrations.count }}</div>
+                <div class="stat-card-title">Active Registrations</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-award"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_credits }}</div>
+                <div class="stat-card-title">Total Credits</div>
+            </div>
+        </div>
+        <div class="stat-card-extended info stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-plus-circle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ available_courses.count }}</div>
+                <div class="stat-card-title">Available Courses</div>
+            </div>
+        </div>
+        <div class="stat-card-extended warning stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-bell"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ announcements.count }}</div>
+                <div class="stat-card-title">New Announcements</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Registrations + Announcements -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-list-check"></i> My Registrations</h5>
+                <a href="{% url 'crp:my_registrations' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> View All
+                </a>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if user_registrations %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Course</th>
+                                    <th>Status</th>
+                                    <th>Semester</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registration in user_registrations %}
+                                    <tr onclick="window.location='{% url 'crp:course_detail' registration.course.id %}'">
+                                        <td>
+                                            <span class="fw-medium">{{ registration.course.code }}</span><br>
+                                            <small class="text-muted">{{ registration.course.name|truncatewords:4 }}</small>
+                                        </td>
+                                        <td><span class="badge status-{{ registration.status }}">{{ registration.status|title }}</span></td>
+                                        <td>{{ registration.semester }}</td>
+                                        <td><span class="text-muted">{{ registration.registration_date|naturaltime }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-book"></i></div>
+                        <div class="empty-state-title">No registrations yet</div>
+                        <div class="empty-state-text">Start by browsing available courses!</div>
+                        <a href="{% url 'crp:course_list' %}" class="btn btn-primary mt-3">
+                            <i class="bi bi-search me-2"></i>Browse Courses
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Announcements -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-megaphone"></i> Announcements</h6>
+                </div>
+                <div class="dashboard-section-body p-0">
+                    {% if announcements %}
+                        <div class="top-requester-list">
+                            {% for announcement in announcements %}
+                                <a href="{% url 'crp:announcement_detail' announcement.id %}" class="top-requester-item">
+                                    <div class="requester-avatar" style="background: var(--gradient-primary);">
+                                        <i class="bi bi-megaphone"></i>
+                                    </div>
+                                    <div class="requester-info">
+                                        <div class="requester-name">{{ announcement.title|truncatewords:6 }}</div>
+                                        <div class="requester-email">{{ announcement.created_at|naturaltime }}</div>
+                                    </div>
+                                    <div class="requester-count">
+                                        {% if announcement.priority == 'urgent' %}<i class="bi bi-exclamation-triangle text-danger"></i>
+                                        {% elif announcement.priority == 'high' %}<i class="bi bi-exclamation-circle text-warning"></i>
+                                        {% else %}<i class="bi bi-info-circle text-info"></i>{% endif %}
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center p-3 mb-0">No announcements at this time.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="{% url 'crp:course_list' %}" class="quick-action-btn">
+                            <i class="bi bi-book"></i><span>Browse Courses</span>
+                        </a>
+                        <a href="{% url 'crp:schedule_list' %}" class="quick-action-btn">
+                            <i class="bi bi-calendar3"></i><span>View Schedule</span>
+                        </a>
+                        <a href="{% url 'crp:announcement_list' %}" class="quick-action-btn">
+                            <i class="bi bi-megaphone"></i><span>All Announcements</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Featured Courses -->
+    <div class="dashboard-section animate-fade-in-up">
+        <div class="dashboard-section-header">
+            <h5 class="dashboard-section-title"><i class="bi bi-star"></i> Featured Courses</h5>
+            <a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-right"></i> View All Courses
+            </a>
+        </div>
+        <div class="dashboard-section-body">
+            <div class="row">
+                {% for course in available_courses|slice:":4" %}
+                    <div class="col-md-6 col-lg-3 mb-4">
+                        <div class="card course-card h-100">
+                            <div class="card-body">
+                                <div class="course-code">{{ course.code }}</div>
+                                <div class="course-name mb-2">{{ course.name }}</div>
+                                <div class="course-meta mb-2">
+                                    <i class="bi bi-mortarboard"></i>{{ course.get_level_display }}<br>
+                                    <i class="bi bi-coin"></i>{{ course.credits }} Credits
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted">Capacity:</small>
+                                    <div class="capacity-indicator mt-1">
+                                        <div class="capacity-bar {% if course.enrolled_count|floatformat:0 < course.max_capacity|floatformat:0 %}capacity-low{% else %}capacity-high{% endif %}" 
+                                             style="width: {% widthratio course.enrolled_count course.max_capacity 100 %}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ course.enrolled_count }}/{{ course.max_capacity }} enrolled</small>
+                                </div>
+                                <a href="{% url 'crp:course_detail' course.id %}" class="btn btn-sm btn-sahe w-100">View Details</a>
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">No courses available at this time.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

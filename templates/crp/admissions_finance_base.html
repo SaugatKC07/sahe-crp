@@ -1,0 +1,185 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SAHE CRP - Admissions & Finance{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/crp.css' %}">
+
+    <style>
+        :root {
+            --bg-secondary: #f4f7fb;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-600: #475569;
+            --gray-900: #0f172a;
+            --sahe-blue-50: #edf6ff;
+            --sahe-blue-500: #0f6cbd;
+            --sahe-blue-600: #0d5aa8;
+            --sahe-blue-700: #0a4a8b;
+            --radius-md: 0.75rem;
+            --transition-normal: 0.2s ease;
+            --transition-fast: 0.15s ease;
+        }
+
+        .crp-layout { display: flex; min-height: 100vh; background: var(--bg-secondary); }
+        .crp-sidebar {
+            width: 260px; background: #fff; border-right: 1px solid var(--gray-200); position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 1000;
+        }
+        .crp-sidebar-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-200); }
+        .crp-sidebar-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .crp-sidebar-brand img { height: 32px; width: auto; }
+        .crp-sidebar-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .crp-sidebar-brand-title { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--gray-900); }
+        .crp-sidebar-brand-subtitle { font-size: 0.65rem; font-weight: 500; color: var(--gray-400); letter-spacing: 0.07em; text-transform: uppercase; }
+        .crp-role-badge {
+            margin-top: 0.7rem; display: inline-block; background: var(--sahe-blue-50); color: var(--sahe-blue-700); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .crp-sidebar-nav { padding: 1rem 0; }
+        .crp-sidebar-section { padding: 0.75rem 1.5rem 0.5rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-400); }
+        .crp-sidebar-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: var(--gray-600); text-decoration: none; transition: all var(--transition-fast); font-size: 0.875rem; font-weight: 500; border-left: 3px solid transparent;
+        }
+        .crp-sidebar-item:hover { background: var(--gray-50); color: var(--gray-900); }
+        .crp-sidebar-item.active { background: var(--sahe-blue-50); color: var(--sahe-blue-700); border-left-color: var(--sahe-blue-600); }
+        .crp-sidebar-item i { width: 20px; text-align: center; font-size: 1rem; }
+        .crp-user-card {
+            margin: 1rem 1.5rem 1.25rem; padding: 0.9rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-md); background: var(--gray-50);
+        }
+        .crp-user-meta { display: flex; align-items: center; gap: 0.75rem; }
+        .crp-user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; background: var(--sahe-blue-600); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.8rem;
+        }
+        .crp-user-name { font-size: 0.8rem; font-weight: 600; color: var(--gray-900); }
+        .crp-user-role { font-size: 0.65rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; }
+        .crp-main { flex: 1; margin-left: 260px; display: flex; flex-direction: column; min-height: 100vh; }
+        .crp-topbar { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 999; }
+        .crp-topbar-left { display: flex; align-items: center; gap: 1rem; }
+        .crp-page-title { font-size: 1.25rem; font-weight: 600; color: var(--gray-900); margin: 0; }
+        .crp-topbar-right { display: flex; align-items: center; gap: 1rem; }
+        .crp-search { position: relative; }
+        .crp-search input { padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 0.875rem; width: 280px; background: var(--gray-50); }
+        .crp-search input:focus { outline: none; border-color: var(--sahe-blue-500); background: #fff; }
+        .crp-search i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.875rem; }
+        .crp-content { flex: 1; padding: 2rem; background: var(--bg-secondary); }
+        @media (max-width: 991.98px) {
+            .crp-sidebar { transform: translateX(-100%); }
+            .crp-main { margin-left: 0; }
+            .crp-topbar { padding: 1rem; }
+            .crp-search input { width: 200px; }
+            .crp-content { padding: 1rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/sahe-ui.css' %}?v=20260913-3">
+    <link rel="stylesheet" href="{% static 'css/base-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cards-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/badges.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ticketing-theme.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="ticketing-shell">
+    <div class="crp-layout">
+        <aside class="crp-sidebar" id="crpSidebar">
+            <div class="crp-sidebar-header">
+                <a href="{% url 'crp:admissions_finance_dashboard' %}" class="crp-sidebar-brand">
+                    <img src="{% static 'images/sahe-logo.svg' %}" alt="SAHE Logo" onerror="this.style.display='none'">
+                </a>
+            </div>
+
+            <div class="crp-sidebar-nav">
+                <div class="crp-sidebar-section">INTAKE</div>
+                <a href="{% url 'crp:admissions_finance_dashboard' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'admissions_finance_dashboard' or request.resolver_match.url_name == 'admissions_dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                </a>
+                <a href="{% url 'crp:admissions_applications' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'admissions_applications' or request.resolver_match.url_name == 'admissions_application_detail' %}active{% endif %}">
+                    <i class="bi bi-file-earmark-text"></i><span>Applications</span>
+                </a>
+                <a href="{% url 'crp:admissions_contracts' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'admissions_contracts' or request.resolver_match.url_name == 'application_contract_detail' %}active{% endif %}">
+                    <i class="bi bi-signpost-split"></i><span>Contracts</span>
+                </a>
+
+                <div class="crp-sidebar-section">MONEY</div>
+                <a href="{% url 'crp:finance_invoices' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'finance_invoices' or request.resolver_match.url_name == 'finance_invoice_detail' %}active{% endif %}">
+                    <i class="bi bi-currency-dollar"></i><span>Fees &amp; Invoices</span>
+                </a>
+                <a href="{% url 'crp:revenue_analytics' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'revenue_analytics' %}active{% endif %}">
+                    <i class="bi bi-bar-chart"></i><span>Revenue Analytics</span>
+                </a>
+                <a href="{% url 'crp:payment_risk' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'payment_risk' %}active{% endif %}">
+                    <i class="bi bi-exclamation-triangle"></i><span>Payment Risk</span>
+                </a>
+            </div>
+
+            <div class="crp-user-card">
+                <div class="crp-user-meta">
+                    <div class="crp-user-avatar">{{ user.get_full_name|first|default:user.email|first|upper }}</div>
+                    <div>
+                        <div class="crp-user-name">{{ user.get_full_name|default:user.email }}</div>
+                        <div class="crp-user-role">Admissions &amp; Finance</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="crp-main">
+            <header class="crp-topbar">
+                <div class="crp-topbar-left">
+                    <button class="sahe-sidebar-toggle" type="button" aria-label="Open navigation" aria-expanded="true">
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                    <div>
+                        <h1 class="crp-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <div class="crp-page-subtitle">{% block page_subtitle %}Admissions &amp; Finance · SAHE CRP{% endblock %}</div>
+                    </div>
+                </div>
+                <div class="crp-topbar-right">
+                    <div class="crp-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search..." aria-label="Search">
+                    </div>
+                    <a class="btn btn-outline-secondary btn-sm" href="{% url 'crp:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </header>
+
+            <div class="crp-content">
+                {% if messages %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <div class="sahe-sidebar-overlay" id="saheSidebarOverlay" aria-hidden="true"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/sahe-ui.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

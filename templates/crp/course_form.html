@@ -1,0 +1,66 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}{% if object %}Edit Course{% else %}Create Course{% endif %}{% endblock %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.id %}Edit Course{% else %}Create Course{% endif %} - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'crp:course_list' %}">Courses</a></li>
+                <li class="breadcrumb-item active">{% if form.instance.id %}Edit{% else %}Create{% endif %} Course</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="fas fa-{% if form.instance.id %}edit{% else %}plus{% endif %} me-2"></i>
+                    {% if form.instance.id %}Edit Course{% else %}Create New Course{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% crispy form %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Course Guidelines</h5>
+            </div>
+            <div class="card-body">
+                <h6 class="text-sahe">Course Code Format</h6>
+                <p class="small text-muted">Use a consistent format like CS101, MATH200, etc.</p>
+                
+                <h6 class="text-sahe">Credits</h6>
+                <p class="small text-muted">Typically 1-12 credits per course based on duration and content.</p>
+                
+                <h6 class="text-sahe">Prerequisites</h6>
+                <p class="small text-muted">Select any courses that must be completed before this one.</p>
+                
+                <h6 class="text-sahe">Capacity</h6>
+                <p class="small text-muted">Set maximum students based on room size and teaching resources.</p>
+                
+                <h6 class="text-sahe">Status</h6>
+                <ul class="small text-muted">
+                    <li><strong>Draft:</strong> Not visible to students</li>
+                    <li><strong>Active:</strong> Open for registration</li>
+                    <li><strong>Full:</strong> Maximum capacity reached</li>
+                    <li><strong>Cancelled:</strong> Course cancelled</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

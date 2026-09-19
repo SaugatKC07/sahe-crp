@@ -1,0 +1,44 @@
+{% extends 'crp/admissions_finance_base.html' %}
+
+{% block title %}Application Contract - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Application contract</h2>
+            <p class="text-muted mb-0">{{ registration.student.get_full_name|default:registration.student.email }} - {{ registration.course.code }}</p>
+        </div>
+        <a href="{% url 'crp:admissions_application_detail' registration.id %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-4"><strong>Title:</strong> {{ contract.title }}</div>
+                <div class="col-md-4"><strong>Type:</strong> {{ contract.get_contract_type_display }}</div>
+                <div class="col-md-4"><strong>Status:</strong> {{ contract.status }}</div>
+            </div>
+
+            <div class="mb-4">
+                <h5>Offer text</h5>
+                <div class="border rounded p-3 bg-light">{{ contract.contract_text|default:'No contract text provided.' }}</div>
+            </div>
+
+            <div class="d-flex gap-2">
+                {% if contract.status == 'draft' %}
+                <form method="post" action="{% url 'crp:application_contract_send' registration.id contract.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">Send contract</button>
+                </form>
+                {% elif contract.status == 'sent' %}
+                <form method="post" action="{% url 'crp:application_contract_accept' registration.id contract.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Accept contract</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

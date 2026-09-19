@@ -1,0 +1,315 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard - SAHE CRP{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}{% if current_week %}Week {{ current_week.week_number }} of {{ total_weeks }} · Career Ready Program{% else %}Start your learning journey · Career Ready Program{% endif %}{% endblock %}
+
+{% block extra_css %}
+<style>
+.student-dashboard-container {
+    padding: 0;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.student-dashboard-container .welcome-card,
+.student-dashboard-container .stats-grid,
+.student-dashboard-container > div:last-child {
+    animation: saheEnter .28s ease both;
+}
+
+.welcome-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 0;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+}
+
+.welcome-content {
+    padding: 28px;
+}
+
+.progress-section {
+    border-left: 1px solid var(--color-divider);
+    padding: 28px;
+    background: var(--color-surface);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.stat-tile {
+    padding: 18px 20px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.agenda-section, .tasks-section {
+    margin-top: 20px;
+}
+
+.section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 8px;
+    margin-bottom: 0;
+}
+
+.agenda-item {
+    display: flex;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-divider);
+    align-items: baseline;
+}
+
+.task-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.career-coach-card {
+    margin-top: 24px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+}
+
+.job-match-card {
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    padding: 16px 0;
+}
+
+@media (max-width: 640px) {
+    .welcome-content, .progress-section { padding: 24px !important; }
+    .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="student-dashboard-container">
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3"><h3 class="mb-0">Courses</h3><a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-outline-primary">Browse catalog</a></div>
+            <div class="row g-3">
+            {% for item in course_cards %}
+                <div class="col-md-6 col-xl-4"><div class="border rounded p-3 h-100">
+                    <div class="d-flex justify-content-between"><strong>{{ item.course.code }}</strong><span class="badge text-bg-secondary">{{ item.status }}</span></div>
+                    <h5 class="mt-2">{{ item.course.name }}</h5><p class="small text-muted">{{ item.course.description|truncatewords:15 }}</p>
+                    {% if item.registration.status == 'approved' or item.registration.status == 'completed' %}
+                        <a href="{% url 'crp:student_course_home' item.course.id %}" class="btn btn-primary btn-sm">Open Course</a>
+                    {% elif item.registration.status == 'pending' %}
+                        <span class="small text-muted">Pending Approval</span>
+                    {% elif item.registration.status == 'rejected' %}
+                        <span class="small text-danger">Rejected</span>
+                    {% else %}
+                        <form method="post" action="{% url 'crp:request_course_enrollment' item.course.id %}">{% csrf_token %}<button class="btn btn-outline-primary btn-sm">Request Enrollment</button></form>
+                    {% endif %}
+                </div></div>
+            {% empty %}<p class="text-muted">No active courses are currently available.</p>{% endfor %}
+            </div>
+        </div>
+    </div>
+    <!-- Welcome Card -->
+    <div class="welcome-card">
+        <div class="welcome-content">
+            <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 12px;">
+                {% if current_week %}Week {{ current_week.week_number }} of {{ total_weeks }} · {{ current_week.title }}{% else %}Start your learning journey{% endif %}
+            </div>
+            <h2 style="font-size: clamp(28px, 3.4vw, 40px); line-height: 1.02; letter-spacing: -0.025em; margin: 0 0 12px;">
+                Good morning, {{ student.user.first_name }}.
+            </h2>
+            <p style="font-size: 14px; max-width: 52ch; color: color-mix(in srgb, var(--color-text) 82%, transparent); margin-bottom: 20px;">
+                {{ career_coach.message }}
+            </p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="{% url 'crp:student_learning' %}" class="btn btn-primary">{% if current_week %}Continue learning{% else %}Explore learning{% endif %}</a>
+                <a href="{% url 'crp:student_interview' %}" class="btn btn-secondary">Book mock interview</a>
+                <a href="{% url 'crp:student_jobs' %}" class="btn btn-secondary">{{ job_match_count }} job matches</a>
+            </div>
+        </div>
+        <div class="progress-section">
+            <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-bottom: 14px;">
+                Program progress
+            </div>
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -0.03em;">
+                {{ progress_percentage }}<span style="font-size: 22px;">%</span>
+            </div>
+            <div style="height: 8px; background: color-mix(in srgb, var(--color-text) 12%, transparent); margin: 16px 0 8px;">
+                <div style="width: {{ progress_percentage }}%; height: 8px; background: var(--color-accent);"></div>
+            </div>
+            <div style="font-size: 12px; color: color-mix(in srgb, var(--color-text) 78%, transparent);">
+                {{ completed_weeks }} weeks complete · {{ remaining_weeks }} remaining{% if student.program_end_date and total_weeks %} · on track for {{ student.program_end_date|date:"d M" }} completion{% endif %}
+            </div>
+            <div style="height: 1px; background: var(--color-divider); margin: 18px 0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for stat in mini_stats %}
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; width: 62px;">{{ stat.value }}</div>
+                    <div style="font-size: 11.5px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">{{ stat.label }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="stats-grid">
+        {% for metric in metrics %}
+        <div class="stat-tile">
+            <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">{{ metric.label }}</div>
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 30px; letter-spacing: -0.02em; margin: 8px 0 4px;">{{ metric.value }}</div>
+            <div style="font-size: 11.5px; color: var(--color-accent);">{{ metric.delta }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Two Column Layout -->
+    <div style="display: grid; grid-template-colum ns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px;">
+        <!-- Left Column: Agenda & Career Coach -->
+        <div>
+            <div class="agenda-section">
+                <div class="section-header">
+                    <h4 style="margin: 0; font-size: 15px;">This week</h4>
+                    <div style="flex: 1;"></div>
+                    <a href="{% url 'crp:student_calendar' %}" class="btn btn-ghost" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;">Calendar</a>
+                </div>
+                {% for event in agenda %}
+                <div class="agenda-item">
+                    <div style="font-family: var(--font-heading); font-weight: 800; font-size: 13px; width: 58px; flex: none;">{{ event.day_label }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13.5px; font-weight: 600;">{{ event.label }}</div>
+                        <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-top: 2px;">{{ event.time }} · {{ event.kind }}</div>
+                    </div>
+                    <span class="tag tag-neutral">{{ event.kind }}</span>
+                </div>
+                {% empty %}
+                <div style="padding: 20px 0; font-size: 13px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+                    No events scheduled this week.
+                </div>
+                {% endfor %}
+
+                <div class="career-coach-card">
+                    <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent-700); margin-bottom: 10px;">
+                        AI career coach
+                    </div>
+                    <p style="font-size: 13.5px; line-height: 1.65; margin: 0 0 14px; color: color-mix(in srgb, var(--color-text) 82%, transparent);">
+                        {{ career_coach.message }}
+                    </p>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        {% for action in career_coach.actions %}
+                        {% if action.action == 'student_resume' %}
+                        <a href="{% url 'crp:student_resume' %}" class="btn btn-primary">{{ action.label }}</a>
+                        {% elif action.action == 'student_linkedin' %}
+                        <a href="{% url 'crp:student_linkedin' %}" class="btn btn-primary">{{ action.label }}</a>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Tasks & Job Match -->
+        <div>
+            <div class="tasks-section">
+                <div class="section-header">
+                    <h4 style="margin: 0; font-size: 15px;">Open tasks</h4>
+                </div>
+                {% for task in open_tasks %}
+                <div class="task-item">
+                    <div onclick="toggleTask({{ task.id }})" role="button" tabindex="0" style="{{ task.box_style }}">{{ task.mark }}</div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 13px; font-weight: 600;">{{ task.title }}</div>
+                        <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-top: 2px;">{{ task.by }} · due {{ task.due }}</div>
+                    </div>
+                    <span style="{{ task.pri_style }}">{{ task.pri }}</span>
+                </div>
+                {% empty %}
+                <div style="padding: 20px 0; font-size: 13px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+                    No open tasks. Great job!
+                </div>
+                {% endfor %}
+                <a href="{% url 'crp:student_tasks' %}" class="btn btn-secondary btn-block">All tasks →</a>
+
+                <div class="section-header" style="margin-top: 28px;">
+                    <h4 style="margin: 0; font-size: 15px;">Top job match</h4>
+                </div>
+                {% if top_job_match %}
+                <div class="job-match-card">
+                    <div style="padding: 16px;">
+                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; letter-spacing: -0.01em;">
+                            {{ top_job_match.title }}
+                        </div>
+                        <div style="font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 78%, transparent); margin: 4px 0 12px;">
+                            {{ top_job_match.company }} · {{ top_job_match.location }} · {{ top_job_match.salary }}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 26px; color: var(--color-accent);">{{ top_job_match.match_percentage }}%</div>
+                            <div style="flex: 1; height: 8px; background: color-mix(in srgb, var(--color-text) 12%, transparent);">
+                                <div style="width: {{ top_job_match.match_percentage }}%; height: 8px; background: var(--color-accent);"></div>
+                            </div>
+                        </div>
+                        <a href="{% url 'crp:student_job_detail' top_job_match.id %}" class="btn btn-secondary btn-block" style="margin-top: 12px;">View and apply →</a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="job-match-card"><div style="padding: 16px; color: var(--sahe-muted);">No active job matches yet.</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleTask(taskId) {
+    fetch('{% url "crp:toggle_task_completion" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ task_id: taskId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

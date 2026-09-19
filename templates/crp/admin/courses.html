@@ -1,0 +1,29 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}Courses{% endblock %}
+{% block title %}CRP Admin - Courses{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div><h1>Courses</h1><p class="text-muted">Manage published course offerings, trainers, and learning content.</p></div>
+  <a class="btn btn-primary" href="{% url 'crp:course_create' %}">Create Course</a>
+</div>
+<form class="row g-2 mb-4">
+  <div class="col-md-6"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Search name or code"></div>
+  <div class="col-md-3"><select class="form-select" name="status"><option value="">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-md-3"><button class="btn btn-outline-primary w-100">Filter</button></div>
+</form>
+<div class="row g-3">
+{% for course in courses %}
+<div class="col-md-6 col-xl-4"><div class="card h-100"><div class="card-body">
+  <div class="d-flex justify-content-between"><span class="text-primary fw-bold">{{ course.code }}</span><span class="badge text-bg-secondary">{{ course.get_status_display }}</span></div>
+  <h4 class="mt-2">{{ course.name }}</h4><p class="text-muted">{{ course.description|truncatewords:22 }}</p>
+  <div class="small text-muted mb-3">{{ course.enrolled_count }} enrolled · {{ course.week_count }} weeks · {{ course.trainers.count }} trainers</div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a class="btn btn-sm btn-primary" href="{% url 'crp:admin_course_detail' course.id %}">Manage</a>
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:course_update' course.id %}">Edit</a>
+    <form method="post" action="{% url 'crp:admin_course_toggle' course.id 'publish' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success">{% if course.status == 'active' %}Unpublish{% else %}Publish{% endif %}</button></form>
+    <form method="post" action="{% url 'crp:admin_course_toggle' course.id 'archive' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">{% if course.status == 'cancelled' %}Unarchive{% else %}Archive{% endif %}</button></form>
+  </div>
+</div></div></div>
+{% empty %}<div class="col-12"><div class="alert alert-info">No courses found.</div></div>{% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'crp/admissions_finance_base.html' %}
+
+{% block title %}Application Detail - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Application detail</h2>
+            <p class="text-muted mb-0">{{ application.student.get_full_name|default:application.student.email }} - {{ application.course.code }}</p>
+        </div>
+        <a href="{% url 'crp:admissions_applications' %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6"><strong>Student:</strong> {{ application.student.get_full_name|default:application.student.email }}</div>
+                        <div class="col-md-6"><strong>Course:</strong> {{ application.course.name }}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4"><strong>Status:</strong> {{ application.status }}</div>
+                        <div class="col-md-4"><strong>Workflow:</strong> {{ application.workflow_status }}</div>
+                        <div class="col-md-4"><strong>Semester:</strong> {{ application.semester }}</div>
+                    </div>
+                    <div class="mt-4">
+                        <h5>Move application</h5>
+                        <form method="post" action="{% url 'crp:admissions_application_transition' application.id %}">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <select class="form-select" name="workflow_status">
+                                    <option value="">Choose status</option>
+                                    <option value="in_review">In Review</option>
+                                    <option value="documents_required">Documents Required</option>
+                                    <option value="conditional_offer">Conditional Offer</option>
+                                    <option value="unconditional_offer">Unconditional Offer</option>
+                                    <option value="offer_sent">Offer Sent</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary">Update</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white"><strong>Invoices</strong></div>
+                <div class="list-group list-group-flush">
+                    {% for invoice in invoices %}
+                    <a href="{% url 'crp:finance_invoice_detail' invoice.id %}" class="list-group-item list-group-item-action">{{ invoice.invoice_number }} - ${{ invoice.amount }}</a>
+                    {% empty %}
+                    <div class="list-group-item text-muted">No invoices created.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

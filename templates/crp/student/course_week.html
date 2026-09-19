@@ -1,0 +1,9 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Week {{ week.week_number }} · {{ course.name }}{% endblock %}
+{% block page_title %}Week {{ week.week_number }}: {{ week.title }}{% endblock %}
+{% block page_subtitle %}{{ course.code }} · {{ course.name }}{% endblock %}
+{% block content %}<div class="mb-3"><a href="{% url 'crp:student_course_home' course.id %}">← {{ course.name }}</a></div>
+<section class="card mb-3"><div class="card-body"><span class="badge bg-primary">{{ progress.get_status_display }}</span><h2 class="mt-2">{{ week.title }}</h2><p>{{ week.description }}</p>{% if week.learning_objectives %}<h3 class="h5">Learning objectives</h3><div>{{ week.learning_objectives|linebreaks }}</div>{% endif %}{% if week.topics %}<h3 class="h5">Topics</h3><ul>{% for topic in week.topics %}<li>{{ topic }}</li>{% endfor %}</ul>{% endif %}{% if week.completion_requirements %}<h3 class="h5">Completion requirements</h3><div>{{ week.completion_requirements|linebreaks }}</div>{% endif %}</div></section>
+<section class="card mb-3"><div class="card-body"><h2 class="h4">Materials</h2>{% for material in materials %}<p><a href="{{ material.resource_url }}" target="_blank" rel="noopener">{{ material.title }}</a> · {{ material.get_material_type_display }}</p>{% empty %}<p class="text-muted">No published materials.</p>{% endfor %}</div></section>
+<section class="card mb-3"><div class="card-body"><h2 class="h4">Quiz</h2>{% if quiz %}<a class="btn btn-primary" href="{% url 'crp:student_quiz_take' quiz.id %}">{{ quiz.title }}</a>{% else %}<p class="text-muted">No published quiz.</p>{% endif %}</div></section>
+<section class="card"><div class="card-body"><h2 class="h4">Assignments</h2>{% for assessment in assessments %}<p><a href="{% url 'crp:student_assessment_detail' assessment.id %}">{{ assessment.title }}</a></p>{% empty %}<p class="text-muted">No published assignments.</p>{% endfor %}</div></section>{% endblock %}

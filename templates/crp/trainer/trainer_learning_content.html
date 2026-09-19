@@ -1,0 +1,119 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Content Library - Trainer Portal{% endblock %}
+{% block page_title %}Content Library{% endblock %}
+{% block page_subtitle %}Upload and release materials week by week{% endblock %}
+
+{% block extra_css %}
+<style>
+    .library-page { max-width:1440px; margin:0 auto; }
+    .library-grid { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr); gap:14px; margin-bottom:22px; }
+    .library-panel { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:16px; box-shadow:var(--sahe-shadow-sm); padding:20px; }
+    .library-panel h3 { margin:0 0 16px; font-size:17px; font-weight:800; }
+    .library-label { display:block; color:var(--sahe-muted); font-size:12px; font-weight:700; margin-bottom:6px; }
+    .library-input { width:100%; border:1px solid var(--sahe-border); border-radius:9px; padding:10px 12px; color:var(--sahe-ink); background:var(--sahe-surface); }
+    .library-options { display:flex; flex-wrap:wrap; gap:7px; }
+    .library-option { border:1px solid var(--sahe-border); border-radius:999px; padding:6px 11px; background:var(--sahe-surface); color:var(--sahe-muted); font-size:12px; font-weight:700; }
+    .library-option.active { color:var(--sahe-primary-dark); background:var(--sahe-primary-soft); border-color:var(--sahe-primary); }
+    .library-drop { display:flex; align-items:center; justify-content:center; min-height:94px; border:1px dashed var(--sahe-primary); border-radius:11px; color:var(--sahe-muted); background:var(--sahe-primary-soft); text-align:center; font-size:12px; }
+    .library-release { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+    .library-stat { padding:12px; border-radius:11px; background:var(--sahe-surface-soft); }
+    .library-stat strong { display:block; font:800 22px var(--font-heading); color:var(--sahe-ink); }
+    .library-stat span { font-size:11px; color:var(--sahe-muted); }
+    .library-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+    .library-toolbar h3 { margin:0; }
+    .library-items { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:16px; box-shadow:var(--sahe-shadow-sm); overflow:hidden; }
+    .library-item { display:grid; grid-template-columns:80px minmax(0,1fr) auto auto auto; align-items:center; gap:16px; padding:15px 20px; border-bottom:1px solid var(--sahe-border); }
+    .library-item:last-child { border-bottom:0; }
+    .library-item:hover { background:var(--sahe-surface-soft); }
+    .library-type { color:var(--sahe-primary-dark); font-size:11px; font-weight:800; text-transform:uppercase; }
+    .library-title { color:var(--sahe-ink); font-weight:800; }
+    .library-meta { color:var(--sahe-muted); font-size:12px; margin-top:3px; }
+    .library-visible { padding:5px 9px; border-radius:99px; color:#08734e; background:#e8f7ef; font-size:11px; font-weight:800; }
+    .library-hidden { padding:5px 9px; border-radius:99px; color:#966200; background:#fff4d6; font-size:11px; font-weight:800; }
+    @media (max-width:850px) { .library-grid { grid-template-columns:1fr; } .library-item { grid-template-columns:70px minmax(0,1fr) auto; } .library-item > :nth-child(3) { display:none; } }
+    @media (max-width:560px) { .library-release { grid-template-columns:repeat(2,1fr); } .library-item { grid-template-columns:1fr auto; } .library-type { grid-column:1 / -1; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="library-page">
+    <div class="library-grid">
+        <section class="library-panel">
+            <h3><i class="bi bi-cloud-arrow-up"></i> Upload learning material</h3>
+            <div class="mb-3">
+                <label class="library-label" for="material-title">Title</label>
+                <input id="material-title" class="library-input" placeholder="e.g. Week 6 case study framework">
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <span class="library-label">Week</span>
+                    <div class="library-options">
+                        {% for week in weeks %}<span class="library-option">W{{ week.week_number }}</span>{% empty %}<span class="library-meta">No assigned weeks</span>{% endfor %}
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <span class="library-label">File type</span>
+                    <div class="library-options">
+                        {% for type in "pdf,video,slides,workbook,link,other"|make_list %}{% endfor %}
+                        <span class="library-meta">Types are taken from saved materials.</span>
+                    </div>
+                </div>
+            </div>
+            <div class="library-drop mb-3"><div><i class="bi bi-upload fs-4"></i><br>Drop a file or click to browse<br><small>PDF, Word, PowerPoint, MP4 or a link · up to 500 MB</small></div></div>
+            <div class="d-flex justify-content-between align-items-center">
+                <span class="library-meta"><i class="bi bi-eye-slash"></i> Hidden until you release it</span>
+            </div>
+        </section>
+        <section class="library-panel">
+            <h3><i class="bi bi-bar-chart"></i> Release status</h3>
+            <p class="library-meta mb-3">{{ published_material_count }} of {{ material_count }} visible to students</p>
+            <div class="library-release">
+                <div class="library-stat"><strong>{{ material_count }}</strong><span>Items</span></div>
+                <div class="library-stat"><strong>{{ published_material_count }}</strong><span>Released</span></div>
+                <div class="library-stat"><strong>{{ video_material_count }}</strong><span>Videos</span></div>
+                <div class="library-stat"><strong>{{ hidden_material_count }}</strong><span>Hidden</span></div>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="library-meta">Use the visibility controls on each saved material.</span>
+            </div>
+        </section>
+    </div>
+
+    <div class="library-toolbar">
+        <h3>Library</h3>
+        <div class="library-options">
+            <span class="library-meta">Materials in your assigned courses</span>
+        </div>
+    </div>
+    <section class="library-items">
+    {% if course_rows %}
+        {% for row in course_rows %}
+            {% for week_group in row.weeks %}
+                {% for material in week_group.materials %}
+                <div class="library-item">
+                    <div class="library-type">{{ material.get_material_type_display }}</div>
+                    <div><div class="library-title">{{ material.title }}</div><div class="library-meta">{{ row.course.code }} · Week {{ week_group.week.week_number }} · {{ material.file_size|default:"No size recorded" }}</div></div>
+                    {% if material.is_published %}<span class="library-visible">Visible</span>{% else %}<span class="library-hidden">Draft</span>{% endif %}
+                    <form method="post" action="{% url 'crp:material_publish' material.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit" aria-label="Toggle visibility"><i class="bi bi-eye"></i></button></form>
+                    <span></span>
+                </div>
+                {% endfor %}
+            {% endfor %}
+        {% endfor %}
+    {% else %}
+        <div class="p-4 text-muted">No learning materials are assigned to your courses yet.</div>
+    {% endif %}
+    </section>
+
+    {% if course_rows %}
+    <details class="mt-4">
+        <summary class="text-muted small">Show connected database learning materials</summary>
+        <div class="mt-3">
+            {% for row in course_rows %}
+            <div class="library-panel mb-3"><h3>{{ row.course.code }} · {{ row.course.name }}</h3>{% for week_group in row.weeks %}<p class="library-meta">Week {{ week_group.week.week_number }} · {{ week_group.week.title }} · {{ week_group.materials|length }} materials</p>{% endfor %}</div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+</div>
+{% endblock %}

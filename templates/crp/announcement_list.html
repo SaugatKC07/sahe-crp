@@ -1,0 +1,88 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}Announcements - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-bullhorn me-2"></i>Announcements</h1>
+            {% if user.is_superuser or user.is_staff %}
+                <a href="{% url 'crp:announcement_create' %}" class="btn btn-sahe">
+                    <i class="fas fa-plus me-2"></i>Create Announcement
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if announcements %}
+            {% for announcement in announcements %}
+                <div class="announcement-card {{ announcement.priority }}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="announcement-title">{{ announcement.title }}</div>
+                            <div class="announcement-meta mb-2">
+                                <i class="far fa-calendar me-1"></i>{{ announcement.created_at|date:"F d, Y H:i" }}
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-user me-1"></i>{{ announcement.author.get_full_name|default:announcement.author.email }}
+                                {% if announcement.course %}
+                                    <span class="mx-2">•</span>
+                                    <span class="badge badge-sahe-light">{{ announcement.course.code }}</span>
+                                {% endif %}
+                                <span class="mx-2">•</span>
+                                <span class="badge bg-{{ 'danger' if announcement.priority == 'urgent' else 'warning' if announcement.priority == 'high' else 'secondary' }}">
+                                    {{ announcement.get_priority_display }}
+                                </span>
+                            </div>
+                            <p class="mb-2">{{ announcement.content|truncatewords:50 }}</p>
+                            <a href="{% url 'crp:announcement_detail' announcement.id %}" class="btn btn-sm btn-outline-sahe">Read More</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            
+            <!-- Pagination -->
+            {% if is_paginated %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <nav aria-label="Announcement pagination">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+                                    </li>
+                                {% endif %}
+                                
+                                <li class="page-item active">
+                                    <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+                                </li>
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-bullhorn fa-3x text-muted mb-3"></i>
+                <h3>No Announcements</h3>
+                <p class="text-muted">Check back later for important updates and news.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

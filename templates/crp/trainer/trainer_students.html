@@ -1,0 +1,108 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+
+{% block title %}My Students - Trainer Portal{% endblock %}
+{% block page_title %}My Students{% endblock %}
+{% block page_subtitle %}Students enrolled in your assigned courses{% endblock %}
+
+{% block extra_css %}
+<style>
+    .students-page { max-width:1440px; margin:0 auto; }
+    .students-hero { display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:22px; }
+    .students-eyebrow { color:var(--sahe-primary); font-size:11px; font-weight:800; letter-spacing:.13em; text-transform:uppercase; }
+    .students-title { margin:4px 0 5px; font-size:30px; font-weight:800; }
+    .students-subtitle { color:var(--sahe-muted); margin:0; }
+    .students-actions { display:flex; gap:8px; }
+    .students-kpis { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; margin-bottom:22px; }
+    .students-kpi { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:14px; padding:18px; box-shadow:var(--sahe-shadow-sm); }
+    .students-kpi strong { display:block; color:var(--sahe-ink); font:800 25px var(--font-heading); }
+    .students-kpi span { color:var(--sahe-muted); font-size:12px; }
+    .students-panel { background:var(--sahe-surface); border:1px solid var(--sahe-border); border-radius:16px; box-shadow:var(--sahe-shadow-sm); overflow:hidden; }
+    .students-panel-head { display:flex; justify-content:space-between; align-items:center; padding:18px 20px; border-bottom:1px solid var(--sahe-border); }
+    .students-panel-title { margin:0; font-size:17px; font-weight:800; }
+    .students-panel-note { color:var(--sahe-muted); font-size:12px; }
+    .student-row { display:grid; grid-template-columns:minmax(0,1.4fr) 90px 120px 120px 150px auto; align-items:center; gap:15px; padding:14px 20px; border-bottom:1px solid var(--sahe-border); }
+    .student-row:last-child { border-bottom:0; }
+    .student-row:hover { background:var(--sahe-surface-soft); }
+    .student-identity { display:flex; align-items:center; gap:10px; min-width:0; }
+    .student-avatar { width:34px; height:34px; display:grid; place-items:center; flex:none; border-radius:50%; color:#fff; background:linear-gradient(135deg,var(--sahe-primary),var(--sahe-teal)); font-size:11px; font-weight:800; }
+    .student-name { color:var(--sahe-ink); font-weight:800; }
+    .student-meta, .student-label { color:var(--sahe-muted); font-size:12px; }
+    .student-score { color:var(--sahe-ink); font-weight:800; }
+    .student-progress { height:6px; margin-top:5px; background:var(--sahe-surface-soft); border-radius:99px; overflow:hidden; }
+    .student-progress span { display:block; height:100%; background:var(--sahe-primary); border-radius:inherit; }
+    .student-status { display:inline-block; width:max-content; border-radius:99px; padding:5px 9px; font-size:11px; font-weight:800; }
+    .student-status-success { color:#08734e; background:#e8f7ef; }
+    .student-status-warning { color:#966200; background:#fff4d6; }
+    .student-status-danger { color:#aa3026; background:#ffebe8; }
+    @media (max-width: 950px) {
+        .students-kpis { grid-template-columns:repeat(2,1fr); }
+        .student-row { grid-template-columns:minmax(0,1fr) 90px 100px; }
+        .student-row > :nth-child(n+4) { grid-column:auto; }
+        .student-row .student-action { grid-column:3; grid-row:1; }
+    }
+    @media (max-width: 600px) {
+        .students-hero { align-items:flex-start; flex-direction:column; }
+        .students-kpis { grid-template-columns:1fr 1fr; }
+        .student-row { grid-template-columns:1fr 1fr; }
+        .student-row .student-action { grid-column:2; grid-row:1; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="students-page">
+    <div class="students-hero">
+        <div>
+            <div class="students-eyebrow">Trainer workspace</div>
+            <h2 class="students-title">My Students</h2>
+            <p class="students-subtitle">Track progress, attendance and support needs across your cohort.</p>
+        </div>
+        <div class="students-actions">
+            <a class="btn btn-sm btn-primary" href="{% url 'crp:trainer_reference_module' 'comms' %}"><i class="bi bi-chat-dots"></i> Message cohort</a>
+        </div>
+    </div>
+
+    <div class="students-kpis">
+        <div class="students-kpi"><strong>{{ student_count }}</strong><span>Assigned students</span></div>
+        <div class="students-kpi"><strong>{{ quiz_average }}%</strong><span>Mean quiz score</span></div>
+        <div class="students-kpi"><strong>{{ attendance_average }}%</strong><span>Mean attendance</span></div>
+        <div class="students-kpi"><strong>{{ at_risk_count }}</strong><span>Students at risk</span></div>
+    </div>
+
+    <section class="students-panel">
+        <div class="students-panel-head">
+            <div>
+                <h3 class="students-panel-title">Assigned student roster</h3>
+                <div class="students-panel-note">Students enrolled in your assigned courses</div>
+            </div>
+            <span class="tag tag-neutral">{{ student_rows|length }} students</span>
+        </div>
+        {% for row in student_rows %}
+        <div class="student-row">
+            <div class="student-identity">
+                <div class="student-avatar">{{ row.student.user.first_name|first }}{{ row.student.user.last_name|first }}</div>
+                <div>
+                    <div class="student-name">{{ row.student.user.get_full_name }}</div>
+                    <div class="student-meta">{{ row.course.code }} · {{ row.overdue_tasks }} overdue task{{ row.overdue_tasks|pluralize }}</div>
+                </div>
+            </div>
+            <div><div class="student-label">Course</div><div class="student-score">{{ row.course.code }}</div></div>
+            <div>
+                <div class="student-label">Quiz average</div>
+                <div class="student-score">{% if row.quiz_average %}{{ row.quiz_average }}%{% else %}—{% endif %}</div>
+                <div class="student-progress"><span style="width:{{ row.quiz_average }}%"></span></div>
+            </div>
+            <div>
+                <div class="student-label">Attendance</div>
+                <div class="student-score">{{ row.student.attendance_percentage }}%</div>
+                <div class="student-progress"><span style="width:{{ row.student.attendance_percentage }}%"></span></div>
+            </div>
+            <div><span class="student-status student-status-{{ row.risk_class }}">{{ row.risk }}</span></div>
+            <div class="student-action"><a class="btn btn-sm btn-outline-primary" href="{% url 'crp:trainer_student_detail' row.student.id %}">Open</a></div>
+        </div>
+        {% empty %}
+        <div class="p-4 text-muted">No students are enrolled in your assigned courses.</div>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

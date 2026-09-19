@@ -1,0 +1,101 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}{{ announcement.title }} - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'crp:announcement_list' %}">Announcements</a></li>
+                <li class="breadcrumb-item active">{{ announcement.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h4 class="mb-1">{{ announcement.title }}</h4>
+                        <small class="text-white">
+                            <i class="far fa-calendar me-1"></i>{{ announcement.created_at|date:"F d, Y H:i" }}
+                            <span class="mx-2">•</span>
+                            <i class="fas fa-user me-1"></i>{{ announcement.author.get_full_name|default:announcement.author.email }}
+                        </small>
+                    </div>
+                    <span class="badge bg-{{ 'danger' if announcement.priority == 'urgent' else 'warning' if announcement.priority == 'high' else 'secondary' }}">
+                        {{ announcement.get_priority_display }}
+                    </span>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if announcement.course %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-book me-2"></i>
+                        Related to: <strong>{{ announcement.course.code }} - {{ announcement.course.name }}</strong>
+                    </div>
+                {% endif %}
+                
+                <div class="announcement-content">
+                    {{ announcement.content|linebreaks }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'crp:announcement_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Announcements
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Announcement Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Author:</strong></td>
+                        <td>{{ announcement.author.get_full_name|default:announcement.author.email }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Created:</strong></td>
+                        <td>{{ announcement.created_at|date:"F d, Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Updated:</strong></td>
+                        <td>{{ announcement.updated_at|date:"F d, Y H:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Priority:</strong></td>
+                        <td>{{ announcement.get_priority_display }}</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Status:</strong></td>
+                        <td>
+                            <span class="badge bg-{{ 'success' if announcement.published else 'secondary' }}">
+                                {{ 'Published' if announcement.published else 'Draft' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% if announcement.course %}
+                        <tr>
+                            <td><strong>Related Course:</strong></td>
+                            <td>
+                                <a href="{% url 'crp:course_detail' announcement.course.id %}">
+                                    {{ announcement.course.code }}
+                                </a>
+                            </td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

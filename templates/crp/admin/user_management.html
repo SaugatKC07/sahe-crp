@@ -1,0 +1,24 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block title %}User Management · Admin{% endblock %}
+{% block page_title %}User Management{% endblock %}
+{% block content %}
+<section class="card">
+  <div class="card-body">
+    <form method="get" class="row g-2 mb-3">
+      <div class="col-md-6"><label class="visually-hidden" for="user-search">Search users</label><input id="user-search" class="form-control" name="q" value="{{ query }}" placeholder="Search name, username or email"></div>
+      <div class="col-md-3"><select class="form-select" name="role"><option value="">All roles</option><option value="student" {% if selected_role == 'student' %}selected{% endif %}>Students</option><option value="trainer" {% if selected_role == 'trainer' %}selected{% endif %}>Trainers</option><option value="admin" {% if selected_role == 'admin' %}selected{% endif %}>Admins</option></select></div>
+      <div class="col-md-3"><button class="btn btn-primary" type="submit">Filter users</button></div>
+    </form>
+    <div class="table-responsive"><table class="table align-middle">
+      <thead><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
+      <tbody>{% for user in users %}<tr>
+        <td>{{ user.get_full_name|default:user.username }}<div class="small text-muted">@{{ user.username }}</div></td>
+        <td>{{ user.email|default:"—" }}</td>
+        <td>{% if user.is_superuser %}Admin{% elif user.instructor_profile %}Trainer{% elif user.student_profile %}Student{% else %}User{% endif %}</td>
+        <td><span class="badge {% if user.is_active %}text-bg-success{% else %}text-bg-secondary{% endif %}">{% if user.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+        <td>{% if user != request.user %}<form method="post">{% csrf_token %}<input type="hidden" name="user_id" value="{{ user.id }}"><input type="hidden" name="is_active" value="{% if not user.is_active %}on{% endif %}"><button class="btn btn-sm btn-outline-secondary" type="submit">{% if user.is_active %}Deactivate{% else %}Reactivate{% endif %}</button></form>{% else %}<span class="small text-muted">Current account</span>{% endif %}</td>
+      </tr>{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">No users match the selected filters.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Settings - SAHE CRP{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:900px; margin:0 auto; display:flex; flex-direction:column; gap:20px;">
+    <div style="border-bottom:1px solid var(--color-divider); padding-bottom:16px; margin-bottom:8px;">
+        <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Account</div>
+        <h3 style="margin:8px 0 0;">Student Settings</h3>
+    </div>
+
+    <div style="background:var(--color-surface); border:1px solid var(--color-divider); border-radius:16px; padding:24px; box-shadow:var(--shadow-sm);">
+        <form method="post">
+            {% csrf_token %}
+            <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px;">
+                <div>
+                    <label class="form-label">First name</label>
+                    <input type="text" name="first_name" class="form-control" value="{{ user.first_name }}">
+                </div>
+                <div>
+                    <label class="form-label">Last name</label>
+                    <input type="text" name="last_name" class="form-control" value="{{ user.last_name }}">
+                </div>
+                <div>
+                    <label class="form-label">Phone</label>
+                    <input type="text" name="phone" class="form-control" value="{{ student.phone }}">
+                </div>
+                <div>
+                    <label class="form-label">Specialisation</label>
+                    <select name="specialisation" class="form-select">
+                        <option value="ai" {% if student.specialisation == 'ai' %}selected{% endif %}>Artificial Intelligence</option>
+                        <option value="cybersecurity" {% if student.specialisation == 'cybersecurity' %}selected{% endif %}>Cybersecurity</option>
+                        <option value="data_analytics" {% if student.specialisation == 'data_analytics' %}selected{% endif %}>Data Analytics</option>
+                        <option value="project_management" {% if student.specialisation == 'project_management' %}selected{% endif %}>Project Management</option>
+                        <option value="information_systems" {% if student.specialisation == 'information_systems' %}selected{% endif %}>Information Systems</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Cohort</label>
+                    <input type="text" class="form-control" value="{{ student.cohort }}" readonly>
+                </div>
+                <div>
+                    <label class="form-label">Profile visibility</label>
+                    <select name="profile_visibility" class="form-select">
+                        <option value="private" {% if preferences.profile_visibility == 'private' %}selected{% endif %}>Private</option>
+                        <option value="cohort" {% if preferences.profile_visibility == 'cohort' %}selected{% endif %}>Cohort Only</option>
+                        <option value="students" {% if preferences.profile_visibility == 'students' %}selected{% endif %}>Student Network</option>
+                        <option value="public" {% if preferences.profile_visibility == 'public' %}selected{% endif %}>Public</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">Dashboard theme</label>
+                    <select name="dashboard_theme" class="form-select">
+                        <option value="light" {% if preferences.dashboard_theme == 'light' %}selected{% endif %}>Light</option>
+                        <option value="dark" {% if preferences.dashboard_theme == 'dark' %}selected{% endif %}>Dark</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-top:22px; border-top:1px solid var(--color-divider); padding-top:18px;">
+                <h5 style="margin-bottom:12px;">Notifications</h5>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <label class="form-check-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="email_notifications" {% if preferences.email_notifications %}checked{% endif %}>
+                        Email notifications
+                    </label>
+                    <label class="form-check-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="sms_notifications" {% if preferences.sms_notifications %}checked{% endif %}>
+                        SMS notifications
+                    </label>
+                    <label class="form-check-label" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" name="community_digest" {% if preferences.community_digest %}checked{% endif %}>
+                        Community digest
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-top:20px; display:flex; justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Save settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends 'crp/base.html' %}
+
+{% block title %}SAHE Support Center{% endblock %}
+
+{% block content %}
+<div class="public-home">
+    <section class="public-hero animate-fade-in-up">
+        <div class="public-hero-content">
+            <span class="public-eyebrow"><i class="bi bi-life-preserver"></i> SAHE Support Center</span>
+            <h1>How can we help you today?</h1>
+            <p>Find answers, manage your course journey, and get support from one simple place.</p>
+            <div class="public-hero-actions">
+                <a href="{% url 'crp:login' %}?next=/crp/" class="btn btn-primary">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign in to your portal
+                </a>
+                <a href="#support-options" class="btn btn-outline-light">Explore support options</a>
+            </div>
+        </div>
+        <div class="public-hero-art" aria-hidden="true">
+            <div class="public-hero-orbit orbit-one"></div>
+            <div class="public-hero-orbit orbit-two"></div>
+            <i class="bi bi-ticket-perforated-fill"></i>
+        </div>
+    </section>
+
+    <section id="support-options" class="public-section">
+        <div class="public-section-heading">
+            <div>
+                <span class="public-eyebrow">Everything in one place</span>
+                <h2>Choose a support path</h2>
+            </div>
+            <span class="public-section-note">Built for students, instructors, and administrators</span>
+        </div>
+        <div class="public-feature-grid">
+            <article class="feature-card public-feature-card">
+                <div class="public-feature-icon primary"><i class="bi bi-mortarboard-fill"></i></div>
+                <h3>Students</h3>
+                <p>Browse courses, complete registrations, view your schedule, and follow your progress.</p>
+                <a href="{% url 'crp:login' %}?next=/crp/" class="btn btn-sm btn-outline-primary">Student portal <i class="bi bi-arrow-right"></i></a>
+            </article>
+            <article class="feature-card public-feature-card">
+                <div class="public-feature-icon success"><i class="bi bi-person-video3"></i></div>
+                <h3>Instructors</h3>
+                <p>Manage your courses, monitor enrolments, and keep learning activities on track.</p>
+                <a href="{% url 'crp:login' %}?next=/crp/" class="btn btn-sm btn-outline-primary">Instructor portal <i class="bi bi-arrow-right"></i></a>
+            </article>
+            <article class="feature-card public-feature-card">
+                <div class="public-feature-icon warning"><i class="bi bi-shield-check"></i></div>
+                <h3>Administrators</h3>
+                <p>Review activity, manage the catalogue, and keep the entire learning operation moving.</p>
+                <a href="{% url 'crp:login' %}?next=/crp/" class="btn btn-sm btn-outline-primary">Admin portal <i class="bi bi-arrow-right"></i></a>
+            </article>
+        </div>
+    </section>
+
+    <section class="public-help-strip">
+        <div>
+            <span class="public-eyebrow">Need a hand?</span>
+            <h2>Sign in to continue your journey</h2>
+            <p>Your dashboard brings registrations, announcements, schedules, and progress together.</p>
+        </div>
+        <a href="{% url 'crp:login' %}?next=/crp/" class="btn btn-primary">Open my dashboard <i class="bi bi-arrow-up-right"></i></a>
+    </section>
+</div>
+{% endblock %}

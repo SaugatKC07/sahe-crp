@@ -1,0 +1,59 @@
+{% extends 'crp/admissions_finance_base.html' %}
+
+{% block title %}Invoice Detail - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Invoice {{ invoice.invoice_number }}</h2>
+            <p class="text-muted mb-0">{{ invoice.student.get_full_name|default:invoice.student.email }}</p>
+        </div>
+        <a href="{% url 'crp:finance_invoices' %}" class="btn btn-outline-secondary">Back</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="row mb-3"><div class="col-md-6"><strong>Amount:</strong> ${{ invoice.amount }}</div><div class="col-md-6"><strong>Outstanding:</strong> ${{ outstanding }}</div></div>
+                    <div class="row mb-3"><div class="col-md-6"><strong>Due date:</strong> {{ invoice.due_date }}</div><div class="col-md-6"><strong>Status:</strong> {{ invoice.status }}</div></div>
+                    <div class="mt-4">
+                        <h5>Record payment</h5>
+                        <form method="post" action="{% url 'crp:record_payment' invoice.id %}">
+                            {% csrf_token %}
+                            <div class="row g-3">
+                                <div class="col-md-4"><input type="number" step="0.01" class="form-control" name="amount" placeholder="Amount"></div>
+                                <div class="col-md-4"><input type="date" class="form-control" name="payment_date"></div>
+                                <div class="col-md-4"><select class="form-select" name="payment_method"><option value="card">Card</option><option value="bank_transfer">Bank Transfer</option><option value="cash">Cash</option></select></div>
+                                <div class="col-md-8"><input type="text" class="form-control" name="transaction_reference" placeholder="Transaction reference"></div>
+                                <div class="col-md-4"><button type="submit" class="btn btn-primary w-100">Pay</button></div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white"><strong>Payments</strong></div>
+                <div class="list-group list-group-flush">
+                    {% for payment in payments %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between"><strong>${{ payment.amount }}</strong><span>{{ payment.payment_date }}</span></div>
+                        <small>{{ payment.payment_method }} / {{ payment.transaction_reference }}</small>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-muted">No payments recorded.</div>
+                    {% endfor %}
+                </div>
+            </div>
+            <form method="post" action="{% url 'crp:finance_clearance' invoice.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success w-100">Finance clearance</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,327 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Jobs - SAHE CRP{% endblock %}
+
+{% block page_title %}Jobs{% endblock %}
+
+{% block extra_css %}
+<style>
+.jobs-container {
+    padding: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.jobs-header {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 14px;
+    margin-bottom: 24px;
+}
+
+.jobs-search {
+    position: relative;
+    max-width: 280px;
+}
+
+.jobs-search input {
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    width: 100%;
+    background: var(--bg-secondary);
+}
+
+.jobs-search input:focus {
+    outline: none;
+    border-color: var(--sahe-blue-500);
+    background: #ffffff;
+}
+
+.jobs-search i {
+    position: absolute;
+    left: 0.875rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    font-size: 0.875rem;
+}
+
+.jobs-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 7px 13px;
+    border-radius: 99px;
+    cursor: pointer;
+    border: 1px solid var(--color-divider);
+    background: transparent;
+    color: inherit;
+    transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+    background: var(--gray-100);
+}
+
+.filter-chip.active {
+    background: var(--sahe-blue-600);
+    color: var(--color-bg);
+    border-color: var(--sahe-blue-600);
+}
+
+.jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.job-card {
+    padding: 18px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.job-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.job-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.job-title {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    color: var(--gray-900);
+}
+
+.job-company {
+    font-size: 12.5px;
+    color: var(--gray-500);
+    margin-top: 3px;
+}
+
+.job-location {
+    font-size: 12px;
+    margin-top: 8px;
+    color: var(--gray-600);
+}
+
+.job-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.job-match {
+    text-align: right;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--sahe-blue-600);
+}
+
+.job-match-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.job-status {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 99px;
+}
+
+.job-posted {
+    font-size: 11.5px;
+    color: var(--gray-400);
+}
+
+.jobs-detail {
+    align-self: start;
+}
+
+.jobs-detail-card {
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+}
+
+.job-detail-header {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sahe-blue-600);
+    margin-bottom: 10px;
+}
+
+.job-detail-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
+    font-weight: 800;
+}
+
+.job-detail-meta {
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+.job-detail-description {
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 18px 0;
+}
+
+.job-detail-section {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin: 18px 0 8px;
+}
+
+.job-skills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.skill-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid var(--color-divider);
+}
+
+.job-detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+}
+
+.job-gap-note {
+    font-size: 11.5px;
+    color: var(--gray-400);
+    margin-top: 10px;
+}
+
+.no-jobs {
+    padding: 32px 0;
+    font-size: 13px;
+    color: var(--gray-400);
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="jobs-container">
+    <div class="jobs-header">
+        <div class="jobs-search">
+            <i class="bi bi-search"></i>
+            <input type="text" name="q" value="{{ job_query }}" placeholder="Search role, company or skill">
+        </div>
+        <div class="jobs-filters">
+            {% for field in field_filters %}
+                <button class="filter-chip {% if job_field == field %}active{% endif %}" 
+                        onclick="location.href='?field={{ field }}&q={{ job_query }}'">
+                    {{ field }}
+                </button>
+            {% endfor %}
+        </div>
+        <div style="flex: 1;"></div>
+        <button class="btn btn-secondary" onclick="exportJobs()">Export matches (CSV)</button>
+    </div>
+    
+    <div class="jobs-grid">
+        <div>
+            {% if job_rows %}
+                {% for job in job_rows %}
+                    <a href="{% url 'crp:student_job_detail' job.id %}" class="job-card">
+                        <div class="job-card-header">
+                            <div style="flex: 1;">
+                                <div class="job-title">{{ job.title }}</div>
+                                <div class="job-company">{{ job.company }} · {{ job.location }}</div>
+                                <div class="job-location">{{ job.salary }}</div>
+                            </div>
+                            <div class="job-match">{{ job.match }}%</div>
+                        </div>
+                        <div class="job-footer">
+                            <span class="job-status" style="{{ job.status_style }}">{{ job.status_label }}</span>
+                            <div style="flex: 1;"></div>
+                            <div class="job-posted">{{ job.posted }}</div>
+                        </div>
+                    </a>
+                {% endfor %}
+            {% else %}
+                <div class="no-jobs">
+                    No roles match that filter. Clear the search or pick another specialisation.
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="jobs-detail">
+            <div class="jobs-detail-card">
+                <div class="job-detail-header">Browse jobs to see details</div>
+                <h3 class="job-detail-title">Select a job</h3>
+                <div class="job-detail-meta">Click on any job listing to view full details, skills requirements, and application options.</div>
+                <div style="height: 1px; background: var(--color-divider); margin: 18px 0;"></div>
+                <p class="job-detail-description">
+                    Browse through {{ total_jobs }} available job opportunities matched to your profile and skills. 
+                    Use the search and filters to find roles that interest you.
+                </p>
+                <div class="job-detail-section">How to apply</div>
+                <p class="job-detail-description">
+                    1. Click on a job to view details<br>
+                    2. Save jobs for later review<br>
+                    3. Apply directly with your SAHE profile<br>
+                    4. Track your application status
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportJobs() {
+    // Placeholder for CSV export functionality
+    alert('CSV export functionality - to be implemented with actual data export');
+}
+</script>
+{% endblock %}

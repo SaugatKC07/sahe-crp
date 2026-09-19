@@ -1,0 +1,9 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}Trainers{% endblock %}
+{% block title %}CRP Admin - Trainers{% endblock %}
+{% block content %}
+<h1>Trainers</h1><p class="text-muted">Active trainers and their assigned courses.</p>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Trainer</th><th>Specialization</th><th>Assigned courses</th></tr></thead><tbody>
+{% for trainer in trainers %}<tr><td>{{ trainer.user.get_full_name|default:trainer.user.username }}</td><td>{{ trainer.specialization|default:"-" }}</td><td>{% for course in trainer.assigned_courses.all %}<a href="{% url 'crp:admin_course_detail' course.id %}" class="badge text-bg-light me-1">{{ course.code }}</a>{% empty %}<span class="text-muted">No assigned courses</span>{% endfor %}</td></tr>{% empty %}<tr><td colspan="3">No active trainers found.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

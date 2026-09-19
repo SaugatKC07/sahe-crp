@@ -1,0 +1,190 @@
+{% extends 'crp/admissions_finance_base.html' %}
+{% load humanize %}
+
+{% block title %}Finance Dashboard - SAHE CRP{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-currency-dollar"></i>
+                    <h2>Finance Portal</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Welcome back, <span>{{ finance_profile.user.get_full_name }}</span>! Manage invoices and payments.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="/admin/" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Invoice
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid animate-fade-in-up">
+        <div class="stat-card-extended primary stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-file-earmark-text"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_invoices }}</div>
+                <div class="stat-card-title">Total Invoices</div>
+            </div>
+        </div>
+        <div class="stat-card-extended warning stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-clock-history"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ pending_invoices }}</div>
+                <div class="stat-card-title">Pending</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-check-circle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ paid_invoices }}</div>
+                <div class="stat-card-title">Paid</div>
+            </div>
+        </div>
+        <div class="stat-card-extended danger stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-exclamation-triangle"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ overdue_invoices }}</div>
+                <div class="stat-card-title">Overdue</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Recent Invoices + Quick Actions -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-file-earmark-text"></i> Recent Invoices</h5>
+                <a href="#" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> View All
+                </a>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if recent_invoices %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Invoice #</th>
+                                    <th>Student</th>
+                                    <th>Amount</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for invoice in recent_invoices %}
+                                    <tr>
+                                        <td><span class="fw-medium">{{ invoice.invoice_number }}</span></td>
+                                        <td>{{ invoice.student.get_full_name|default:invoice.student.email }}</td>
+                                        <td>${{ invoice.amount }}</td>
+                                        <td>{{ invoice.due_date|date:"M d, Y" }}</td>
+                                        <td><span class="badge status-{{ invoice.status }}">{{ invoice.get_status_display }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-file-earmark-text"></i></div>
+                        <div class="empty-state-title">No invoices yet</div>
+                        <div class="empty-state-text">Create invoices to get started.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Profile Information -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-person"></i> Profile Information</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="text-center mb-4">
+                        <div class="requester-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                            {{ finance_profile.user.get_full_name|first|upper }}
+                        </div>
+                        <h6 class="mb-1">{{ finance_profile.user.get_full_name }}</h6>
+                        <p class="text-muted small mb-0">{{ finance_profile.employee_id }}</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Department</small>
+                            <span class="fw-medium">{{ finance_profile.department.name|default:"Not Assigned" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Status</small>
+                            <span class="badge status-{{ finance_profile.status }}">{{ finance_profile.get_status_display }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Specialization</small>
+                            <span class="fw-medium">{{ finance_profile.specialization|default:"Not Specified" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Email</small>
+                            <span class="fw-medium small">{{ finance_profile.user.email }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="#" class="quick-action-btn">
+                            <i class="bi bi-plus-circle"></i><span>Create Invoice</span>
+                        </a>
+                        <a href="#" class="quick-action-btn">
+                            <i class="bi bi-file-earmark-excel"></i><span>Export Reports</span>
+                        </a>
+                        <a href="/admin/" class="quick-action-btn">
+                            <i class="bi bi-gear"></i><span>Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,286 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}{{ job.title }} - Jobs{% endblock %}
+
+{% block page_title %}Job Details{% endblock %}
+
+{% block extra_css %}
+<style>
+.job-detail-container {
+    padding: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.job-detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+}
+
+.job-listing-section {
+    margin-bottom: 10px;
+}
+
+.job-card {
+    padding: 18px;
+    margin-bottom: 10px;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.job-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.job-card.active {
+    border-color: var(--sahe-blue-600);
+    box-shadow: inset 0 0 0 1px var(--sahe-blue-600), var(--shadow-md);
+}
+
+.job-card-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+}
+
+.job-title {
+    flex: 1;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: -0.01em;
+    color: var(--gray-900);
+}
+
+.job-company {
+    font-size: 12.5px;
+    color: var(--gray-500);
+    margin-top: 3px;
+}
+
+.job-location {
+    font-size: 12px;
+    margin-top: 8px;
+    color: var(--gray-600);
+}
+
+.job-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.job-match {
+    text-align: right;
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 20px;
+    color: var(--sahe-blue-600);
+}
+
+.job-match-label {
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.job-status {
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 99px;
+}
+
+.job-posted {
+    font-size: 11.5px;
+    color: var(--gray-400);
+}
+
+.job-detail-card {
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-md);
+    padding: 24px;
+}
+
+.job-detail-header {
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--sahe-blue-600);
+    margin-bottom: 10px;
+}
+
+.job-detail-title {
+    margin: 0 0 4px;
+    font-size: 24px;
+    letter-spacing: -0.02em;
+    font-family: var(--font-heading);
+    font-weight: 800;
+}
+
+.job-detail-meta {
+    font-size: 13px;
+    color: var(--gray-500);
+}
+
+.job-detail-description {
+    font-size: 13.5px;
+    line-height: 1.65;
+    margin: 18px 0;
+}
+
+.job-detail-section {
+    font-size: 10.5px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+    margin: 18px 0 8px;
+}
+
+.job-skills {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.skill-tag {
+    font-size: 11px;
+    padding: 3px 10px;
+    border: 1px solid var(--color-divider);
+}
+
+.skill-tag.matching {
+    border-color: var(--sahe-blue-600);
+    color: var(--sahe-blue-600);
+}
+
+.job-detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 22px;
+    flex-wrap: wrap;
+}
+
+.job-gap-note {
+    font-size: 11.5px;
+    color: var(--gray-400);
+    margin-top: 10px;
+}
+
+.job-detail-stats {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.job-detail-stat {
+    flex: 1;
+}
+
+.job-detail-stat-label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.job-detail-stat-value {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 16px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="job-detail-container">
+    <div class="job-detail-grid">
+        <div class="job-listing-section">
+            <!-- Simplified job listing for navigation -->
+            <div style="margin-bottom: 20px;">
+                <a href="{% url 'crp:student_jobs' %}" class="btn btn-ghost">
+                    <i class="bi bi-arrow-left me-2"></i>Back to all jobs
+                </a>
+            </div>
+            
+            <div class="job-card active">
+                <div class="job-card-header">
+                    <div style="flex: 1;">
+                        <div class="job-title">{{ job.title }}</div>
+                        <div class="job-company">{{ job.company }} · {{ job.location }}</div>
+                        <div class="job-location">{{ job.salary }}</div>
+                    </div>
+                    <div class="job-match">{{ job.match_percentage }}%</div>
+                </div>
+                <div class="job-footer">
+                    <span class="job-status" style="{% if application and application.status == 'applied' %}background: var(--sahe-blue-600); color: var(--color-bg);{% else %}background: color-mix(in srgb, var(--color-text) 9%, transparent); color: inherit;{% endif %}">
+                        {% if application and application.status == 'applied' %}Applied{% elif application and application.status == 'saved' %}Saved{% else %}New{% endif %}
+                    </span>
+                    <div style="flex: 1;"></div>
+                    <div class="job-posted">{{ job.posted_date|date:"d M Y" }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div>
+            <div class="job-detail-card">
+                <div class="job-detail-header">{{ job.match_percentage }}% skill match</div>
+                <h3 class="job-detail-title">{{ job.title }}</h3>
+                <div class="job-detail-meta">{{ job.company }} · {{ job.location }} · {{ job.get_job_type_display }}</div>
+                <div style="height: 1px; background: var(--color-divider); margin: 18px 0;"></div>
+                <p class="job-detail-description">{{ job.description }}</p>
+                
+                <div class="job-detail-section">Required skills</div>
+                <div class="job-skills">
+                    {% for skill_display in job_skills_display %}
+                        <span class="skill-tag {% if skill_display.is_matching %}matching{% endif %}" style="{{ skill_display.style }}">
+                            {{ skill_display.label }}
+                        </span>
+                    {% endfor %}
+                </div>
+                <div class="job-gap-note">{{ gap_note }}</div>
+                
+                <div style="height: 1px; background: var(--color-divider); margin: 18px 0;"></div>
+                
+                <div class="job-detail-stats">
+                    <div class="job-detail-stat">
+                        <div class="job-detail-stat-label">Salary</div>
+                        <div class="job-detail-stat-value">{{ job.salary }}</div>
+                    </div>
+                    <div class="job-detail-stat">
+                        <div class="job-detail-stat-label">Posted</div>
+                        <div class="job-detail-stat-value">{{ job.posted_date|date:"d M Y" }}</div>
+                    </div>
+                </div>
+                
+                <div class="job-detail-actions">
+                    <form method="post" action="{% url 'crp:student_apply_job' job.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary">{{ apply_label }}</button>
+                    </form>
+                    <form method="post" action="{% url 'crp:student_save_job' job.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary">{{ save_label }}</button>
+                    </form>
+                    <a href="{% url 'crp:student_tailor_resume' job.id %}" class="btn btn-secondary">Tailor resume</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends 'crp/base.html' %}
+{% load static %}
+
+{% block title %}Image Gallery - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-1">Image Gallery</h2>
+                    <p class="text-muted mb-0">Manage uploaded images and documents</p>
+                </div>
+                <a href="{% url 'crp:image_upload_create' %}" class="btn btn-sahe">
+                    <i class="fas fa-upload me-2"></i>Upload New Image
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Category</label>
+                            <select name="category" class="form-select">
+                                <option value="">All Categories</option>
+                                <option value="course" {% if category == 'course' %}selected{% endif %}>Course Images</option>
+                                <option value="instructor" {% if category == 'instructor' %}selected{% endif %}>Instructor Photos</option>
+                                <option value="department" {% if category == 'department' %}selected{% endif %}>Department Logos</option>
+                                <option value="announcement" {% if category == 'announcement' %}selected{% endif %}>Announcement Images</option>
+                                <option value="document" {% if category == 'document' %}selected{% endif %}>Documents</option>
+                                <option value="other" {% if category == 'other' %}selected{% endif %}>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-sahe me-2">Filter</button>
+                            <a href="{% url 'crp:image_upload_list' %}" class="btn btn-outline-secondary">Clear</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Grid -->
+    <div class="row">
+        {% for image in page_obj %}
+        <div class="col-md-4 col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-img-top position-relative" style="height: 200px; overflow: hidden;">
+                    {% if image.image %}
+                    <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:image.title }}" class="w-100 h-100 object-fit-cover">
+                    {% else %}
+                    <div class="w-100 h-100 d-flex align-items-center justify-content-center bg-light">
+                        <i class="fas fa-image fa-3x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <span class="position-absolute top-0 end-0 m-2">
+                        <span class="badge bg-sahe-blue">{{ image.get_category_display }}</span>
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h6 class="card-title fw-bold mb-2">{{ image.title }}</h6>
+                    <p class="card-text text-muted small mb-2">{{ image.description|truncatewords:10 }}</p>
+                    <p class="card-text small mb-0">
+                        <i class="fas fa-user me-1"></i>{{ image.uploaded_by.get_full_name|default:image.uploaded_by.username }}
+                    </p>
+                    <p class="card-text small text-muted mb-0">
+                        <i class="fas fa-calendar me-1"></i>{{ image.created_at|date:"M d, Y" }}
+                    </p>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'crp:image_upload_detail' image.pk %}" class="btn btn-sm btn-outline-primary flex-fill">View</a>
+                        {% if image.uploaded_by == request.user or request.user.is_superuser %}
+                        <a href="{% url 'crp:image_upload_delete' image.pk %}" class="btn btn-sm btn-outline-danger">Delete</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="fas fa-images fa-4x text-muted mb-3"></i>
+                <h5 class="text-muted">No images found</h5>
+                <p class="text-muted">Upload your first image to get started</p>
+                <a href="{% url 'crp:image_upload_create' %}" class="btn btn-sahe">Upload Image</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if category %}&category={{ category }}{% endif %}">Previous</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}{% if category %}&category={{ category }}{% endif %}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if category %}&category={{ category }}{% endif %}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

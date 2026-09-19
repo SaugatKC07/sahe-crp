@@ -1,0 +1,43 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Notifications · Student{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<section class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+            <div>
+                <p class="eyebrow mb-1">Activity stream</p>
+                <h2 class="h4 mb-0">Your notifications</h2>
+            </div>
+            {% if notifications %}
+            <form method="post">
+                {% csrf_token %}
+                <button class="btn btn-secondary btn-sm" name="action" value="mark_all_read">Mark all read</button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="list-group list-group-flush">
+            {% for notification in notifications %}
+            <div class="list-group-item px-0 {% if not notification.is_read %}fw-semibold{% endif %}">
+                <div class="d-flex justify-content-between gap-3">
+                    <div>
+                        {% if notification.target_url %}<a href="{{ notification.target_url }}" class="text-reset text-decoration-none">{% endif %}
+                        <div>{{ notification.title }}</div>
+                        {% if notification.message %}<small class="text-muted">{{ notification.message }}</small>{% endif %}
+                        {% if notification.target_url %}</a>{% endif %}
+                    </div>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="notification_id" value="{{ notification.id }}">
+                        {% if not notification.is_read %}<button class="btn btn-link btn-sm" name="action" value="mark_read">Mark read</button>{% endif %}
+                    </form>
+                </div>
+                <small class="text-muted">{{ notification.created_at|date:"d M Y H:i" }}</small>
+            </div>
+            {% empty %}
+            <div class="empty-state py-5 text-center">No notifications.</div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

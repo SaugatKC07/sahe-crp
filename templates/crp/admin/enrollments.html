@@ -1,0 +1,16 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block page_title %}Enrollments{% endblock %}
+{% block title %}CRP Admin - Enrollments{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between mb-4"><div><h1>Enrollments</h1><p class="text-muted">Review and manage course enrollment requests.</p></div></div>
+<form class="row g-2 mb-4">
+ <div class="col-md-3"><input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Student or course"></div>
+ <div class="col-md-3"><select class="form-select" name="course"><option value="">All courses</option>{% for course in courses %}<option value="{{ course.id }}" {% if request.GET.course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.code }} - {{ course.name }}</option>{% endfor %}</select></div>
+ <div class="col-md-3"><select class="form-select" name="status"><option value="">All statuses</option>{% for value,label in status_choices %}<option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+ <div class="col-md-2"><input class="form-control" type="date" name="date_from" value="{{ request.GET.date_from }}"></div><div class="col-md-2"><input class="form-control" type="date" name="date_to" value="{{ request.GET.date_to }}"></div><div class="col-md-1"><button class="btn btn-outline-primary w-100">Filter</button></div>
+</form>
+<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Student</th><th>Course</th><th>Status</th><th>Requested</th><th></th></tr></thead><tbody>
+{% for item in enrollments %}<tr><td>{{ item.student.get_full_name|default:item.student.username }}<br><small>{{ item.student.email }}</small></td><td>{{ item.course.code }} - {{ item.course.name }}</td><td><span class="badge text-bg-secondary">{{ item.get_status_display }}</span></td><td>{{ item.registration_date|date:"d M Y H:i" }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'crp:admin_enrollment_detail' item.id %}">View</a></td></tr>
+{% empty %}<tr><td colspan="5" class="text-center py-4">No enrollments match the selected filters.</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

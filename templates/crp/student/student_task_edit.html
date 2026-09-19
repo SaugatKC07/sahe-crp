@@ -1,0 +1,44 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Edit Task - SAHE CRP{% endblock %}
+{% block page_title %}Edit Task{% endblock %}
+
+{% block content %}
+<div style="max-width:760px; margin:0 auto; border:1px solid var(--color-divider); border-radius:18px; background:var(--color-surface); padding:28px; box-shadow:var(--shadow-md);">
+    <h3 style="margin-top:0;">Edit task</h3>
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input type="text" name="title" class="form-control" value="{{ task.title }}" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea name="description" class="form-control" rows="4">{{ task.description }}</textarea>
+        </div>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select">
+                    <option value="high" {% if task.priority == 'high' %}selected{% endif %}>High</option>
+                    <option value="medium" {% if task.priority == 'medium' %}selected{% endif %}>Medium</option>
+                    <option value="low" {% if task.priority == 'low' %}selected{% endif %}>Low</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Tag</label>
+                <input type="text" name="tag" class="form-control" value="{{ task.tag }}">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Due date</label>
+                <input type="date" name="due_date" class="form-control" value="{% if task.due_date %}{{ task.due_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+        </div>
+        <div class="mt-4" style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary">Save changes</button>
+            <a href="{% url 'crp:student_tasks' %}" class="btn btn-secondary">Back to tasks</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

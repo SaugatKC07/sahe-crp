@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Course Registration Portal - SAHE{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts - Archivo & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/crp.css' %}">
+    <link rel="stylesheet" href="{% static 'css/sahe-ui.css' %}?v=20260913-3">
+    <!-- Shared SAHE ticketing design system -->
+    <link rel="stylesheet" href="{% static 'css/base-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cards-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/badges.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ticketing-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/robotics-ui.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light ticketing-shell">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-sahe sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'crp:dashboard' %}">
+                <div class="sahe-logo">
+                    <img src="{% static 'images/sahe-logo.svg' %}" alt="SAHE Logo" height="38" width="auto" onerror="this.style.display='none'">
+                </div>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:dashboard' %}">
+                            <i class="bi bi-speedometer2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:course_list' %}">
+                            <i class="bi bi-book"></i> Courses
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:schedule_list' %}">
+                            <i class="bi bi-calendar3"></i> Schedule
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:announcement_list' %}">
+                            <i class="bi bi-megaphone"></i> Announcements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:image_upload_list' %}">
+                            <i class="bi bi-images"></i> Image Gallery
+                        </a>
+                    </li>
+                    {% if user.is_superuser or user.is_staff or is_crp_admin %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'crp:admin_dashboard' %}">
+                            <i class="bi bi-gear"></i> CRP Admin
+                        </a>
+                    </li>
+                    {% if is_crp_admin %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_courses' %}">Manage Courses</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_enrollments' %}">Enrollments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_courses' %}">Content</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_courses' %}">Quizzes</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_courses' %}">Question Banks</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_enrollments' %}">Students</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_trainers' %}">Trainers</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_courses' %}">Assignments</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:announcement_list' %}">Announcements</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:schedule_list' %}">Live Sessions</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_dashboard' %}">Reports</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_dashboard' %}">Settings</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'crp:admin_legacy_mapping' %}">Legacy Mapping</a></li>
+                    {% endif %}
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link user-dropdown" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <div class="user-avatar">{{ user.get_full_name|first|default:user.email|first|upper }}</div>
+                                <div class="user-info">
+                                    <div class="user-name">{{ user.get_full_name|default:user.email }}</div>
+                                    <div class="user-role">{% if user.is_superuser %}Admin{% elif user.is_staff %}Staff{% else %}Student{% endif %}</div>
+                                </div>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'crp:my_registrations' %}">
+                                    <i class="bi bi-list-check"></i> My Registrations
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'crp:logout' %}">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link btn-sahe" href="{% url 'crp:login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="py-4">
+        <div class="container">
+            {% if messages %}
+                <div class="row mb-4">
+                    <div class="col-12">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-sahe-blue text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3">Southern Academy Higher Education</h5>
+                    <p class="small mb-0">Empowering students through quality education and innovative learning experiences.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3">Quick Links</h5>
+                    <ul class="list-unstyled small">
+                        <li><a href="{% url 'crp:course_list' %}" class="text-white text-decoration-none">Course Catalog</a></li>
+                        <li><a href="{% url 'crp:schedule_list' %}" class="text-white text-decoration-none">Class Schedule</a></li>
+                        <li><a href="{% url 'crp:announcement_list' %}" class="text-white text-decoration-none">Announcements</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="fw-bold mb-3">Contact Us</h5>
+                    <ul class="list-unstyled small">
+                        <li><i class="fas fa-envelope me-2"></i> student.services@sahe.edu.au</li>
+                        <li><i class="fas fa-phone me-2"></i> +61 2 1234 5678</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i> Sydney, Australia</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="mt-4 mb-3">
+            <div class="row">
+                <div class="col-12 text-center small">
+                    <p class="mb-0">&copy; {% now "Y" %} Southern Academy Higher Education. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/sahe-ui.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

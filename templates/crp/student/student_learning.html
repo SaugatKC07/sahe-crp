@@ -1,0 +1,179 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Learning Hub - SAHE CRP{% endblock %}
+
+{% block page_title %}Learning Hub{% endblock %}
+
+{% block extra_css %}
+<style>
+.learning-container {
+    padding: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.learning-header {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.week-row {
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.week-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0;
+    cursor: pointer;
+}
+
+.week-content {
+    padding: 0 0 22px 86px;
+}
+
+.topics-container {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.material-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 0;
+    border-top: 1px solid var(--color-divider);
+}
+
+.week-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="learning-container">
+    <div class="learning-header">
+        <div style="flex: 1;">
+            <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent);">
+                {{ week_rows|length }}-week curriculum
+            </div>
+            <h3 style="margin: 6px 0 0;">Learning Hub</h3>
+        </div>
+        <div style="font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 78%, transparent);">
+            {{ materials_done }} of {{ materials_total }} items complete
+        </div>
+    </div>
+
+    {% for week in week_rows %}
+    <div class="week-row" style="opacity: {% if week.status == 'locked' %}0.55{% else %}1{% endif %};">
+        <div class="week-header" onclick="toggleWeek({{ week.week_number }})">
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; letter-spacing: 0.08em; width: 68px; flex: none; color: var(--color-accent);">
+                WEEK {{ week.week_number }}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; letter-spacing: -0.01em;">
+                    {{ week.title }}
+                </div>
+                <div style="font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 78%, transparent); margin-top: 3px;">
+                    {{ week.description }}
+                </div>
+            </div>
+            <span style="{{ week.tag_style }}">{{ week.status_label }}</span>
+            <div style="font-size: 13px; width: 16px; text-align: right; color: color-mix(in srgb, var(--color-text) 74%,透明);">
+                <span id="chevron-{{ week.week_number }}">+</span>
+            </div>
+        </div>
+        
+        <div class="week-content" id="week-content-{{ week.week_number }}" style="display: none;">
+            {% if week.status == 'locked' %}
+            <div style="padding: 16px 0; color: var(--gray-500);">Complete the previous week to unlock this content.</div>
+            {% else %}
+            <div class="topics-container">
+                {% for topic in week.topics %}
+                <span class="tag tag-outline">{{ topic }}</span>
+                {% endfor %}
+            </div>
+            
+            {% for item in week.items %}
+            <div class="material-item">
+                <div onclick="toggleMaterial({{ item.material_id }})" role="button" tabindex="0" style="{{ item.box_style }}">{{ item.mark }}</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 13px; font-weight: 600;">{{ item.title }}</div>
+                    <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">{{ item.meta }}</div>
+                </div>
+                {% if item.file_url %}<a class="btn btn-ghost" href="{{ item.file_url }}" target="_blank" rel="noopener" style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;">Open</a>{% endif %}
+            </div>
+            {% endfor %}
+            
+            <div class="week-actions">
+                {% if week.has_quiz %}
+                <a href="{% url 'crp:student_quiz_take' week.quiz_id %}" class="btn btn-primary">
+                    Start Week {{ week.week_number }} quiz
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+function toggleWeek(weekNumber) {
+    const content = document.getElementById(`week-content-${weekNumber}`);
+    const chevron = document.getElementById(`chevron-${weekNumber}`);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        chevron.textContent = '−';
+    } else {
+        content.style.display = 'none';
+        chevron.textContent = '+';
+    }
+}
+
+function toggleMaterial(materialId) {
+    fetch('{% url "crp:toggle_material_progress" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ material_id: materialId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

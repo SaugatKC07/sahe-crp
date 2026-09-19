@@ -1,0 +1,112 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Quiz Center - SAHE CRP{% endblock %}
+
+{% block page_title %}Quiz Center{% endblock %}
+
+{% block extra_css %}
+<style>
+.quiz-container {
+    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.quiz-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+}
+
+.quiz-stats-item {
+    padding: 18px 20px;
+}
+
+.quiz-week-item {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.progress-bar {
+    width: 120px;
+    height: 6px;
+    background: color-mix(in srgb, var(--color-text) 12%, transparent);
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--c-1), var(--c-6));
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="quiz-container">
+    <div class="quiz-stats-grid">
+        {% for stat in quiz_stats %}
+        <div class="quiz-stats-item">
+            <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+                {{ stat.label }}
+            </div>
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 30px; margin-top: 8px;">
+                {{ stat.value }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 24px; border-bottom: 1px solid var(--color-divider); padding-bottom: 10px; display: flex; align-items: baseline; gap: 12px;">
+        <h4 style="margin: 0; font-size: 15px;">Weekly adaptive sets</h4>
+        <div style="font-size: 12px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+            10 questions · difficulty adapts to your answers
+        </div>
+    </div>
+
+    {% for quiz_week in quiz_weeks %}
+    <div class="quiz-week-item">
+        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; letter-spacing: 0.08em; width: 68px; flex: none; color: var(--color-accent);">
+            WEEK {{ quiz_week.week_number }}
+        </div>
+        <div style="flex: 1;">
+            <div style="font-size: 14px; font-weight: 600;">{{ quiz_week.title }}</div>
+            <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-top: 2px;">
+                {% if quiz_week.completed %}
+                    Completed · 10 questions
+                {% elif quiz_week.locked %}
+                    Opens in week {{ quiz_week.week_number }}
+                {% else %}
+                    Not started · 10 questions
+                {% endif %}
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="{{ quiz_week.bar_style }}"></div>
+        </div>
+        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px; width: 54px; text-align: right;">
+            {{ quiz_week.score_label }}
+        </div>
+        {% if quiz_week.locked %}
+        <button class="btn btn-ghost" style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; padding: 8px 14px; border: 1px solid var(--color-divider); background: transparent; color: color-mix(in srgb, var(--color-text) 74%, transparent); cursor: not-allowed;">
+            Locked
+        </button>
+        {% elif quiz_week.completed %}
+        <a href="{% url 'crp:student_quiz_take' quiz_week.quiz_id %}" class="btn btn-primary" style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; padding: 8px 14px; border: 1px solid transparent; background: var(--color-accent); color: var(--color-bg); cursor: pointer;">
+            Retake
+        </a>
+        {% else %}
+        <a href="{% url 'crp:student_quiz_take' quiz_week.quiz_id %}" class="btn btn-primary" style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; padding: 8px 14px; border: 1px solid transparent; background: var(--color-accent); color: var(--color-bg); cursor: pointer;">
+            Start
+        </a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

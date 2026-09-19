@@ -1,0 +1,75 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Announcements - Trainer Portal{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">Course Announcements</h2>
+        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#announcementForm">Create announcement</button>
+    </div>
+
+    <div class="collapse mb-4" id="announcementForm">
+        <div class="card shadow-sm border-0">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create" />
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Course</label>
+                            <select class="form-select" name="course" required>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.code }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Priority</label>
+                            <select class="form-select" name="priority">
+                                <option value="low">Low</option>
+                                <option value="normal" selected>Normal</option>
+                                <option value="high">High</option>
+                                <option value="urgent">Urgent</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Title</label>
+                            <input type="text" class="form-control" name="title" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Content</label>
+                            <textarea class="form-control" name="content" rows="4" required></textarea>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary mt-3" type="submit">Publish</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% if announcements %}
+    <div class="list-group">
+        {% for announcement in announcements %}
+        <div class="list-group-item">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="mb-1">{{ announcement.title }}</h5>
+                    <div class="small text-muted">{{ announcement.course.code }} · {{ announcement.get_priority_display }}</div>
+                </div>
+                <span class="badge text-bg-light">{{ announcement.created_at|date:'d M Y' }}</span>
+            </div>
+            <p class="mb-0 mt-2">{{ announcement.content }}</p>
+            {% if announcement.author_id == request.user.id %}
+            <form method="post" action="{% url 'crp:trainer_announcement_delete' announcement.id %}" class="mt-2">
+                {% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">No announcements have been published for your courses.</div>
+    {% endif %}
+</div>
+{% endblock %}

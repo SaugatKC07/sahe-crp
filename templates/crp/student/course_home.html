@@ -1,0 +1,47 @@
+{% extends 'crp/student/student_base.html' %}
+
+{% block title %}{{ course.name }} - SAHE CRP{% endblock %}
+{% block page_title %}{{ course.name }}{% endblock %}
+{% block page_subtitle %}{{ course.code }}{% endblock %}
+
+{% block content %}
+<section class="portal-section">
+    <div class="card">
+        <h2>Course progress</h2>
+        <p>{{ completed_weeks }} of {{ total_weeks }} weeks complete ({{ progress_percentage }}%).</p>
+        {% if current_week %}
+            <p>Current module: Week {{ current_week.week_number }} - {{ current_week.title }}</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Learning</h2>
+        {% for week in weeks %}
+            <article>
+                <h3><a href="{% url 'crp:student_course_week' course.id week.id %}">Week {{ week.week_number }}: {{ week.title }}</a></h3>
+                <p>{{ week.description }}</p>
+                {% if week.learning_objectives %}<p><strong>Objectives:</strong> {{ week.learning_objectives|truncatewords:24 }}</p>{% endif %}
+                <span class="badge bg-secondary">{{ week.display_progress.get_status_display }}</span>
+                {% for material in week.materials.all %}
+                    {% if material.is_published and not material.is_archived %}
+                        <a href="{{ material.resource_url }}">{{ material.title }}</a>
+                    {% endif %}
+                {% empty %}
+                    <p>No published materials yet.</p>
+                {% endfor %}
+            </article>
+        {% empty %}
+            <p>No course content is available yet.</p>
+        {% endfor %}
+    </div>
+
+    <div class="card">
+        <h2>Assessments</h2>
+        {% for assessment in assessments %}
+            <p><a href="{% url 'crp:student_assessment_detail' assessment.id %}">{{ assessment.title }}</a></p>
+        {% empty %}
+            <p>No published assessments.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

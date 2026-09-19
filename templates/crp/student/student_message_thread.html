@@ -1,0 +1,42 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Conversation - SAHE CRP{% endblock %}
+{% block page_title %}Conversation{% endblock %}
+
+{% block content %}
+<div style="max-width:960px; margin:0 auto;">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; border-bottom:1px solid var(--color-divider); padding-bottom:16px; margin-bottom:20px;">
+        <div>
+            <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Conversation</div>
+            <h3 style="margin:8px 0 0;">{{ thread.title|default:'Conversation' }}</h3>
+        </div>
+        <a href="{% url 'crp:student_messages' %}" class="btn btn-secondary">Back to messages</a>
+    </div>
+
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+        {% for message in messages %}
+        <div style="max-width:75%; {% if message.sender == request.user %}align-self:flex-end; background:var(--sahe-blue-50);{% else %}align-self:flex-start; background:var(--color-surface);{% endif %}; border:1px solid var(--color-divider); border-radius:16px; padding:14px 16px; box-shadow:var(--shadow-sm);">
+            <div style="font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-500); margin-bottom:4px;">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+            <div>{{ message.content }}</div>
+        </div>
+        {% empty %}
+        <div style="padding:20px; border:1px dashed var(--color-divider); border-radius:16px; background:var(--color-surface); color:var(--gray-500);">
+            No messages yet.
+        </div>
+        {% endfor %}
+    </div>
+
+    <form method="post" action="{% url 'crp:student_message_thread' thread.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Send a message</label>
+            <textarea name="content" class="form-control" rows="4" required></textarea>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="submit" class="btn btn-primary">Send</button>
+            <button type="submit" name="mark_read" value="1" class="btn btn-secondary">Mark read</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

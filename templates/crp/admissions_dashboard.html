@@ -1,0 +1,292 @@
+{% extends 'crp/admissions_finance_base.html' %}
+{% load humanize %}
+
+{% block title %}Admissions Dashboard - SAHE CRP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Intake overview · Admissions &amp; Finance{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-shield-check"></i>
+                    <h2>Admissions Portal</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Manage course registrations and student enrollments.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="{% url 'crp:export_courses' %}" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                </a>
+                <a href="{% url 'crp:course_create' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> New Course
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid animate-fade-in-up">
+        <div class="stat-card-extended warning stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-clock-history"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ pending_registrations.count }}</div>
+                <div class="stat-card-title">Pending Approvals</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-book"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ active_courses.count }}</div>
+                <div class="stat-card-title">Active Courses</div>
+            </div>
+        </div>
+        <div class="stat-card-extended info stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_enrolled }}</div>
+                <div class="stat-card-title">Total Enrolled</div>
+            </div>
+        </div>
+        <div class="stat-card-extended primary stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-activity"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ recent_registrations.count }}</div>
+                <div class="stat-card-title">Recent Activity</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Row: Pending Registrations + Recent Activity -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-clock-history"></i> Pending Registrations</h5>
+                <span class="badge bg-warning text-dark">{{ pending_registrations.count }} Pending</span>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if pending_registrations %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Course</th>
+                                    <th>Semester</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for registration in pending_registrations %}
+                                    <tr>
+                                        <td>
+                                            <span class="fw-medium">{{ registration.student.get_full_name|default:registration.student.email }}</span><br>
+                                            <small class="text-muted">{{ registration.student.email }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-medium">{{ registration.course.code }}</span><br>
+                                            <small class="text-muted">{{ registration.course.name|truncatewords:3 }}</small>
+                                        </td>
+                                        <td>{{ registration.semester }}</td>
+                                        <td><span class="text-muted">{{ registration.registration_date|naturaltime }}</span></td>
+                                        <td>
+                                            <form method="post" action="{% url 'crp:approve_registration' registration.id %}" class="d-inline">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-success" title="Approve">
+                                                    <i class="bi bi-check-lg"></i>
+                                                </button>
+                                            </form>
+                                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ registration.id }}" title="Reject">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <!-- Reject Modal -->
+                                    <div class="modal fade" id="rejectModal{{ registration.id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Reject Registration</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <form method="post" action="{% url 'crp:reject_registration' registration.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <p>Are you sure you want to reject this registration?</p>
+                                                        <div class="mb-3">
+                                                            <label for="reason{{ registration.id }}" class="form-label">Reason (optional)</label>
+                                                            <textarea class="form-control" id="reason{{ registration.id }}" name="reason" rows="3"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-danger">Reject</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-check-circle"></i></div>
+                        <div class="empty-state-title">All caught up!</div>
+                        <div class="empty-state-text">No pending registrations to review.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Recent Activity -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-activity"></i> Recent Activity</h6>
+                </div>
+                <div class="dashboard-section-body p-0">
+                    {% if recent_registrations %}
+                        <div class="top-requester-list">
+                            {% for registration in recent_registrations %}
+                                <div class="top-requester-item">
+                                    <div class="requester-avatar">
+                                        {{ registration.student.get_full_name|first|default:registration.student.email|first|upper }}
+                                    </div>
+                                    <div class="requester-info">
+                                        <div class="requester-name">{{ registration.student.get_full_name|default:registration.student.email }}</div>
+                                        <div class="requester-email">{{ registration.course.code }} - {{ registration.course.name|truncatewords:3 }}</div>
+                                    </div>
+                                    <div class="requester-count">
+                                        <span class="badge status-{{ registration.status }}">{{ registration.status|title }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted text-center p-3 mb-0">No recent activity.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="{% url 'crp:course_list' %}" class="quick-action-btn">
+                            <i class="bi bi-book"></i><span>View All Courses</span>
+                        </a>
+                        <a href="{% url 'crp:course_create' %}" class="quick-action-btn">
+                            <i class="bi bi-plus-circle"></i><span>Create New Course</span>
+                        </a>
+                        <a href="{% url 'crp:export_courses' %}" class="quick-action-btn">
+                            <i class="bi bi-file-earmark-excel"></i><span>Export Data</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Courses Overview -->
+    <div class="dashboard-section animate-fade-in-up">
+        <div class="dashboard-section-header">
+            <h5 class="dashboard-section-title"><i class="bi bi-book"></i> Active Courses Overview</h5>
+            <div>
+                <a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-outline-primary me-2">View All Courses</a>
+                <a href="{% url 'crp:export_courses' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-file-earmark-excel"></i> Export Excel
+                </a>
+            </div>
+        </div>
+        <div class="dashboard-section-body p-0">
+            {% if active_courses %}
+                <div class="table-responsive">
+                    <table class="table table-clickable mb-0">
+                        <thead>
+                            <tr>
+                                <th>Course Code</th>
+                                <th>Course Name</th>
+                                <th>Level</th>
+                                <th>Capacity</th>
+                                <th>Enrolled</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in active_courses %}
+                                <tr onclick="window.location='{% url 'crp:course_detail' course.id %}'">
+                                    <td><span class="fw-medium">{{ course.code }}</span></td>
+                                    <td>{{ course.name|truncatewords:4 }}</td>
+                                    <td>{{ course.get_level_display }}</td>
+                                    <td>{{ course.max_capacity }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <span class="me-2">{{ course.enrolled_count }}</span>
+                                            <div class="capacity-indicator" style="width: 100px;">
+                                                <div class="capacity-bar {% if course.enrolled_count|floatformat:0 < course.max_capacity|floatformat:0 %}capacity-low{% else %}capacity-high{% endif %}" 
+                                                     style="width: {% widthratio course.enrolled_count course.max_capacity 100 %}%"></div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td><span class="badge status-{{ course.status }}">{{ course.get_status_display }}</span></td>
+                                    <td>
+                                        <a href="{% url 'crp:course_detail' course.id %}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon"><i class="bi bi-book"></i></div>
+                    <div class="empty-state-title">No active courses</div>
+                    <div class="empty-state-text">Create courses to get started.</div>
+                    <a href="{% url 'crp:course_create' %}" class="btn btn-primary mt-3">
+                        <i class="bi bi-plus-circle me-2"></i>Create Course
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

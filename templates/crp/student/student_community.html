@@ -1,0 +1,85 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Community - SAHE CRP{% endblock %}
+{% block page_title %}Community{% endblock %}
+
+{% block content %}
+<div style="max-width:1100px; margin:0 auto; display:flex; flex-direction:column; gap:20px;">
+    <div style="border-bottom:1px solid var(--color-divider); padding-bottom:16px; margin-bottom:8px;">
+        <div style="font-size:10.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--color-accent);">Student community</div>
+        <h3 style="margin:8px 0 0;">Community Feed</h3>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1.1fr 2fr; gap:20px;">
+        <div style="background:var(--color-surface); border:1px solid var(--color-divider); border-radius:16px; padding:20px; box-shadow:var(--shadow-sm);">
+            <h5 style="margin-bottom:12px;">Post an update</h5>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="create_post">
+                <div style="display:flex; flex-direction:column; gap:12px;">
+                    <input type="text" name="title" class="form-control" placeholder="Post title" required>
+                    <textarea name="content" class="form-control" rows="5" placeholder="Share something with your peers..." required></textarea>
+                    <button type="submit" class="btn btn-primary">Publish</button>
+                </div>
+            </form>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div style="background:var(--color-surface); border:1px solid var(--color-divider); border-radius:16px; padding:18px; box-shadow:var(--shadow-sm);">
+                <h5 style="margin-bottom:12px;">Announcements</h5>
+                {% if announcements %}
+                    {% for item in announcements %}
+                        <div style="padding:12px 0; border-top:1px solid var(--color-divider);">
+                            <div style="font-weight:700;">{{ item.title }}</div>
+                            <div style="margin-top:6px; color:var(--gray-600);">{{ item.content }}</div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div style="color:var(--gray-500);">No announcements at the moment.</div>
+                {% endif %}
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:14px;">
+                {% for post in posts %}
+                <div style="background:var(--color-surface); border:1px solid var(--color-divider); border-radius:16px; padding:20px; box-shadow:var(--shadow-sm);">
+                    <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                        <div>
+                            <div style="font-size:12px; color:var(--color-accent); text-transform:uppercase; letter-spacing:0.08em;">{{ post.author_user.get_full_name|default:post.author_user.username }}</div>
+                            <h5 style="margin:6px 0 0;">{{ post.title }}</h5>
+                        </div>
+                        {% if post.student.user == user %}
+                        <div style="display:flex; gap:8px;">
+                            <a href="{% url 'crp:student_community_post_edit' post.id %}" class="btn btn-secondary btn-sm">Edit</a>
+                            <form method="post" action="{% url 'crp:student_community_post_delete' post.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div style="margin-top:12px; color:var(--gray-700); white-space:pre-wrap;">{{ post.content }}</div>
+                    <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+                        <div style="display:flex; gap:12px; align-items:center; color:var(--gray-500); font-size:12px;">
+                            <span>{{ post.like_count }} likes</span>
+                            <span>{{ post.comments.count }} comments</span>
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <form method="post" action="{% url 'crp:student_community_post_like' post.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-outline-primary btn-sm">Like</button>
+                            </form>
+                            <a href="{% url 'crp:student_community_post_detail' post.id %}" class="btn btn-primary btn-sm">View</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div style="padding:22px; border:1px dashed var(--color-divider); border-radius:16px; background:var(--color-surface); color:var(--gray-500);">
+                    No community posts yet.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

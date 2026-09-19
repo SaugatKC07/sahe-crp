@@ -1,0 +1,141 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Assessments - SAHE CRP{% endblock %}
+
+{% block page_title %}Assessments{% endblock %}
+
+{% block extra_css %}
+<style>
+.assessments-container {
+    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.assess-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.assess-stat-item {
+    padding: 18px 20px;
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.assessment-row {
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.assessment-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    cursor: pointer;
+}
+
+.assessment-content {
+    padding: 0 0 24px 84px;
+    display: none;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assessments-container">
+    <div class="assess-stats-grid">
+        {% for stat in assess_stats %}
+        <div class="assess-stat-item">
+            <div style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+                {{ stat.label }}
+            </div>
+            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 30px; margin-top: 8px;">
+                {{ stat.value }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div style="margin-top: 24px;">
+        {% for assess in assess_rows %}
+        <div class="assessment-row">
+            <div class="assessment-header" onclick="toggleAssessment({{ assess.assessment_id }})">
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 12px; width: 68px; flex: none; color: var(--color-accent);">
+                    WEEK {{ assess.week }}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-size: 14px; font-weight: 600;">{{ assess.title }}</div>
+                    <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-top: 2px;">
+                        {{ assess.meta }}
+                    </div>
+                </div>
+                <span class="tag tag-{% if assess.status == 'marked' %}success{% elif assess.status == 'submitted' %}neutral{% else %}outline{% endif %}">
+                    {{ assess.status_label }}
+                </span>
+                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 16px; width: 78px; text-align: right;">
+                    {{ assess.marks_label }}
+                </div>
+                <div style="font-size: 13px; width: 16px; text-align: right; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
+                    <span id="chevron-{{ assess.assessment_id }}">+</span>
+                </div>
+            </div>
+            
+            <div class="assessment-content" id="assessment-content-{{ assess.assessment_id }}">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+                    <div>
+                        <div style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-bottom: 10px;">
+                            Assessment Details
+                        </div>
+                        <p style="font-size: 13.5px; line-height: 1.65;">
+                            {{ assess.assessment_type }} - {{ assess.title }}
+                        </p>
+                        <div style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin: 20px 0 10px;">
+                            Key Information
+                        </div>
+                        <div style="font-size: 12.5px; line-height: 2;">
+                            <div>Type · <strong>{{ assess.assessment_type }}</strong></div>
+                            <div>Weight · <strong>{{ assess.week }}</strong></div>
+                            <div>Status · <strong>{{ assess.status_label }}</strong></div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--color-surface); padding: 18px; border-radius: var(--radius-md); box-shadow: var(--shadow-sm);">
+                        <div style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent); margin-bottom: 12px;">
+                            Actions
+                        </div>
+                        {% if assess.has_submission %}
+                        <a href="{% url 'crp:student_assessment_detail' assess.assessment_id %}" class="btn btn-primary btn-block">
+                            View Submission
+                        </a>
+                        {% else %}
+                        <a href="{% url 'crp:student_assessment_submit' assess.assessment_id %}" class="btn btn-primary btn-block">
+                            Submit Assessment
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function toggleAssessment(assessmentId) {
+    const content = document.getElementById(`assessment-content-${assessmentId}`);
+    const chevron = document.getElementById(`chevron-${assessmentId}`);
+    
+    if (content.style.display === 'none') {
+        content.style.display = 'block';
+        chevron.textContent = '−';
+    } else {
+        content.style.display = 'none';
+        chevron.textContent = '+';
+    }
+}
+</script>
+{% endblock %}

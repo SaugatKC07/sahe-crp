@@ -1,0 +1,254 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Trainer Portal{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/crp.css' %}">
+    <link rel="stylesheet" href="{% static 'css/base-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/navbar-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/components-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/cards-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-modern.css' %}">
+    <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+    <link rel="stylesheet" href="{% static 'css/badges.css' %}">
+    <link rel="stylesheet" href="{% static 'css/tables.css' %}">
+    <link rel="stylesheet" href="{% static 'css/alerts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/ticketing-theme.css' %}">
+    <link rel="stylesheet" href="{% static 'css/robotics-ui.css' %}">
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+
+    <style>
+        .crp-layout { display: flex; min-height: 100vh; background: var(--bg-secondary); }
+        .crp-sidebar {
+            width: 260px; background: #fff; border-right: 1px solid var(--gray-200); position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; z-index: 1000;
+        }
+        .crp-sidebar-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--gray-200); }
+        .crp-sidebar-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
+        .crp-sidebar-brand img { height: 32px; width: auto; }
+        .crp-sidebar-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+        .crp-sidebar-brand-title { font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; color: var(--gray-900); }
+        .crp-sidebar-brand-subtitle { font-size: 0.65rem; font-weight: 500; color: var(--gray-400); letter-spacing: 0.07em; text-transform: uppercase; }
+        .crp-role-badge {
+            margin-top: 0.7rem; display: inline-block; background: var(--sahe-primary-soft); color: var(--sahe-primary-dark); padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .crp-sidebar-nav { padding: 1rem 0; }
+        .crp-sidebar-section { padding: 0.75rem 1.5rem 0.5rem; font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gray-400); }
+        .crp-sidebar-item {
+            display: flex; align-items: center; gap: 0.75rem; padding: 0.625rem 1.5rem; color: var(--gray-600); text-decoration: none; transition: all var(--transition-fast); font-size: 0.875rem; font-weight: 500; border-left: 3px solid transparent;
+        }
+        .crp-sidebar-item:hover { background: var(--gray-50); color: var(--gray-900); }
+        .crp-sidebar-item.active { background: var(--sahe-primary-soft); color: var(--sahe-primary-dark); border-left-color: var(--sahe-primary); }
+        .crp-sidebar-item i { width: 20px; text-align: center; font-size: 1rem; }
+        .crp-user-card {
+            margin: 1rem 1.5rem 1.25rem; padding: 0.9rem 1rem; border: 1px solid var(--gray-200); border-radius: var(--radius-md); background: var(--gray-50);
+        }
+        .crp-user-meta { display: flex; align-items: center; gap: 0.75rem; }
+        .crp-user-avatar {
+            width: 36px; height: 36px; border-radius: 50%; background: var(--sahe-primary); display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.8rem;
+        }
+        .crp-user-name { font-size: 0.8rem; font-weight: 600; color: var(--gray-900); }
+        .crp-user-role { font-size: 0.65rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.05em; }
+        .crp-main { flex: 1; margin-left: 260px; display: flex; flex-direction: column; min-height: 100vh; }
+        .crp-topbar { background: #fff; border-bottom: 1px solid var(--gray-200); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 999; }
+        .crp-topbar-left { display: flex; align-items: center; gap: 1rem; }
+        .crp-page-title { font-size: 1.25rem; font-weight: 600; color: var(--gray-900); margin: 0; }
+        .crp-topbar-right { display: flex; align-items: center; gap: 1rem; }
+        .crp-search { position: relative; }
+        .crp-search input { padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid var(--gray-200); border-radius: var(--radius-md); font-size: 0.875rem; width: 280px; background: var(--gray-50); }
+        .crp-search input:focus { outline: none; border-color: var(--sahe-primary); background: var(--sahe-surface); }
+        .crp-search i { position: absolute; left: 0.875rem; top: 50%; transform: translateY(-50%); color: var(--gray-400); font-size: 0.875rem; }
+        .crp-content { flex: 1; padding: 2rem; background: var(--bg-secondary); }
+        @media (max-width: 991.98px) {
+            .crp-sidebar { transform: translateX(-100%); }
+            .crp-main { margin-left: 0; }
+            .crp-topbar { padding: 1rem; }
+            .crp-search input { width: 200px; }
+            .crp-content { padding: 1rem; }
+        }
+    </style>
+    <link rel="stylesheet" href="{% static 'css/sahe-ui.css' %}?v=20260913-3">
+    <style>
+        /* Match the shared SAHE ticketing system palette. */
+        body.trainer-shell {
+            --sahe-primary: #2b5aa7;
+            --sahe-primary-dark: #234888;
+            --sahe-primary-soft: #eff4fb;
+            --primary-500: var(--sahe-primary);
+            --primary-600: var(--sahe-primary);
+            --primary-700: var(--sahe-primary-dark);
+            --sahe-blue-50: var(--sahe-primary-soft);
+            --sahe-blue-500: var(--sahe-primary);
+            --sahe-blue-600: var(--sahe-primary);
+            --sahe-blue-700: var(--sahe-primary-dark);
+            --color-accent: var(--sahe-primary);
+            --color-accent-600: var(--sahe-primary);
+            --color-accent-700: var(--sahe-primary-dark);
+            --color-accent-800: var(--sahe-primary-dark);
+            --c-1: var(--sahe-primary);
+            --c-1d: var(--sahe-primary-dark);
+        }
+        body.trainer-shell .stats-grid .stat-card-extended:nth-child(1) { --metric-color: #2b5aa7; }
+        body.trainer-shell .stats-grid .stat-card-extended:nth-child(2) { --metric-color: #10b981; }
+        body.trainer-shell .stats-grid .stat-card-extended:nth-child(3) { --metric-color: #0ea5e9; }
+        body.trainer-shell .stats-grid .stat-card-extended:nth-child(4) { --metric-color: #f59e0b; }
+        body.trainer-shell .stats-grid .stat-card-extended::before { background: var(--metric-color) !important; }
+        body.trainer-shell .stats-grid .stat-card-extended .stat-card-icon-wrapper {
+            background: color-mix(in srgb, var(--metric-color) 10%, var(--sahe-surface)) !important;
+            color: var(--metric-color) !important;
+        }
+    </style>
+</head>
+<body class="ticketing-shell trainer-shell">
+    {% if not request.htmx %}
+    <div class="crp-layout">
+        <aside class="crp-sidebar" id="crpSidebar">
+            <div class="crp-sidebar-header">
+                <a href="{% url 'crp:trainer_dashboard' %}" class="crp-sidebar-brand">
+                    <img src="{% static 'images/sahe-logo.svg' %}" alt="SAHE Logo" onerror="this.style.display='none'">
+                </a>
+            </div>
+
+            <div class="crp-sidebar-nav"
+                 hx-boost="true" hx-target="#portal-content" hx-select="#portal-content"
+                 hx-swap="outerHTML transition:true" hx-push-url="true"
+                 hx-indicator="#htmx-indicator">
+                <div class="crp-sidebar-section">Teaching</div>
+                <a href="{% url 'crp:trainer_dashboard' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_dashboard' %}active{% endif %}">
+                    <i class="bi bi-speedometer2"></i><span>Dashboard</span>
+                </a>
+                <a href="{% url 'crp:trainer_students' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_students' or request.resolver_match.url_name == 'trainer_student_detail' %}active{% endif %}">
+                    <i class="bi bi-people"></i><span>My Students</span>
+                </a>
+                <a href="{% url 'crp:trainer_courses' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_courses' or request.resolver_match.url_name == 'trainer_course_detail' %}active{% endif %}">
+                    <i class="bi bi-book"></i><span>My Courses</span>
+                </a>
+                <a href="{% url 'crp:trainer_learning_content' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_learning_content' %}active{% endif %}">
+                    <i class="bi bi-journal-bookmark"></i><span>Content Library</span>
+                </a>
+                <a href="{% url 'crp:trainer_assessments' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_assessments' or request.resolver_match.url_name == 'trainer_assessment_detail' or request.resolver_match.url_name == 'trainer_submission_detail' %}active{% endif %}">
+                    <i class="bi bi-clipboard-check"></i><span>Assignments</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'marking' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'marking' %}active{% endif %}">
+                    <i class="bi bi-clipboard-check"></i><span>Marking Queue</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'attendance' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'attendance' %}active{% endif %}">
+                    <i class="bi bi-calendar-check"></i><span>Attendance</span>
+                </a>
+                <div class="crp-sidebar-section">Insight</div>
+                <a href="{% url 'crp:trainer_reference_module' 'analytics' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'analytics' %}active{% endif %}">
+                    <i class="bi bi-bar-chart-line"></i><span>Cohort Analytics</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'risks' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'risks' %}active{% endif %}">
+                    <i class="bi bi-exclamation-triangle"></i><span>At Risk</span>
+                </a>
+                <div class="crp-sidebar-section">Cohort</div>
+                <a href="{% url 'crp:trainer_reference_module' 'groups' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'groups' %}active{% endif %}">
+                    <i class="bi bi-diagram-3"></i><span>Groups &amp; Leaders</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'live' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'live' %}active{% endif %}">
+                    <i class="bi bi-camera-video"></i><span>Online Classes</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'requests' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'requests' %}active{% endif %}">
+                    <i class="bi bi-hourglass-split"></i><span>Extensions</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'unit' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'unit' %}active{% endif %}">
+                    <i class="bi bi-diagram-2"></i><span>Unit Coordination</span>
+                </a>
+                <div class="crp-sidebar-section">Communication</div>
+                <a href="{% url 'crp:trainer_announcements' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_announcements' %}active{% endif %}">
+                    <i class="bi bi-megaphone"></i><span>Announcements</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'tasks' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'tasks' %}active{% endif %}">
+                    <i class="bi bi-list-check"></i><span>Task Manager</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'comms' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'comms' %}active{% endif %}">
+                    <i class="bi bi-send"></i><span>Bulk Comms</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'messages' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'messages' %}active{% endif %}">
+                    <i class="bi bi-chat"></i><span>Messages</span>
+                </a>
+                <a href="{% url 'crp:support_tickets' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'support_tickets' %}active{% endif %}">
+                    <i class="bi bi-life-preserver"></i><span>Support</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'notes' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'notes' %}active{% endif %}">
+                    <i class="bi bi-journal-text"></i><span>Student Notes</span>
+                </a>
+                <a href="{% url 'crp:trainer_reference_module' 'calendar' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'calendar' %}active{% endif %}">
+                    <i class="bi bi-calendar3"></i><span>Calendar</span>
+                </a>
+            </div>
+
+            <div class="crp-user-card">
+                <div class="crp-user-meta">
+                    <div class="crp-user-avatar">{{ user.get_full_name|first|default:user.email|first|upper }}</div>
+                    <div>
+                        <div class="crp-user-name">{{ user.get_full_name|default:user.email }}</div>
+                        <div class="crp-user-role">Trainer</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="crp-main">
+            <header class="crp-topbar">
+                <div class="crp-topbar-left">
+                    <button class="sahe-sidebar-toggle" type="button" aria-label="Collapse navigation" aria-expanded="true">
+                        <span class="visually-hidden">Open navigation</span>
+                        <i class="bi bi-layout-sidebar-inset"></i>
+                    </button>
+                    <div>
+                        <h1 class="crp-page-title" id="portal-page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+                        <div class="crp-page-subtitle">{% block page_subtitle %}Trainer portal · Career Ready Program{% endblock %}</div>
+                    </div>
+                </div>
+                <div class="crp-topbar-right">
+                    <div class="crp-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" placeholder="Search anything…  Ctrl K" aria-label="Search">
+                    </div>
+                    <button type="button" class="sahe-theme-toggle sahe-topbar-pill" data-theme-label aria-label="Use dark theme">Dark</button>
+                    <a class="btn btn-secondary btn-sm" href="{% url 'crp:logout' %}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                </div>
+            </header>
+
+            {% endif %}
+            <div id="htmx-indicator" class="htmx-indicator" aria-live="polite">Loading…</div>
+            <div id="portal-content" class="crp-content">
+                {% block extra_css %}{% endblock %}
+                {% if messages %}
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %} me-2"></i>
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+                {% block content %}{% endblock %}
+                {% block extra_js %}{% endblock %}
+            </div>
+            {% if not request.htmx %}
+        </main>
+    </div>
+
+    <div class="sahe-sidebar-overlay" id="saheSidebarOverlay" aria-hidden="true"></div>
+    {% endif %}
+
+    {% if not request.htmx %}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="{% static 'js/sahe-ui.js' %}?v=trainer-20260913-1"></script>
+    {% endif %}
+</body>
+</html>

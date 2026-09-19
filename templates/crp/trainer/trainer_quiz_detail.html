@@ -1,0 +1,50 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Trainer Quiz Detail - SAHE CRP{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>{{ quiz.title }}</h2>
+        <a href="{% url 'crp:trainer_quizzes' %}" class="btn btn-outline-secondary">Back to quizzes</a>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+            <p class="mb-1"><strong>Week:</strong> {{ quiz.week.week_number }} · {{ quiz.week.title }}</p>
+            <p class="mb-1"><strong>Passing score:</strong> {{ quiz.passing_score }}%</p>
+            <p class="mb-0"><strong>Description:</strong> {{ quiz.description|default:'No description provided.' }}</p>
+        </div>
+    </div>
+
+    {% if attempts %}
+    <div class="card shadow-sm border-0">
+        <div class="card-body">
+            <h4 class="mb-3">Attempts</h4>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Score</th>
+                            <th>Passed</th>
+                            <th>Completed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attempt in attempts %}
+                        <tr>
+                            <td>{{ attempt.student.user.get_full_name }}</td>
+                            <td>{{ attempt.score|default:'—' }}{% if attempt.score %}%{% endif %}</td>
+                            <td>{% if attempt.is_passed %}Yes{% else %}No{% endif %}</td>
+                            <td>{{ attempt.completed_at|date:'d M Y H:i' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">No attempts have been recorded for this quiz yet.</div>
+    {% endif %}
+</div>
+{% endblock %}

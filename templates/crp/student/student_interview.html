@@ -1,0 +1,171 @@
+{% extends 'crp/student/student_base.html' %}
+{% load static %}
+
+{% block title %}Mock Interview - SAHE CRP{% endblock %}
+
+{% block page_title %}Mock Interview{% endblock %}
+
+{% block extra_css %}
+<style>
+.interview-container {
+    padding: 0;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.interview-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    background: var(--color-surface);
+}
+
+.interview-stat-card {
+    padding: 18px 20px;
+}
+
+.interview-stat-label {
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.interview-stat-value {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 30px;
+    margin-top: 8px;
+}
+
+.interview-section-header {
+    margin-top: 24px;
+    border-bottom: 1px solid var(--color-divider);
+    padding-bottom: 10px;
+}
+
+.interview-section-title {
+    margin: 0;
+    font-size: 15px;
+}
+
+.interview-sets-list {
+    margin-top: 16px;
+}
+
+.interview-set-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.interview-set-info {
+    flex: 1;
+}
+
+.interview-set-name {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: -0.01em;
+}
+
+.interview-set-desc {
+    font-size: 12.5px;
+    color: var(--gray-400);
+    margin-top: 3px;
+}
+
+.interview-set-meta {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--gray-400);
+}
+
+.interview-history-section {
+    margin-top: 28px;
+}
+
+.interview-history-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--color-divider);
+}
+
+.interview-history-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.interview-history-meta {
+    font-size: 12px;
+    color: var(--gray-400);
+}
+
+.interview-history-score {
+    font-family: var(--font-heading);
+    font-weight: 800;
+    font-size: 15px;
+}
+
+.empty-state {
+    padding: 32px 0;
+    font-size: 13px;
+    color: var(--gray-400);
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="interview-container">
+    <div class="interview-stats-grid">
+        {% for stat in iv_stats %}
+            <div class="interview-stat-card">
+                <div class="interview-stat-label">{{ stat.label }}</div>
+                <div class="interview-stat-value">{{ stat.value }}</div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="interview-section-header">
+        <h4 class="interview-section-title">Choose a mock interview</h4>
+    </div>
+    
+    <div class="interview-sets-list">
+        {% for interview_set in iv_sets %}
+            <div class="interview-set-card">
+                <div class="interview-set-info">
+                    <div class="interview-set-name">{{ interview_set.name }}</div>
+                    <div class="interview-set-desc">{{ interview_set.desc }}</div>
+                </div>
+                <div class="interview-set-meta">{{ interview_set.meta }}</div>
+                <a href="{% url 'crp:student_start_interview' interview_set.id %}" class="btn btn-primary">Start</a>
+            </div>
+        {% endfor %}
+    </div>
+    
+    {% if has_history %}
+        <div class="interview-history-section">
+            <div class="interview-section-header">
+                <h4 class="interview-section-title">Past sessions</h4>
+            </div>
+            {% for history_item in iv_history %}
+                <div class="interview-history-item">
+                    <div class="interview-history-name">{{ history_item.name }}</div>
+                    <div class="interview-history-meta">{{ history_item.when }} · {{ history_item.answered }} answered</div>
+                    <div class="interview-history-score">{{ history_item.score }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

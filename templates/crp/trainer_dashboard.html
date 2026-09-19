@@ -1,0 +1,460 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% load humanize %}
+
+{% block title %}Trainer Dashboard - SAHE CRP{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block page_subtitle %}Teaching overview · Career Ready Program{% endblock %}
+
+{% block extra_css %}
+<style>
+.dashboard-container {
+    padding: 2rem 2.5rem;
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.schedule-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.schedule-item {
+    background: var(--sahe-surface);
+    border: 1px solid var(--sahe-border);
+    border-radius: var(--sahe-radius-md);
+    padding: 1.5rem;
+    border-top: 3px solid var(--sahe-primary);
+    box-shadow: var(--sahe-shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.schedule-item:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--sahe-shadow-md);
+}
+
+.schedule-item .day-badge {
+    background-color: var(--sahe-primary);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.trainer-dashboard-charts {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr);
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.trainer-chart-card {
+    min-height: 310px;
+    padding: 20px;
+    border: 1px solid var(--sahe-border);
+    border-radius: var(--sahe-radius-md);
+    background: var(--sahe-surface);
+    box-shadow: var(--sahe-shadow-sm);
+}
+
+.trainer-chart-card canvas {
+    max-height: 240px;
+}
+
+.trainer-reference-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr);
+    gap: 12px;
+    margin: 12px 0;
+}
+.trainer-reference-card {
+    border: 1px solid var(--sahe-border);
+    border-radius: var(--sahe-radius-md);
+    background: var(--sahe-surface);
+    box-shadow: var(--sahe-shadow-sm);
+    overflow: hidden;
+}
+.trainer-reference-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--sahe-border);
+}
+.trainer-reference-card-head h5 { margin: 0; font-weight: 800; }
+.trainer-reference-row, .trainer-task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--sahe-border);
+}
+.trainer-reference-row:last-child, .trainer-task-row:last-child { border-bottom: 0; }
+.trainer-reference-avatar {
+    width: 32px; height: 32px; display: grid; place-items: center; flex: none;
+    border-radius: 50%; color: #fff; background: linear-gradient(135deg,var(--sahe-primary),var(--sahe-teal));
+    font-size: 10px; font-weight: 800;
+}
+.trainer-reference-name { font-weight: 800; color: var(--sahe-ink); }
+.trainer-reference-detail, .trainer-task-meta { color: var(--sahe-muted); font-size: 12px; }
+.trainer-reference-score { margin-left: auto; color: var(--sahe-ink); font-weight: 800; }
+.trainer-task-row button { width: 22px; height: 22px; border: 1px solid var(--sahe-border); border-radius: 50%; background: transparent; color: var(--sahe-muted); }
+.trainer-task-priority { margin-left: auto; font-size: 11px; font-weight: 800; color: var(--sahe-coral); }
+@media (max-width: 991.98px) {
+    .trainer-dashboard-charts { grid-template-columns: 1fr; }
+    .trainer-reference-grid { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header animate-fade-in-up">
+        <div class="dashboard-header-row">
+            <div>
+                <div class="dashboard-title">
+                    <i class="bi bi-person-video2"></i>
+                    <h2>Instructor Portal</h2>
+                </div>
+                <p class="dashboard-subtitle">
+                    Welcome back, <span>{{ instructor.user.get_full_name }}</span>! Manage your courses and schedules.
+                </p>
+            </div>
+            <div class="dashboard-actions d-flex gap-2 align-items-center">
+                <a href="{% url 'crp:trainer_schedule' %}" class="btn btn-sm btn-outline-primary d-none d-md-inline-flex">
+                    <i class="bi bi-calendar3"></i> View Schedule
+                </a>
+                <a href="{% url 'crp:trainer_courses' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-book"></i> My Courses
+                </a>
+                <a href="{% url 'crp:trainer_learning_content' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-journal-bookmark"></i> Content Library
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Stat Cards -->
+    <div class="stats-grid animate-fade-in-up">
+        <div class="stat-card-extended primary stagger-1">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-book"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ my_courses.count }}</div>
+                <div class="stat-card-title">My Courses</div>
+            </div>
+        </div>
+        <div class="stat-card-extended success stagger-2">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-people"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ total_students }}</div>
+                <div class="stat-card-title">Total Students</div>
+            </div>
+        </div>
+        <div class="stat-card-extended info stagger-3">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-calendar3"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ my_schedules.count }}</div>
+                <div class="stat-card-title">Weekly Classes</div>
+            </div>
+        </div>
+        <div class="stat-card-extended warning stagger-4">
+            <div class="stat-card-header">
+                <div class="stat-card-icon-wrapper"><i class="bi bi-building"></i></div>
+            </div>
+            <div class="stat-card-content">
+                <div class="stat-card-number">{{ instructor.department.code|default:"N/A" }}</div>
+                <div class="stat-card-title">Department</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="trainer-reference-grid animate-fade-in-up">
+        <section class="trainer-reference-card">
+            <div class="trainer-reference-card-head">
+                <h5><i class="bi bi-person-exclamation"></i> Needs attention</h5>
+                <a href="{% url 'crp:trainer_students' %}" class="btn btn-sm btn-outline-primary">All students</a>
+            </div>
+            {% for item in attention %}
+            <div class="trainer-reference-row">
+                <div class="trainer-reference-avatar">{{ item.student.user.first_name|first }}{{ item.student.user.last_name|first }}</div>
+                <div>
+                    <div class="trainer-reference-name">{{ item.student.user.get_full_name }}</div>
+                    <div class="trainer-reference-detail">{{ item.detail }}</div>
+                </div>
+                <div class="trainer-reference-score">{% if item.score != None %}{{ item.score }}%{% else %}—{% endif %}</div>
+                <a href="{% url 'crp:trainer_student_detail' item.student.id %}" class="btn btn-sm btn-outline-primary">Open</a>
+            </div>
+            {% empty %}<div class="p-4 text-muted">No students currently need attention.</div>
+            {% endfor %}
+        </section>
+        <section class="trainer-reference-card">
+            <div class="trainer-reference-card-head">
+                <h5><i class="bi bi-check2-square"></i> Your tasks</h5>
+                <span class="tag tag-neutral">This week</span>
+            </div>
+            {% for task in trainer_tasks %}
+            <div class="trainer-task-row">
+                <button type="button" aria-label="Mark task complete">✓</button>
+                <div>
+                    <div class="trainer-reference-name">{{ task.title }}</div>
+                    <div class="trainer-task-meta">{{ task.student.user.get_full_name }}{% if task.due_date %} · due {{ task.due_date }}{% endif %}</div>
+                </div>
+                <span class="trainer-task-priority">{{ task.get_priority_display }}</span>
+            </div>
+            {% empty %}<div class="p-4 text-muted">No open tasks for assigned students.</div>
+            {% endfor %}
+        </section>
+    </div>
+
+    <div class="trainer-dashboard-charts animate-fade-in-up">
+        <section class="trainer-chart-card">
+            <div class="dashboard-section-header border-0 p-0 mb-3">
+                <div>
+                    <div class="sahe-chart-kicker">Teaching overview</div>
+                    <h5 class="dashboard-section-title mb-0"><i class="bi bi-bar-chart-line"></i> Workload snapshot</h5>
+                </div>
+                <span class="tag tag-success">This term</span>
+            </div>
+            <canvas id="trainerWorkloadChart" aria-label="Trainer workload chart"></canvas>
+        </section>
+        <section class="trainer-chart-card">
+            <div class="dashboard-section-header border-0 p-0 mb-3">
+                <div>
+                    <div class="sahe-chart-kicker">Class planning</div>
+                    <h5 class="dashboard-section-title mb-0"><i class="bi bi-calendar3"></i> Weekly classes</h5>
+                </div>
+            </div>
+            <canvas id="trainerScheduleChart" aria-label="Trainer weekly classes chart"></canvas>
+        </section>
+    </div>
+
+    <!-- Bottom Row: Courses + Profile -->
+    <div class="dashboard-bottom-grid animate-fade-in-up">
+        <div class="dashboard-section">
+            <div class="dashboard-section-header">
+                <h5 class="dashboard-section-title"><i class="bi bi-book"></i> My Courses</h5>
+                <a href="{% url 'crp:course_list' %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-arrow-right"></i> View All
+                </a>
+            </div>
+            <div class="dashboard-section-body p-0">
+                {% if my_courses %}
+                    <div class="table-responsive">
+                        <table class="table table-clickable mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Course Code</th>
+                                    <th>Course Name</th>
+                                    <th>Students</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for course in my_courses %}
+                                    <tr onclick="window.location='{% url 'crp:course_detail' course.id %}'">
+                                        <td><span class="fw-medium">{{ course.code }}</span></td>
+                                        <td>{{ course.name|truncatewords:4 }}</td>
+                                        <td><span class="badge badge-sahe">{{ course.student_count }}</span></td>
+                                        <td><span class="badge status-{{ course.status }}">{{ course.get_status_display }}</span></td>
+                                        <td>
+                                            <a href="{% url 'crp:course_detail' course.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="empty-state text-center py-5">
+                        <div class="empty-state-icon"><i class="bi bi-book"></i></div>
+                        <div class="empty-state-title">No courses assigned</div>
+                        <div class="empty-state-text">Courses will appear here when assigned to you.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div>
+            <!-- Instructor Profile -->
+            <div class="dashboard-section mb-4">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-person"></i> Profile Information</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="text-center mb-4">
+                        <div class="requester-avatar mx-auto mb-3" style="width: 80px; height: 80px; font-size: 2rem;">
+                            {{ instructor.user.get_full_name|first|upper }}
+                        </div>
+                        <h6 class="mb-1">{{ instructor.user.get_full_name }}</h6>
+                        <p class="text-muted small mb-0">{{ instructor.employee_id }}</p>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Department</small>
+                            <span class="fw-medium">{{ instructor.department.name|default:"Not Assigned" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Status</small>
+                            <span class="badge status-{{ instructor.status }}">{{ instructor.get_status_display }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Phone</small>
+                            <span class="fw-medium">{{ instructor.phone|default:"Not Provided" }}</span>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Email</small>
+                            <span class="fw-medium small">{{ instructor.user.email }}</span>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">Specialization</small>
+                            <span class="fw-medium">{{ instructor.specialization|default:"Not Specified" }}</span>
+                        </div>
+                        <div class="col-12">
+                            <small class="text-muted d-block">Qualification</small>
+                            <span class="fw-medium">{{ instructor.qualification|default:"Not Specified" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="dashboard-section">
+                <div class="dashboard-section-header">
+                    <h6 class="dashboard-section-title"><i class="bi bi-lightning"></i> Quick Actions</h6>
+                </div>
+                <div class="dashboard-section-body">
+                    <div class="quick-actions">
+                        <a href="{% url 'crp:trainer_schedule' %}" class="quick-action-btn">
+                            <i class="bi bi-calendar3"></i><span>View Schedule</span>
+                        </a>
+                        <a href="{% url 'crp:trainer_courses' %}" class="quick-action-btn">
+                            <i class="bi bi-book"></i><span>My Courses</span>
+                        </a>
+                        <a href="{% url 'crp:trainer_assessments' %}" class="quick-action-btn">
+                            <i class="bi bi-clipboard-check"></i><span>Assignments</span>
+                        </a>
+                    <a href="/admin/" class="quick-action-btn">
+                            <i class="bi bi-gear"></i><span>Profile Settings</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Weekly Schedule -->
+    <div class="dashboard-section animate-fade-in-up">
+        <div class="dashboard-section-header">
+            <h5 class="dashboard-section-title"><i class="bi bi-calendar-week"></i> Weekly Schedule</h5>
+            <a href="{% url 'crp:schedule_list' %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-arrow-right"></i> Full Schedule
+            </a>
+        </div>
+        <div class="dashboard-section-body">
+            {% if my_schedules %}
+                <div class="schedule-grid">
+                    {% for schedule in my_schedules %}
+                        <div class="schedule-item">
+                            <span class="day-badge">{{ schedule.get_day_display }}</span>
+                            <h6 class="mt-2">{{ schedule.course.code }} - {{ schedule.course.name }}</h6>
+                            <p class="text-muted mb-1">
+                                <i class="bi bi-clock me-1"></i>
+                                {{ schedule.time_slot.start_time }} - {{ schedule.time_slot.end_time }}
+                            </p>
+                            <p class="text-muted mb-1">
+                                <i class="bi bi-geo-alt me-1"></i>
+                                {{ schedule.room.building }} - {{ schedule.room.name }}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="bi bi-people me-1"></i>
+                                Capacity: {{ schedule.room.capacity }}
+                            </p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state text-center py-5">
+                    <div class="empty-state-icon"><i class="bi bi-calendar3"></i></div>
+                    <div class="empty-state-title">No scheduled classes</div>
+                    <div class="empty-state-text">Your weekly schedule will appear here.</div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    if (!window.Chart) return;
+    var colors = ['#2b5aa7', '#10b981', '#0ea5e9', '#f59e0b'];
+    var text = getComputedStyle(document.documentElement).getPropertyValue('--sahe-muted').trim() || '#6f6a66';
+    var grid = 'rgba(25, 22, 20, .08)';
+    var workload = document.getElementById('trainerWorkloadChart');
+    var schedule = document.getElementById('trainerScheduleChart');
+    if (workload) {
+        new Chart(workload, {
+            type: 'bar',
+            data: {
+                labels: ['Courses', 'Students', 'Classes'],
+                datasets: [{
+                    data: [{{ my_courses.count }}, {{ total_students }}, {{ my_schedules.count }}],
+                    backgroundColor: colors.slice(0, 3),
+                    borderRadius: 8,
+                    maxBarThickness: 42
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: text } },
+                    y: { beginAtZero: true, grid: { color: grid }, ticks: { color: text, precision: 0 } }
+                }
+            }
+        });
+    }
+    if (schedule) {
+        new Chart(schedule, {
+            type: 'doughnut',
+            data: {
+                labels: ['Scheduled', 'Open capacity'],
+                datasets: [{
+                    data: [{{ my_schedules.count }}, {{ my_courses.count|add:my_schedules.count }}],
+                    backgroundColor: [colors[0], '#eff4fb'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '68%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { color: text, usePointStyle: true, padding: 18 } }
+                }
+            }
+        });
+    }
+}());
+</script>
+{% endblock %}

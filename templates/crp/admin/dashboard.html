@@ -1,0 +1,43 @@
+{% extends 'crp/admin/admin_base.html' %}
+{% block title %}Admin Dashboard · SAHE CRP{% endblock %}
+{% block page_title %}Administration Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-4">
+    <div>
+        <h2 class="h4 mb-1">Course operations</h2>
+        <p class="text-muted mb-0">Manage courses, delivery weeks, content, enrollments, and trainers.</p>
+    </div>
+    <a class="btn btn-primary" href="{% url 'crp:admin_courses' %}"><i class="bi bi-book me-1"></i>Manage courses</a>
+</div>
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Students</small><div class="fs-3 fw-semibold">{{ total_students }}</div><a href="{% url 'crp:admin_operations_module' 'students' %}">View students</a></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Active trainers</small><div class="fs-3 fw-semibold">{{ total_instructors }}</div><a href="{% url 'crp:admin_trainers' %}">Manage trainers</a></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Courses</small><div class="fs-3 fw-semibold">{{ total_courses }}</div><a href="{% url 'crp:admin_courses' %}">Open course management</a></div></div></div>
+    <div class="col-sm-6 col-xl-3"><div class="card h-100"><div class="card-body"><small class="text-muted">Pending enrollments</small><div class="fs-3 fw-semibold">{{ pending_registrations }}</div><a href="{% url 'crp:admin_enrollments' %}?status=pending">Review requests</a></div></div></div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center"><strong>Recent enrollment activity</strong><a href="{% url 'crp:admin_enrollments' %}">View all</a></div>
+            <div class="table-responsive">
+                <table class="table mb-0 align-middle"><thead><tr><th>Student</th><th>Course</th><th>Status</th><th>Date</th></tr></thead><tbody>
+                {% for registration in recent_activity %}<tr><td>{{ registration.student.get_full_name|default:registration.student.username }}</td><td>{{ registration.course.code }}</td><td><span class="badge text-bg-{{ registration.status }}">{{ registration.get_status_display }}</span></td><td>{{ registration.registration_date|date:"d M Y H:i" }}</td></tr>{% empty %}<tr><td colspan="4" class="text-muted">No enrollment activity yet.</td></tr>{% endfor %}
+                </tbody></table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header"><strong>Academic shortcuts</strong></div>
+            <div class="list-group list-group-flush">
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_academic_module' 'weeks' %}">Weeks / Modules</a>
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_academic_module' 'materials' %}">Learning Materials</a>
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_academic_module' 'quizzes' %}">Quizzes</a>
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_academic_module' 'questions' %}">Question Banks</a>
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_academic_module' 'assessments' %}">Assessments</a>
+                <a class="list-group-item list-group-item-action" href="{% url 'crp:admin_legacy_mapping' %}">Legacy content mapping</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

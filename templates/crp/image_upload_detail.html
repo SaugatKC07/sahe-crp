@@ -1,0 +1,105 @@
+{% extends 'crp/base.html' %}
+{% load static %}
+
+{% block title %}{{ image.title }} - SAHE CRP{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'crp:image_upload_list' %}">Image Gallery</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ image.title }}</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold mb-1">{{ image.title }}</h2>
+            <p class="text-muted mb-0">Image details and information</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-0">
+                    {% if image.image %}
+                    <img src="{{ image.image.url }}" alt="{{ image.alt_text|default:image.title }}" class="w-100">
+                    {% else %}
+                    <div class="w-100 d-flex align-items-center justify-content-center bg-light" style="height: 400px;">
+                        <i class="fas fa-image fa-5x text-muted"></i>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h6 class="fw-bold mb-0">Image Information</h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless small">
+                        <tr>
+                            <td class="text-muted">Title:</td>
+                            <td class="fw-semibold">{{ image.title }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Category:</td>
+                            <td><span class="badge bg-sahe-blue">{{ image.get_category_display }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Uploaded By:</td>
+                            <td>{{ image.uploaded_by.get_full_name|default:image.uploaded_by.username }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Uploaded On:</td>
+                            <td>{{ image.created_at|date:"F d, Y, g:i A" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Last Updated:</td>
+                            <td>{{ image.updated_at|date:"F d, Y, g:i A" }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            {% if image.description %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h6 class="fw-bold mb-0">Description</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ image.description }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if image.alt_text %}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent">
+                    <h6 class="fw-bold mb-0">Alt Text</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0"><code>{{ image.alt_text }}</code></p>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'crp:image_upload_list' %}" class="btn btn-outline-secondary flex-fill">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Gallery
+                        </a>
+                        {% if image.uploaded_by == request.user or request.user.is_superuser %}
+                        <a href="{% url 'crp:image_upload_delete' image.pk %}" class="btn btn-outline-danger">
+                            <i class="fas fa-trash me-2"></i>Delete
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

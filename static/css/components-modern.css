@@ -1,0 +1,535 @@
+/* ============================================
+   SAHE Ticket Management - Reusable Components
+   ============================================ */
+
+/* Component: Information Box */
+.info-box {
+    background: var(--primary-50);
+    border: 1px solid var(--primary-100);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    display: flex;
+    gap: 0.875rem;
+}
+
+.info-box.success {
+    background: #d1fae5;
+    border-color: #a7f3d0;
+}
+
+.info-box.warning {
+    background: #fef3c7;
+    border-color: #fde68a;
+}
+
+.info-box.danger {
+    background: #fee2e2;
+    border-color: #fecaca;
+}
+
+.info-box-icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    color: var(--primary-600);
+}
+
+.info-box.success .info-box-icon { color: var(--success); }
+.info-box.warning .info-box-icon { color: var(--warning); }
+.info-box.danger .info-box-icon { color: var(--danger); }
+
+.info-box-content {
+    flex: 1;
+}
+
+.info-box-title {
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--gray-900);
+    margin-bottom: 0.25rem;
+}
+
+.info-box-text {
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    margin: 0;
+}
+
+/* Component: Status Indicator */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 600;
+}
+
+.status-indicator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: pulse-indicator 2s ease-in-out infinite;
+}
+
+@keyframes pulse-indicator {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.status-indicator.active {
+    background: #d1fae5;
+    color: #059669;
+}
+
+.status-indicator.pending {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.status-indicator.inactive {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+/* Component: User Badge */
+.user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.75rem;
+    background: var(--gray-100);
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.user-badge-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+/* Component: Time Badge */
+.time-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    color: var(--gray-600);
+    font-weight: 500;
+}
+
+.time-badge i {
+    font-size: 0.875rem;
+    color: var(--gray-400);
+}
+
+/* Component: Action Row */
+.action-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.action-row:hover {
+    background: var(--gray-50);
+    transform: translateX(2px);
+}
+
+.action-row-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: var(--primary-50);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-600);
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.action-row-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.action-row-title {
+    font-weight: 600;
+    color: var(--gray-900);
+    font-size: 0.9375rem;
+    margin-bottom: 0.125rem;
+}
+
+.action-row-text {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+}
+
+.action-row-arrow {
+    color: var(--gray-300);
+    font-size: 1.125rem;
+    transition: all var(--transition-fast);
+}
+
+.action-row:hover .action-row-arrow {
+    color: var(--primary-600);
+    transform: translateX(4px);
+}
+
+/* Component: Loading Skeleton */
+.skeleton {
+    background: linear-gradient(90deg, var(--gray-200) 0%, var(--gray-100) 50%, var(--gray-200) 100%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+    border-radius: var(--radius-md);
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.skeleton-text {
+    height: 0.875rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-bottom: 0.75rem;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: var(--radius-lg);
+    margin-bottom: 1rem;
+}
+
+/* Component: Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-xl);
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gray-400);
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+}
+
+.empty-state-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: var(--gray-500);
+    font-size: 0.9375rem;
+    max-width: 400px;
+    margin: 0 auto 1.5rem;
+}
+
+.empty-state-action {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Component: Stat Number */
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    line-height: 1;
+}
+
+.stat-number.small {
+    font-size: 2rem;
+}
+
+.stat-number.large {
+    font-size: 3rem;
+}
+
+/* Component: Progress Bar */
+.progress-bar-custom {
+    height: 6px;
+    background: var(--gray-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.progress-bar-custom-fill {
+    height: 100%;
+    background: var(--gradient-primary);
+    border-radius: var(--radius-full);
+    transition: width 0.5s ease;
+}
+
+.progress-bar-custom.success .progress-bar-custom-fill {
+    background: var(--success);
+}
+
+.progress-bar-custom.warning .progress-bar-custom-fill {
+    background: var(--warning);
+}
+
+.progress-bar-custom.danger .progress-bar-custom-fill {
+    background: var(--danger);
+}
+
+/* Component: Tooltip */
+.tooltip-custom {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: help;
+}
+
+.tooltip-custom-icon {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--gray-200);
+    color: var(--gray-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+    transition: all var(--transition-fast);
+}
+
+.tooltip-custom:hover .tooltip-custom-icon {
+    background: var(--primary-600);
+    color: #fff;
+}
+
+/* Component: Divider */
+.divider {
+    height: 1px;
+    background: var(--gray-200);
+    margin: 1.5rem 0;
+}
+
+.divider.text-center {
+    display: flex;
+    align-items: center;
+    color: var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.divider.text-center::before,
+.divider.text-center::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gray-200);
+}
+
+.divider.text-center::before {
+    margin-right: 1rem;
+}
+
+.divider.text-center::after {
+    margin-left: 1rem;
+}
+
+/* Component: Link with Icon */
+.link-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    color: var(--primary-600);
+    text-decoration: none;
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.link-icon:hover {
+    color: var(--primary-500);
+    gap: 0.625rem;
+}
+
+.link-icon i {
+    font-size: 0.875rem;
+}
+
+/* Component: Tag List */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.75rem;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    border-radius: var(--radius-full);
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+
+.tag.secondary {
+    background: var(--secondary-50);
+    color: var(--secondary-700);
+}
+
+.tag.removable {
+    padding-right: 0.5rem;
+}
+
+.tag-remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: currentColor;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all var(--transition-fast);
+}
+
+.tag-remove:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transform: scale(1.1);
+}
+
+/* Component: Pill Button Group */
+.pill-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.pill-btn {
+    padding: 0.5rem 1rem;
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-700);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-decoration: none;
+}
+
+.pill-btn:hover {
+    background: var(--gray-200);
+    border-color: var(--gray-300);
+}
+
+.pill-btn.active {
+    background: var(--primary-600);
+    border-color: var(--primary-600);
+    color: #fff;
+}
+
+/* Component: Contact Card */
+.contact-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    text-align: center;
+    transition: all var(--transition-normal);
+}
+
+.contact-card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-200);
+    transform: translateY(-4px);
+}
+
+.contact-card-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--gradient-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 auto 0.75rem;
+}
+
+.contact-card-name {
+    font-weight: 600;
+    color: var(--gray-900);
+    font-size: 0.9375rem;
+    margin-bottom: 0.25rem;
+}
+
+.contact-card-role {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+}
+
+/* Responsive adjustments for components */
+@media (max-width: 767.98px) {
+    .empty-state {
+        padding: 2rem 1rem;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .contact-card {
+        padding: 1rem;
+    }
+}

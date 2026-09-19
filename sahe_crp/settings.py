@@ -20,7 +20,10 @@ def env_list(name, default=''):
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
+VERCEL_HOST = os.environ.get('VERCEL_URL', '')
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')
+if VERCEL_HOST and VERCEL_HOST not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(VERCEL_HOST)
 
 # Add Devin preview ports for development if needed
 if DEBUG:
@@ -244,6 +247,10 @@ if os.environ.get('USE_X_FORWARDED_PROTO', str(not DEBUG)).lower() == 'true':
 
 # CSRF Trusted Origins - Development only
 CSRF_TRUSTED_ORIGINS = env_list('CSRF_TRUSTED_ORIGINS')
+if VERCEL_HOST:
+    vercel_origin = f'https://{VERCEL_HOST}'
+    if vercel_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(vercel_origin)
 if DEBUG and not CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS = [
         'http://127.0.0.1:8000',

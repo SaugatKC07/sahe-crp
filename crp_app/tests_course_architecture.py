@@ -43,6 +43,21 @@ class CourseArchitectureEndToEndTests(TestCase):
         registration.approve(self.admin)
         return registration
 
+    def test_admin_created_courses_receive_readable_unique_slugs(self):
+        first = Course.objects.create(
+            code='QA-NEW', name='Robotics Foundations', description='New course',
+            credits=3, level='certificate', department=self.department, status='active',
+            start_date=timezone.localdate(), end_date=timezone.localdate() + timedelta(days=90),
+        )
+        second = Course.objects.create(
+            code='QA-NEW2', name='Robotics Foundations', description='Another course',
+            credits=3, level='certificate', department=self.department, status='active',
+            start_date=timezone.localdate(), end_date=timezone.localdate() + timedelta(days=90),
+        )
+        self.assertEqual(first.slug, 'robotics-foundations')
+        self.assertEqual(second.slug, 'robotics-foundations-qa-new2')
+        self.assertNotEqual(first.slug, second.slug)
+
     def test_admin_week_values_render_exactly_and_stay_course_scoped(self):
         self.client.force_login(self.admin)
         response = self.client.post(reverse('crp:admin_course_detail', args=[self.courses[0].id]), {

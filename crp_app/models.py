@@ -132,12 +132,13 @@ class Course(models.Model):
         if not self.slug:
             base_slug = slugify(self.name) or slugify(self.code)
             candidate = base_slug
-            if self.pk:
-                conflict = Course.objects.filter(slug=candidate).exclude(pk=self.pk).exists()
-            else:
-                conflict = Course.objects.filter(slug=candidate).exists()
-            if conflict:
+            queryset = Course.objects.exclude(pk=self.pk) if self.pk else Course.objects.all()
+            if queryset.filter(slug=candidate).exists():
                 candidate = f"{base_slug}-{slugify(self.code)}"
+            suffix = 2
+            while queryset.filter(slug=candidate).exists():
+                candidate = f"{base_slug}-{slugify(self.code)}-{suffix}"
+                suffix += 1
             self.slug = candidate
         super().save(*args, **kwargs)
 

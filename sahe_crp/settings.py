@@ -288,23 +288,28 @@ CRISPY_BOOTSTRAP5 = {
 }
 
 # Logging
+LOG_HANDLERS = {
+    'console': {
+        'level': 'INFO',
+        'class': 'logging.StreamHandler',
+    },
+}
+LOG_HANDLER_NAMES = ['console']
+if DEBUG:
+    LOG_HANDLERS['file'] = {
+        'level': 'ERROR',
+        'class': 'logging.FileHandler',
+        'filename': BASE_DIR / 'logs' / 'django.log',
+    }
+    LOG_HANDLER_NAMES.insert(0, 'file')
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-        },
-        'console': {
-            'level': 'INFO',
-            'class': 'logging.StreamHandler',
-        },
-    },
+    'handlers': LOG_HANDLERS,
     'loggers': {
         'django': {
-            'handlers': ['file', 'console'],
+            'handlers': LOG_HANDLER_NAMES,
             'level': 'INFO',
             'propagate': True,
         },
@@ -312,4 +317,5 @@ LOGGING = {
 }
 
 # Create logs directory if it doesn't exist
-os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+if DEBUG:
+    os.makedirs(BASE_DIR / 'logs', exist_ok=True)

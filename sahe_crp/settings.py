@@ -139,12 +139,12 @@ USE_I18N = True
 USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
-STATIC_URL = os.environ.get('STATIC_URL', '/static/')
+STATIC_URL = os.environ.get('STATIC_URL', '/static/').strip() or '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = Path(os.environ.get('STATIC_ROOT', BASE_DIR / 'staticfiles'))
 
 # Media files
-MEDIA_URL = os.environ.get('MEDIA_URL', '/media/')
+MEDIA_URL = os.environ.get('MEDIA_URL', '/media/').strip() or '/media/'
 MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
 MAX_LEARNING_MATERIAL_UPLOAD_MB = int(os.environ.get('MAX_LEARNING_MATERIAL_UPLOAD_MB', '250'))
 
@@ -175,6 +175,10 @@ if USE_S3:
     }
     
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/" if AWS_S3_CUSTOM_DOMAIN else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+
+# Django requires separate URL prefixes for static and media files.
+if MEDIA_URL.rstrip('/') == STATIC_URL.rstrip('/'):
+    MEDIA_URL = '/media/' if STATIC_URL.rstrip('/') != '/media' else '/uploads/'
 
 # Keep the staticfiles backend available regardless of deployment environment.
 STORAGES.setdefault(

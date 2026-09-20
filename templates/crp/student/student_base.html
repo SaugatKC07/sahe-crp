@@ -462,7 +462,7 @@
                     <i class="bi bi-gear"></i>
                     <span>Settings</span>
                 </a>
-                <a href="{% url 'crp:logout' %}" class="crp-sidebar-item">
+                <a href="{% url 'crp:logout' %}" class="crp-sidebar-item" hx-boost="false">
                     <i class="bi bi-box-arrow-right"></i>
                     <span>Logout</span>
                 </a>
@@ -558,7 +558,7 @@
         <div class="sahe-popover-head"><div><h2 class="sahe-popover-title">{{ user.get_full_name|default:user.email }}</h2><small class="text-muted">{{ user.email }}</small></div></div>
         <a class="sahe-popover-item" href="{% url 'crp:student_settings' %}"><i class="bi bi-gear"></i><span><strong>Settings</strong><small>Profile, privacy and appearance</small></span></a>
         <a class="sahe-popover-item" href="{% url 'crp:student_achievements' %}"><i class="bi bi-trophy"></i><span><strong>Achievements</strong><small>Badges, streaks and leaderboard</small></span></a>
-        <a class="sahe-popover-item" href="{% url 'crp:logout' %}" style="color:var(--sahe-coral)"><i class="bi bi-box-arrow-right"></i><span><strong>Sign out</strong></span></a>
+        <a class="sahe-popover-item" href="{% url 'crp:logout' %}" hx-boost="false" style="color:var(--sahe-coral)"><i class="bi bi-box-arrow-right"></i><span><strong>Sign out</strong></span></a>
     </aside>
 
     <div class="sahe-command-backdrop" id="saheCommand" aria-hidden="true">

@@ -2005,6 +2005,15 @@ class CourseListView(LoginRequiredMixin, ListView):
     context_object_name = 'courses'
     paginate_by = 12
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['catalog_base_template'] = (
+            'crp/student/student_base.html'
+            if get_user_role(self.request.user) == 'student'
+            else 'crp/base.html'
+        )
+        return context
+
     def get_queryset(self):
         queryset = Course.objects.select_related('department', 'instructor').prefetch_related('prerequisites')
         if get_user_role(self.request.user) == 'trainer':

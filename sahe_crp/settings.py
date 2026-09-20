@@ -141,7 +141,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = os.environ.get('STATIC_URL', '/static/').strip() or '/static/'
 STATICFILES_DIRS = [BASE_DIR / "static"]
-STATIC_ROOT = Path(os.environ.get('STATIC_ROOT', BASE_DIR / 'staticfiles'))
+_default_static_root = BASE_DIR / 'staticfiles'
+if os.environ.get('VERCEL') and not os.environ.get('STATIC_ROOT'):
+    _static_segment = STATIC_URL.strip('/') or 'static'
+    _default_static_root = BASE_DIR / '.vercel' / 'output' / 'static' / _static_segment
+STATIC_ROOT = Path(os.environ.get('STATIC_ROOT', _default_static_root))
 
 # Media files
 MEDIA_URL = os.environ.get('MEDIA_URL', '/media/').strip() or '/media/'

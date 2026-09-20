@@ -176,6 +176,19 @@ if USE_S3:
     
     MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/" if AWS_S3_CUSTOM_DOMAIN else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
 
+# Keep the staticfiles backend available regardless of deployment environment.
+STORAGES.setdefault(
+    'default',
+    {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+)
+STORAGES['staticfiles'] = {
+    'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+}
+print(
+    f"Django settings: module={os.environ.get('DJANGO_SETTINGS_MODULE')!r}, "
+    f"DEBUG={DEBUG!r}, USE_S3={USE_S3!r}, STORAGES={STORAGES!r}"
+)
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

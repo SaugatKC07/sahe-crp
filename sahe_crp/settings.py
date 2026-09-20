@@ -184,10 +184,6 @@ STORAGES.setdefault(
 STORAGES['staticfiles'] = {
     'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
 }
-print(
-    f"Django settings: module={os.environ.get('DJANGO_SETTINGS_MODULE')!r}, "
-    f"DEBUG={DEBUG!r}, USE_S3={USE_S3!r}, STORAGES={STORAGES!r}"
-)
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

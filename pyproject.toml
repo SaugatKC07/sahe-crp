@@ -1,2 +1,0 @@
-[tool.vercel]
-entrypoint = "sahe_crp.wsgi:application"

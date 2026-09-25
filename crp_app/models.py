@@ -1288,12 +1288,61 @@ class StudentPreference(models.Model):
         choices=[('light', 'Light'), ('dark', 'Dark')],
         default='light',
     )
+    job_keywords = models.JSONField(default=list, blank=True)
+    job_locations = models.JSONField(default=list, blank=True)
+    job_remote_only = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Preferences for {self.student.user.username}"
 
 # Career Section Models - Phase 2B
+class JobSource(models.Model):
+    """Configuration for an external job listing provider."""
+    PROVIDER_CHOICES = [('adzuna', 'Adzuna')]
+
+    name = models.CharField(max_length=100, unique=True)
+    provider = models.CharField(max_length=30, choices=PROVIDER_CHOICES, default='adzuna')
+    country = models.CharField(max_length=2, default='au')
+    search_query = models.CharField(max_length=200, blank=True)
+    results_per_page = models.PositiveSmallIntegerField(default=50)
+    is_enabled = models.BooleanField(default=True)
+    sync_interval_hours = models.PositiveSmallIntegerField(default=6)
+    configuration = models.JSONField(default=dict, blank=True)
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.get_provider_display()})"
+
+
+class JobSyncRun(models.Model):
+    """Audit record for a provider sync attempt."""
+    STATUS_CHOICES = [
+        ('running', 'Running'),
+        ('succeeded', 'Succeeded'),
+        ('failed', 'Failed'),
+    ]
+
+    source = models.ForeignKey(JobSource, on_delete=models.CASCADE, related_name='sync_runs')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='running')
+    jobs_seen = models.PositiveIntegerField(default=0)
+    jobs_created = models.PositiveIntegerField(default=0)
+    jobs_updated = models.PositiveIntegerField(default=0)
+    jobs_expired = models.PositiveIntegerField(default=0)
+    jobs_stale = models.PositiveIntegerField(default=0)
+    error_message = models.TextField(blank=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+
+    def __str__(self):
+        return f"{self.source.name} sync {self.started_at:%Y-%m-%d %H:%M} ({self.status})"
+
+
 class JobListing(models.Model):
     """Job listings for student matching"""
     FIELD_CHOICES = [
@@ -1324,6 +1373,14 @@ class JobListing(models.Model):
     posted_date = models.DateField()
     application_deadline = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
+    source = models.ForeignKey(
+        JobSource, on_delete=models.SET_NULL, null=True, blank=True, related_name='jobs',
+    )
+    source_external_id = models.CharField(max_length=255, blank=True)
+    apply_url = models.URLField(max_length=1000, blank=True)
+    is_remote = models.BooleanField(default=False)
+    last_seen_at = models.DateTimeField(null=True, blank=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -1336,6 +1393,13 @@ class JobListing(models.Model):
             models.Index(fields=['fields']),
             models.Index(fields=['match_percentage']),
             models.Index(fields=['posted_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['source', 'source_external_id'],
+                condition=~models.Q(source_external_id=''),
+                name='unique_job_source_external_id',
+            ),
         ]
 
 class JobApplication(models.Model):

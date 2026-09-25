@@ -1,0 +1,29 @@
+{% extends 'crp/student/student_base.html' %}
+
+{% block title %}Job preferences · SAHE CRP{% endblock %}
+{% block page_title %}Job Preferences{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:760px">
+    <div class="card-body">
+        <p class="text-muted">Choose keywords and locations to improve job recommendations. Separate multiple values with commas.</p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label" for="job-keywords">Job keywords</label>
+                <input class="form-control" id="job-keywords" name="job_keywords" value="{{ preferences.job_keywords|join:', ' }}" maxlength="2000" placeholder="Python, analytics, graduate">
+            </div>
+            <div class="mb-3">
+                <label class="form-label" for="job-locations">Preferred locations</label>
+                <input class="form-control" id="job-locations" name="job_locations" value="{{ preferences.job_locations|join:', ' }}" maxlength="2000" placeholder="Sydney, Melbourne, Remote">
+            </div>
+            <div class="form-check mb-4">
+                <input class="form-check-input" type="checkbox" id="job-remote-only" name="job_remote_only" {% if preferences.job_remote_only %}checked{% endif %}>
+                <label class="form-check-label" for="job-remote-only">Only recommend remote jobs</label>
+            </div>
+            <button class="btn btn-primary" type="submit">Save preferences</button>
+            <a class="btn btn-secondary" href="{% url 'crp:student_job_recommendations' %}">View recommendations</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

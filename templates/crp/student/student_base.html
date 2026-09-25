@@ -389,6 +389,10 @@
                     <i class="bi bi-briefcase"></i>
                     <span>Job Board</span>
                 </a>
+                <a href="{% url 'crp:student_job_recommendations' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_job_recommendations' %}active{% endif %}"><i class="bi bi-stars"></i><span>Recommended Jobs</span></a>
+                <a href="{% url 'crp:student_job_applications' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_job_applications' %}active{% endif %}"><i class="bi bi-send"></i><span>My Applications</span></a>
+                <a href="{% url 'crp:student_saved_jobs' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_saved_jobs' %}active{% endif %}"><i class="bi bi-bookmark"></i><span>Saved Jobs</span></a>
+                <a href="{% url 'crp:student_job_preferences' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_job_preferences' %}active{% endif %}"><i class="bi bi-sliders"></i><span>Job Preferences</span></a>
                 <a href="{% url 'crp:student_resume' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'student_resume' %}active{% endif %}">
                     <i class="bi bi-file-earmark-person"></i>
                     <span>Resume Builder</span>

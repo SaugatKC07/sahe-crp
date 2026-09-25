@@ -1,0 +1,40 @@
+{% extends 'crp/student/student_base.html' %}
+
+{% block title %}{{ page_title }} · SAHE CRP{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap gap-2 mb-3">
+    <a class="btn btn-secondary btn-sm" href="{% url 'crp:student_jobs' %}">Discover jobs</a>
+    <a class="btn btn-secondary btn-sm" href="{% url 'crp:student_saved_jobs' %}">Saved jobs</a>
+    <a class="btn btn-secondary btn-sm" href="{% url 'crp:student_job_preferences' %}">Job preferences</a>
+</div>
+<div class="card">
+    <div class="card-body">
+        {% if applications %}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead><tr><th>Role</th><th>Company</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+                    <tbody>
+                    {% for application in applications %}
+                        <tr>
+                            <td><a href="{% url 'crp:student_job_detail' application.job_id %}">{{ application.job.title }}</a></td>
+                            <td>{{ application.job.company }}</td>
+                            <td>{{ application.get_status_display }}</td>
+                            <td>{{ application.updated_at|date:"d M Y" }}</td>
+                            <td>
+                                {% if application.job.apply_url %}
+                                    <a href="{{ application.job.apply_url }}" target="_blank" rel="noopener noreferrer">Employer listing</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="mb-0 text-muted">{% if page_title == 'Saved jobs' %}You have no saved jobs yet.{% else %}You have not tracked any job applications yet.{% endif %}</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

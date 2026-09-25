@@ -1,0 +1,83 @@
+{% extends 'crp/admin/admin_base.html' %}
+
+{% block title %}Global Job Sources · Admin{% endblock %}
+{% block page_title %}Global Job Sources{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <p class="text-muted mb-0">Configure Adzuna sources and trigger or inspect provider synchronization.</p>
+</div>
+<div class="card mb-4">
+    <div class="card-body border-bottom">
+        <h2 class="h5">Add a source</h2>
+        <form method="post" class="row g-2 align-items-end">
+            {% csrf_token %}<input type="hidden" name="action" value="save_source">
+            <div class="col-md-3"><label class="form-label" for="new-source-name">Name</label><input class="form-control" id="new-source-name" name="name" required maxlength="100"></div>
+            <div class="col-md-2"><label class="form-label" for="new-source-provider">Provider</label><select class="form-select" id="new-source-provider" name="provider"><option value="adzuna">Adzuna</option></select></div>
+            <div class="col-md-2"><label class="form-label" for="new-source-country">Country</label><input class="form-control" id="new-source-country" name="country" value="au" required maxlength="2"></div>
+            <div class="col-md-3"><label class="form-label" for="new-source-query">Search query</label><input class="form-control" id="new-source-query" name="search_query" maxlength="200"></div>
+            <div class="col-md-1"><label class="form-label" for="new-source-page-size">Page size</label><input class="form-control" id="new-source-page-size" type="number" name="results_per_page" value="50" min="1" max="100"></div>
+            <div class="col-md-1"><button class="btn btn-primary" type="submit">Add</button></div>
+            <input type="hidden" name="is_enabled" value="on">
+        </form>
+    </div>
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <h2 class="h5 mb-0">Configured sources</h2>
+        <form method="post">
+            {% csrf_token %}
+            <button class="btn btn-primary btn-sm" type="submit">Sync all enabled</button>
+        </form>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Name / query</th><th>Provider / country</th><th>Page size</th><th>Listings</th><th>Enabled</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for source in sources %}
+                <tr>
+                    <td colspan="5">
+                        <form method="post" class="row g-2 align-items-center">
+                            {% csrf_token %}<input type="hidden" name="action" value="save_source"><input type="hidden" name="source_id" value="{{ source.pk }}">
+                            <div class="col-md-4"><input class="form-control form-control-sm" aria-label="Source name" name="name" value="{{ source.name }}" required><input class="form-control form-control-sm mt-1" aria-label="Search query" name="search_query" value="{{ source.search_query }}" placeholder="Search query"></div>
+                            <div class="col-md-2"><select class="form-select form-select-sm" name="provider" aria-label="Provider"><option value="adzuna" selected>Adzuna</option></select><input class="form-control form-control-sm mt-1" aria-label="Country" name="country" value="{{ source.country }}" maxlength="2" required></div>
+                            <div class="col-md-1"><input class="form-control form-control-sm" aria-label="Results per page" type="number" name="results_per_page" value="{{ source.results_per_page }}" min="1" max="100"></div>
+                            <div class="col-md-2">{{ source.job_count }} jobs</div>
+                            <div class="col-md-1"><label><input type="checkbox" name="is_enabled" {% if source.is_enabled %}checked{% endif %}> Enabled</label></div>
+                            <div class="col-md-2"><button class="btn btn-outline-secondary btn-sm" type="submit">Save config</button></div>
+                        </form>
+                    </td>
+                    <td>
+                        {% if source.is_enabled %}
+                        <form method="post">
+                            {% csrf_token %}<input type="hidden" name="source_id" value="{{ source.pk }}">
+                            <button class="btn btn-outline-primary btn-sm" type="submit">Sync now</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6" class="text-muted">No job sources configured. Add one using the form above.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header"><h2 class="h5 mb-0">Recent sync runs</h2></div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead><tr><th>Source</th><th>Status</th><th>Seen</th><th>Created</th><th>Updated</th><th>Started</th><th>Details</th></tr></thead>
+            <tbody>
+            {% for run in sync_runs %}
+                <tr>
+                    <td>{{ run.source.name }}</td><td>{{ run.get_status_display }}</td>
+                    <td>{{ run.jobs_seen }}</td><td>{{ run.jobs_created }}</td><td>{{ run.jobs_updated }}</td>
+                    <td>{{ run.started_at|date:"d M Y H:i" }}</td><td>{{ run.error_message|default:"—" }}</td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="7" class="text-muted">No syncs have run yet.</td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

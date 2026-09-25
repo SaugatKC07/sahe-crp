@@ -241,7 +241,7 @@
             <div class="job-detail-card">
                 <div class="job-detail-header">{{ job.match_percentage }}% skill match</div>
                 <h3 class="job-detail-title">{{ job.title }}</h3>
-                <div class="job-detail-meta">{{ job.company }} · {{ job.location }} · {{ job.get_job_type_display }}</div>
+                <div class="job-detail-meta">{{ job.company }} · {{ job.location }} · {{ job.get_job_type_display }}{% if job.is_remote %} · Remote{% endif %}{% if job.source %} · via {{ job.source.name }}{% endif %}</div>
                 <div style="height: 1px; background: var(--color-divider); margin: 18px 0;"></div>
                 <p class="job-detail-description">{{ job.description }}</p>
                 
@@ -271,8 +271,9 @@
                 <div class="job-detail-actions">
                     <form method="post" action="{% url 'crp:student_apply_job' job.id %}">
                         {% csrf_token %}
-                        <button type="submit" class="btn btn-primary">{{ apply_label }}</button>
+                        <button type="submit" class="btn btn-primary">{% if job.apply_url and application.status == 'applied' %}Application recorded{% elif job.apply_url %}Record application status{% else %}{{ apply_label }}{% endif %}</button>
                     </form>
+                    {% if job.apply_url %}<a href="{{ job.apply_url }}" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Apply on employer site</a>{% endif %}
                     <form method="post" action="{% url 'crp:student_save_job' job.id %}">
                         {% csrf_token %}
                         <button type="submit" class="btn btn-secondary">{{ save_label }}</button>

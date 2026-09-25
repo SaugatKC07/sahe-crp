@@ -252,21 +252,30 @@
 
 {% block content %}
 <div class="jobs-container">
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-sm {% if not recommendations %}btn-primary{% else %}btn-secondary{% endif %}" href="{% url 'crp:student_jobs' %}">Discover</a>
+        <a class="btn btn-sm {% if recommendations %}btn-primary{% else %}btn-secondary{% endif %}" href="{% url 'crp:student_job_recommendations' %}">For you</a>
+        <a class="btn btn-sm btn-secondary" href="{% url 'crp:student_job_applications' %}">My applications</a>
+        <a class="btn btn-sm btn-secondary" href="{% url 'crp:student_saved_jobs' %}">Saved jobs</a>
+        <a class="btn btn-sm btn-secondary" href="{% url 'crp:student_job_preferences' %}">Preferences</a>
+    </div>
+    {% if recommendations %}<h2 class="h4 mb-3">Recommended for you</h2>{% endif %}
     <div class="jobs-header">
-        <div class="jobs-search">
-            <i class="bi bi-search"></i>
-            <input type="text" name="q" value="{{ job_query }}" placeholder="Search role, company or skill">
-        </div>
-        <div class="jobs-filters">
-            {% for field in field_filters %}
-                <button class="filter-chip {% if job_field == field %}active{% endif %}" 
-                        onclick="location.href='?field={{ field }}&q={{ job_query }}'">
-                    {{ field }}
-                </button>
-            {% endfor %}
-        </div>
+        <form method="get" class="d-flex flex-wrap align-items-center gap-2">
+            <div class="jobs-search">
+                <i class="bi bi-search"></i>
+                <input type="search" name="q" value="{{ job_query }}" placeholder="Search role, company or skill">
+            </div>
+            {% if not recommendations %}
+            <select name="field" class="form-select" aria-label="Filter by job field" style="width:auto">
+                {% for field in field_filters %}
+                    <option value="{{ field }}" {% if job_field == field %}selected{% endif %}>{{ field|title }}</option>
+                {% endfor %}
+            </select>
+            {% endif %}
+            <button type="submit" class="btn btn-secondary">Search</button>
+        </form>
         <div style="flex: 1;"></div>
-        <button class="btn btn-secondary" onclick="exportJobs()">Export matches (CSV)</button>
     </div>
     
     <div class="jobs-grid">
@@ -279,6 +288,7 @@
                                 <div class="job-title">{{ job.title }}</div>
                                 <div class="job-company">{{ job.company }} · {{ job.location }}</div>
                                 <div class="job-location">{{ job.salary }}</div>
+                                <div class="job-posted">{{ job.source_name }}{% if job.apply_url %} · External listing{% endif %}</div>
                             </div>
                             <div class="job-match">{{ job.match }}%</div>
                         </div>
@@ -310,18 +320,11 @@
                 <p class="job-detail-description">
                     1. Click on a job to view details<br>
                     2. Save jobs for later review<br>
-                    3. Apply directly with your SAHE profile<br>
+                    3. Apply on the employer site and track your application here<br>
                     4. Track your application status
                 </p>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-function exportJobs() {
-    // Placeholder for CSV export functionality
-    alert('CSV export functionality - to be implemented with actual data export');
-}
-</script>
 {% endblock %}

@@ -52,6 +52,7 @@
             <a class="admin-link" href="{% url 'crp:admin_operations_module' 'live-sessions' %}"><i class="bi bi-camera-video"></i>Live Sessions</a>
             <a class="admin-link" href="{% url 'crp:admin_operations_module' 'support' %}"><i class="bi bi-life-preserver"></i>Support Tickets</a>
             <a class="admin-link" href="{% url 'crp:admin_operations_module' 'integrations' %}"><i class="bi bi-plug"></i>Integrations</a>
+            <a class="admin-link {% if request.resolver_match.url_name == 'admin_job_sources' %}active{% endif %}" href="{% url 'crp:admin_job_sources' %}"><i class="bi bi-briefcase"></i>Global Job Sources</a>
             <a class="admin-link" href="{% url 'crp:admin_operations_module' 'success-stories' %}"><i class="bi bi-stars"></i>Success Stories</a>
             <div class="admin-nav-title">System</div>
             <a class="admin-link" href="{% url 'crp:admin_system_module' 'reports' %}"><i class="bi bi-bar-chart"></i>Reports</a>

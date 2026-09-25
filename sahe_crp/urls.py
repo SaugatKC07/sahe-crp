@@ -12,6 +12,7 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 urlpatterns = [
+    path('api/cron/jobs/', include(('crp_app.cron_urls', 'job_cron'))),
     path('admin/', admin.site.urls),
     path('accounts/', include('allauth.urls')),
     path('crp/', include('crp_app.urls')),

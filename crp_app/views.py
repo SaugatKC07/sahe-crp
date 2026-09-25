@@ -10,7 +10,8 @@ from django.http import Http404, HttpResponse, JsonResponse, HttpResponseForbidd
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.urls import reverse, reverse_lazy
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
 from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
@@ -19,6 +20,7 @@ from datetime import timedelta, datetime
 from decimal import Decimal
 import json
 import random
+import hmac
 
 from .models import (
     Course, Registration, Schedule, Instructor, Room, TimeSlot, Waitlist, Announcement, 
@@ -37,7 +39,8 @@ from .models import (
     # Career Section Models - Phase 2B
     JobListing, JobApplication, Resume, ResumeExperience, ResumeEducation,
     InterviewSet, InterviewQuestion, InterviewAttempt,
-    LinkedInProfile, Badge, StudentBadge, Streak, Leaderboard
+    LinkedInProfile, Badge, StudentBadge, Streak, Leaderboard,
+    JobSource, JobSyncRun,
 )
 from .services import (
     eligible_assessments,
@@ -51,6 +54,8 @@ from .forms import RegistrationForm, CourseForm, InstructorForm, AnnouncementFor
 from .utils import generate_registration_pdf, export_courses_to_excel, send_registration_email, export_rows_to_excel
 from .decorators import get_user_role, role_required
 from .material_uploads import validate_material_upload
+from .job_matching import recommendation_score
+from .job_sync import sync_job_source
 
 
 def create_notification(user, title, message='', target_url='', category='general'):
@@ -3812,8 +3817,108 @@ def student_settings_by_id(request, student_id):
     return render(request, 'crp/student/student_settings.html', context)
 
 # Career Section Views - Phase 2B
+@role_required('admin')
+def admin_job_sources(request):
+    """Review configured external job sources and recent sync history."""
+    if request.method == 'POST':
+        if request.POST.get('action') == 'save_source':
+            name = (request.POST.get('name') or '').strip()
+            provider = (request.POST.get('provider') or 'adzuna').strip()
+            country = (request.POST.get('country') or '').strip().lower()
+            try:
+                results_per_page = int(request.POST.get('results_per_page', '50'))
+            except ValueError:
+                messages.error(request, 'Results per page must be a number from 1 to 100.')
+                return redirect('crp:admin_job_sources')
+            if (
+                not name or provider not in dict(JobSource.PROVIDER_CHOICES)
+                or len(country) != 2 or not country.isascii() or not country.isalpha()
+                or not 1 <= results_per_page <= 100
+            ):
+                messages.error(request, 'Enter a name, valid provider/country, and 1–100 results per page.')
+                return redirect('crp:admin_job_sources')
+
+            source_id = request.POST.get('source_id')
+            source = get_object_or_404(JobSource, pk=source_id) if source_id else JobSource()
+            if JobSource.objects.filter(name=name).exclude(pk=source.pk).exists():
+                messages.error(request, f'A job source named "{name}" already exists.')
+                return redirect('crp:admin_job_sources')
+            source.name = name
+            source.provider = provider
+            source.country = country
+            source.search_query = (request.POST.get('search_query') or '').strip()[:200]
+            source.results_per_page = results_per_page
+            source.is_enabled = 'is_enabled' in request.POST
+            try:
+                source.save()
+            except ValidationError as exc:
+                messages.error(request, f'Could not save source: {exc}')
+            else:
+                messages.success(request, f'Job source "{source.name}" saved.')
+            return redirect('crp:admin_job_sources')
+
+        source_id = request.POST.get('source_id')
+        sources = JobSource.objects.filter(is_enabled=True)
+        if source_id:
+            sources = sources.filter(pk=source_id)
+        if not sources.exists():
+            messages.error(request, 'No enabled job source matched the requested sync.')
+            return redirect('crp:admin_job_sources')
+        had_error = False
+        for source in sources:
+            try:
+                run = sync_job_source(source)
+            except Exception as exc:
+                had_error = True
+                messages.error(request, f'{source.name} sync failed: {exc}')
+            else:
+                messages.success(
+                    request,
+                    f'{source.name}: {run.jobs_created} new and {run.jobs_updated} updated jobs.',
+                )
+        if had_error:
+            messages.warning(request, 'One or more provider syncs failed; see the run history below.')
+        return redirect('crp:admin_job_sources')
+
+    return render(request, 'crp/admin/job_sources.html', {
+        'sources': JobSource.objects.annotate(job_count=Count('jobs')).order_by('name'),
+        'sync_runs': JobSyncRun.objects.select_related('source')[:20],
+        'role': 'admin',
+    })
+
+
+@csrf_exempt
+@require_http_methods(['GET', 'POST'])
+def cron_sync_jobs(request):
+    """Vercel cron entry point protected by a constant-time bearer-token check."""
+    expected_token = settings.JOB_CRON_SECRET
+    supplied_token = request.headers.get('Authorization', '')
+    expected_header = f'Bearer {expected_token}'
+    if not expected_token or not hmac.compare_digest(supplied_token, 'Bearer ' + expected_token):
+        return JsonResponse({'error': 'Unauthorized'}, status=403)
+
+    results = []
+    errors = []
+    for source in JobSource.objects.filter(is_enabled=True).order_by('pk'):
+        try:
+            run = sync_job_source(source)
+        except Exception as exc:
+            errors.append({'source': source.name, 'error': str(exc)})
+        else:
+            results.append({
+                'source': source.name,
+                'jobs_seen': run.jobs_seen,
+                'jobs_created': run.jobs_created,
+                'jobs_updated': run.jobs_updated,
+            })
+    return JsonResponse(
+        {'results': results, 'errors': errors},
+        status=502 if errors else 200,
+    )
+
+
 @role_required('student')
-def student_jobs(request):
+def student_jobs(request, recommendations=False):
     """Student job matching and application tracking"""
     try:
         student = request.user.student_profile
@@ -3825,8 +3930,10 @@ def student_jobs(request):
     job_query = request.GET.get('q', '')
     job_field = request.GET.get('field', 'all').lower()
     
-    # Get all active jobs
-    jobs = JobListing.objects.filter(is_active=True)
+    preferences, _ = StudentPreference.objects.get_or_create(student=student)
+    jobs = JobListing.objects.filter(is_active=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()),
+    )
     
     # Apply field filter (SQLite doesn't support JSON contains, use alternative)
     if job_field and job_field != 'all':
@@ -3845,8 +3952,7 @@ def student_jobs(request):
             Q(skills__icontains=job_query)
         )
     
-    # Sort by match percentage
-    jobs = jobs.order_by('-match_percentage')
+    jobs = list(jobs.select_related('source').order_by('-posted_date'))
     
     # Get student's job applications
     applications = JobApplication.objects.filter(student=student)
@@ -3861,9 +3967,20 @@ def student_jobs(request):
     except Resume.DoesNotExist:
         pass
     
+    # Compute matches per student rather than relying on a shared listing score.
+    scored_jobs = [
+        (job, recommendation_score(student, job, preferences, student_skills))
+        for job in jobs
+    ]
+    if recommendations:
+        scored_jobs.sort(key=lambda row: (row[1], row[0].posted_date), reverse=True)
+        scored_jobs = [row for row in scored_jobs if row[1] > 0]
+    else:
+        scored_jobs.sort(key=lambda row: (row[1], row[0].posted_date), reverse=True)
+
     # Prepare job data
     job_rows = []
-    for job in jobs:
+    for job, match in scored_jobs:
         is_saved = job.id in saved_jobs
         is_applied = job.id in applied_jobs
         
@@ -3888,7 +4005,7 @@ def student_jobs(request):
             'company': job.company,
             'location': job.location,
             'salary': job.salary,
-            'match': job.match_percentage,
+            'match': match,
             'posted': job.posted_date.strftime('%d %b %Y'),
             'status_label': status_label,
             'status_style': status_style,
@@ -3896,6 +4013,8 @@ def student_jobs(request):
             'is_applied': is_applied,
             'skills': job_skills,
             'matching_skills': matching_skills,
+            'source_name': job.source.name if job.source_id else 'SAHE',
+            'apply_url': job.apply_url,
         })
     
     # Field filter options
@@ -3908,9 +4027,67 @@ def student_jobs(request):
         'field_filters': field_filters,
         'job_rows': job_rows,
         'total_jobs': len(job_rows),
+        'recommendations': recommendations,
+        'recommended_jobs': job_rows[:6],
         'role': 'student',
     }
     return render(request, 'crp/student/student_jobs.html', context)
+
+
+@role_required('student')
+def student_job_applications(request, status=None):
+    """Show this student's saved jobs or application tracking list."""
+    try:
+        student = request.user.student_profile
+    except Student.DoesNotExist:
+        messages.error(request, 'Student profile not found.')
+        return redirect('crp:dashboard')
+
+    applications = JobApplication.objects.filter(student=student).select_related(
+        'job', 'job__source',
+    )
+    if status:
+        applications = applications.filter(status=status)
+    return render(request, 'crp/student/student_applications.html', {
+        'student': student,
+        'applications': applications,
+        'page_title': 'Saved jobs' if status == 'saved' else 'My applications',
+        'role': 'student',
+    })
+
+
+@role_required('student')
+def student_job_preferences(request):
+    """Update the student's job matching preferences."""
+    try:
+        student = request.user.student_profile
+    except Student.DoesNotExist:
+        messages.error(request, 'Student profile not found.')
+        return redirect('crp:dashboard')
+
+    preferences, _ = StudentPreference.objects.get_or_create(student=student)
+    if request.method == 'POST':
+        preferences.job_keywords = [
+            value.strip()[:80] for value in request.POST.get('job_keywords', '').split(',')
+            if value.strip()
+        ][:20]
+        preferences.job_locations = [
+            value.strip()[:100] for value in request.POST.get('job_locations', '').split(',')
+            if value.strip()
+        ][:20]
+        preferences.job_remote_only = 'job_remote_only' in request.POST
+        preferences.save(update_fields=[
+            'job_keywords', 'job_locations', 'job_remote_only', 'updated_at',
+        ])
+        messages.success(request, 'Job preferences saved.')
+        return redirect('crp:student_job_preferences')
+
+    return render(request, 'crp/student/student_job_preferences.html', {
+        'student': student,
+        'preferences': preferences,
+        'role': 'student',
+    })
+
 
 @role_required('student')
 def student_job_detail(request, job_id):
@@ -3922,7 +4099,7 @@ def student_job_detail(request, job_id):
         return redirect('crp:dashboard')
     
     job = get_object_or_404(JobListing, id=job_id)
-    
+
     # Get student's application status
     application = JobApplication.objects.filter(student=student, job=job).first()
     
@@ -3957,7 +4134,7 @@ def student_job_detail(request, job_id):
         'matching_skills': matching_skills,
         'missing_skills': missing_skills,
         'gap_note': f'Highlighted skills are already on your resume — add the rest to lift your match.' if missing_skills else 'All required skills are on your resume!',
-        'apply_label': 'Application submitted' if application and application.status == 'applied' else 'Apply with SAHE profile',
+        'apply_label': 'Interest recorded' if application and application.status == 'applied' else 'Record application',
         'save_label': 'Saved ✓' if application and application.status == 'saved' else 'Save for later',
         'role': 'student',
     }
@@ -3984,10 +4161,11 @@ def student_save_job(request, job_id):
     if created:
         messages.success(request, f"Job '{job.title}' saved successfully")
     else:
-        # Toggle between saved and none
         if application.status == 'saved':
             application.delete()
             messages.info(request, f"Job '{job.title}' removed from saved")
+        elif application.status == 'applied':
+            messages.info(request, 'Applied jobs cannot be moved back to saved.')
         else:
             application.status = 'saved'
             application.save()
@@ -4006,6 +4184,9 @@ def student_apply_job(request, job_id):
         return redirect('crp:dashboard')
     
     job = get_object_or_404(JobListing, id=job_id)
+    if not job.is_active or (job.expires_at and job.expires_at <= timezone.now()):
+        messages.error(request, 'This job is no longer accepting applications.')
+        return redirect('crp:student_job_detail', job_id=job_id)
     
     application, created = JobApplication.objects.get_or_create(
         student=student,
@@ -4014,16 +4195,18 @@ def student_apply_job(request, job_id):
     )
     
     if created:
-        messages.success(request, f"Applied to {job.company} — resume and cover letter attached")
+        messages.success(request, f"Application link opened for {job.company}.")
     else:
         if application.status != 'applied':
             application.status = 'applied'
             application.applied_at = timezone.now()
             application.save()
-            messages.success(request, f"Applied to {job.company} — resume and cover letter attached")
+            messages.success(request, f"Application link opened for {job.company}.")
         else:
             messages.info(request, f"You have already applied to {job.company}")
     
+    if job.apply_url:
+        return redirect(job.apply_url)
     return redirect('crp:student_job_detail', job_id=job_id)
 
 @role_required('student')

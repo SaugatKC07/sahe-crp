@@ -93,6 +93,7 @@ urlpatterns = [
     path('admissions-finance/revenue/', views.revenue_analytics, name='revenue_analytics'),
     path('admissions-finance/payment-risk/', views.payment_risk, name='payment_risk'),
     path('admin/', views.admin_dashboard, name='admin_dashboard'),
+    path('admin/jobs/', views.admin_job_sources, name='admin_job_sources'),
     path('admin/courses/', views.admin_courses, name='admin_courses'),
     path('admin/courses/<int:course_id>/', views.admin_course_detail, name='admin_course_detail'),
     path('admin/courses/<int:course_id>/<slug:action>/', views.admin_course_toggle, name='admin_course_toggle'),
@@ -152,6 +153,10 @@ urlpatterns = [
     
     # Student Portal - Phase 2B: Career Section
     path('student/jobs/', views.student_jobs, name='student_jobs'),
+    path('student/jobs/recommendations/', views.student_jobs, {'recommendations': True}, name='student_job_recommendations'),
+    path('student/jobs/applications/', views.student_job_applications, name='student_job_applications'),
+    path('student/jobs/saved/', views.student_job_applications, {'status': 'saved'}, name='student_saved_jobs'),
+    path('student/jobs/preferences/', views.student_job_preferences, name='student_job_preferences'),
     path('student/jobs/<int:job_id>/', views.student_job_detail, name='student_job_detail'),
     path('student/jobs/<int:job_id>/save/', views.student_save_job, name='student_save_job'),
     path('student/jobs/<int:job_id>/apply/', views.student_apply_job, name='student_apply_job'),

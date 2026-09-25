@@ -5,7 +5,7 @@ from .models import (
     FinanceProfile, Invoice, MarketingProfile, Campaign, CampaignMetrics,
     UploadedImage, Program, Cohort, LearningWeek, LearningMaterial, Quiz, QuizQuestion,
     QuizOption,     Assessment, Rubric, RubricCriterion, AssessmentSubmission, SubmissionFile,
-    LiveSession, StudentRequest
+    LiveSession, StudentRequest, JobListing, JobApplication, JobSource, JobSyncRun
 )
 
 @admin.register(Course)
@@ -103,3 +103,24 @@ admin.site.register([
     Assessment, Rubric, RubricCriterion, AssessmentSubmission, SubmissionFile,
     LiveSession, StudentRequest,
 ])
+
+
+@admin.register(JobSource)
+class JobSourceAdmin(admin.ModelAdmin):
+    list_display = ['name', 'provider', 'country', 'is_enabled', 'updated_at']
+    list_filter = ['provider', 'country', 'is_enabled']
+    search_fields = ['name', 'search_query']
+
+
+@admin.register(JobSyncRun)
+class JobSyncRunAdmin(admin.ModelAdmin):
+    list_display = ['source', 'status', 'jobs_seen', 'jobs_created', 'jobs_updated', 'started_at']
+    list_filter = ['status', 'source']
+    readonly_fields = [
+        'source', 'status', 'jobs_seen', 'jobs_created', 'jobs_updated',
+        'error_message', 'started_at', 'finished_at',
+    ]
+
+
+admin.site.register(JobListing)
+admin.site.register(JobApplication)

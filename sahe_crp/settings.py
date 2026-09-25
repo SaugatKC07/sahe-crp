@@ -19,6 +19,8 @@ def env_list(name, default=''):
 
 # Quick-start development settings - unsuitable for production
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-change-this-in-production')
+JOB_CRON_SECRET = os.environ.get('CRON_SECRET', '')
+JOB_STALE_AFTER_DAYS = int(os.environ.get('JOB_STALE_AFTER_DAYS', '7'))
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 VERCEL_HOST = os.environ.get('VERCEL_URL', '')
 ALLOWED_HOSTS = env_list('ALLOWED_HOSTS', 'localhost,127.0.0.1')

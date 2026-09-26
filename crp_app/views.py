@@ -4024,6 +4024,7 @@ def student_jobs(request, recommendations=False):
             'salary': job.salary,
             'match': match,
             'posted': job.posted_date.strftime('%d %b %Y'),
+            'expires_at': job.expires_at,
             'status_label': status_label,
             'status_style': status_style,
             'is_saved': is_saved,

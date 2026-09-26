@@ -107,6 +107,15 @@
     color: var(--gray-400);
 }
 
+.job-deadline {
+    font-size: 12px;
+    color: var(--gray-600);
+}
+
+.job-deadline strong {
+    color: var(--gray-900);
+}
+
 .job-detail-card {
     border: 1px solid var(--color-divider);
     border-radius: var(--radius-lg);
@@ -266,6 +275,12 @@
                         <div class="job-detail-stat-label">Posted</div>
                         <div class="job-detail-stat-value">{{ job.posted_date|date:"d M Y" }}</div>
                     </div>
+                    {% if job.expires_at %}
+                    <div class="job-detail-stat">
+                        <div class="job-detail-stat-label">Apply by</div>
+                        <div class="job-detail-stat-value job-deadline">{{ job.expires_at|date:"d M Y, H:i" }}</div>
+                    </div>
+                    {% endif %}
                 </div>
                 
                 <div class="job-detail-actions">

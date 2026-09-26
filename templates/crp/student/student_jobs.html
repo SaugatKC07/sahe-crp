@@ -179,6 +179,15 @@
     color: var(--gray-400);
 }
 
+.job-deadline {
+    font-size: 11.5px;
+    color: var(--gray-600);
+}
+
+.job-deadline strong {
+    color: var(--gray-900);
+}
+
 .jobs-detail {
     align-self: start;
 }
@@ -300,6 +309,7 @@
                                 <div class="job-company">{{ job.company }} · {{ job.location }}</div>
                                 <div class="job-location">{{ job.salary }}</div>
                                 <div class="job-posted">{{ job.source_name }}{% if job.apply_url %} · External listing{% endif %}</div>
+                                {% if job.expires_at %}<div class="job-deadline"><strong>Apply by:</strong> {{ job.expires_at|date:"d M Y, H:i" }}</div>{% endif %}
                             </div>
                             <div class="job-match">{{ job.match }}%</div>
                         </div>

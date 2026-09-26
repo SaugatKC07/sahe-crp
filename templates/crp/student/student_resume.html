@@ -641,6 +641,20 @@
     background: var(--danger);
     color: white;
 }
+.resume-modal[hidden] { display: none; }
+.resume-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px; background: rgb(15 23 42 / 55%); }
+.resume-modal-dialog { width: min(680px, 100%); max-height: 90vh; overflow: auto; padding: 24px; border: 1px solid var(--color-divider); border-radius: var(--radius-lg); background: var(--color-surface); box-shadow: var(--shadow-lg); }
+.resume-modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.resume-modal-header h2 { margin: 0; font: 750 20px var(--font-heading); }
+.resume-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.resume-modal-field { display: flex; flex-direction: column; gap: 5px; }
+.resume-modal-field.full { grid-column: 1 / -1; }
+.resume-modal-field label { font-size: 13px; font-weight: 650; }
+.resume-modal-field input, .resume-modal-field textarea { width: 100%; }
+.resume-modal-field textarea { min-height: 100px; resize: vertical; }
+.resume-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.resume-modal-error { color: var(--danger); font-size: 13px; }
+@media (max-width: 560px) { .resume-modal-grid { grid-template-columns: 1fr; } .resume-modal-field.full { grid-column: auto; } }
 </style>
 {% endblock %}
 
@@ -841,7 +855,7 @@
         
         <div id="experience-container">
             {% for exp in experience %}
-                <div class="experience-item" data-exp-id="{{ exp.id }}">
+                <div class="experience-item" data-exp-id="{{ exp.id }}" data-role="{{ exp.role|escapejs }}" data-company="{{ exp.company|escapejs }}" data-location="{{ exp.location|escapejs }}" data-start="{{ exp.start_date|date:'Y-m-d' }}" data-end="{{ exp.end_date|date:'Y-m-d' }}" data-current="{{ exp.is_current|yesno:'true,false' }}" data-details="{{ exp.details|default:''|escapejs }}" data-bullets="{{ exp.bullets|join:'\n'|escapejs }}">
                     <div class="experience-header">
                         <strong>{{ exp.role }} at {{ exp.company }}</strong>
                         <div>
@@ -878,7 +892,7 @@
         
         <div id="education-container">
             {% for edu in education %}
-                <div class="education-item" data-edu-id="{{ edu.id }}">
+                <div class="education-item" data-edu-id="{{ edu.id }}" data-degree="{{ edu.degree|escapejs }}" data-institution="{{ edu.institution|escapejs }}" data-location="{{ edu.location|escapejs }}" data-start="{{ edu.start_date|date:'Y-m-d' }}" data-end="{{ edu.end_date|date:'Y-m-d' }}" data-current="{{ edu.is_current|yesno:'true,false' }}" data-details="{{ edu.details|default:''|escapejs }}">
                     <div class="education-header">
                         <strong>{{ edu.degree }} from {{ edu.institution }}</strong>
                         <div>
@@ -952,16 +966,46 @@
         </div>
     </div>
 </div>
-
+<div class="resume-modal" id="resume-entry-modal" role="dialog" aria-modal="true" aria-labelledby="resume-modal-title" hidden>
+    <div class="resume-modal-dialog">
+        <div class="resume-modal-header">
+            <h2 id="resume-modal-title">Add experience</h2>
+            <button type="button" class="btn btn-ghost" onclick="closeResumeModal()" aria-label="Close dialog">Close</button>
+        </div>
+        <form id="resume-entry-form">
+            <div class="resume-modal-grid">
+                <div class="resume-modal-field"><label for="entry-role">Role / Job Title</label><input id="entry-role" required></div>
+                <div class="resume-modal-field"><label for="entry-company">Company</label><input id="entry-company" required></div>
+                <div class="resume-modal-field"><label for="entry-location">Location</label><input id="entry-location"></div>
+                <div class="resume-modal-field"><label for="entry-start">Start Date</label><input id="entry-start" type="date" required></div>
+                <div class="resume-modal-field"><label for="entry-end">End Date</label><input id="entry-end" type="date"></div>
+                <div class="resume-modal-field" style="justify-content:end;"><label><input id="entry-current" type="checkbox"> Currently working here</label></div>
+                <div class="resume-modal-field full"><label for="entry-details">Description / Details</label><textarea id="entry-details" placeholder="Add context or responsibilities"></textarea></div>
+                <div class="resume-modal-field full"><label for="entry-bullets">Achievement / responsibility bullets (one per line)</label><textarea id="entry-bullets" placeholder="Built...&#10;Improved..."></textarea></div>
+            </div>
+            <p class="resume-modal-error" id="resume-modal-error" role="alert"></p>
+            <div class="resume-modal-actions"><button type="button" class="btn btn-secondary" onclick="closeResumeModal()">Cancel</button><button type="submit" class="btn btn-primary">Save experience</button></div>
+        </form>
+    </div>
+</div>
+<div class="resume-modal" id="resume-delete-modal" role="dialog" aria-modal="true" aria-labelledby="delete-modal-title" hidden>
+    <div class="resume-modal-dialog" style="max-width:440px;">
+        <div class="resume-modal-header"><h2 id="delete-modal-title">Delete entry?</h2><button type="button" class="btn btn-ghost" onclick="closeDeleteModal()">Close</button></div>
+        <p id="delete-modal-copy">This entry will be removed from your resume.</p>
+        <div class="resume-modal-actions"><button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button><button type="button" class="btn btn-primary" id="delete-confirm-button">Delete</button></div>
+    </div>
+</div>
 <script>
 const BASE_URLS = {
     resume_autosave: '{% url "crp:resume_autosave" %}',
     resume_add_skill: '{% url "crp:resume_add_skill" %}',
     resume_remove_skill: '{% url "crp:resume_remove_skill" %}',
     resume_add_experience: '{% url "crp:resume_add_experience" %}',
+    resume_edit_experience: '{% url "crp:resume_edit_experience" 0 %}',
     resume_delete_experience: '{% url "crp:resume_delete_experience" 0 %}',
     resume_add_bullet: '{% url "crp:resume_add_bullet" 0 %}',
     resume_add_education: '{% url "crp:resume_add_education" %}',
+    resume_edit_education: '{% url "crp:resume_edit_education" 0 %}',
     resume_delete_education: '{% url "crp:resume_delete_education" 0 %}',
     resume_rerun_ai: '{% url "crp:resume_rerun_ai" %}'
 };
@@ -1075,50 +1119,11 @@ function handleSkillKey(event) {
 }
 
 function addExperience() {
-    const role = prompt('Role/Title:');
-    const company = prompt('Company:');
-    const startDate = prompt('Start Date (YYYY-MM-DD):');
-    
-    if (!role || !company) return;
-    
-    const formData = new FormData();
-    formData.append('role', role);
-    formData.append('company', company);
-    formData.append('start_date', startDate);
-    formData.append('csrfmiddlewaretoken', getCSRFToken());
-    
-    fetch(BASE_URLS.resume_add_experience, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    });
+    openEntryModal('experience');
 }
 
 function deleteExperience(expId) {
-    if (!confirm('Delete this experience?')) return;
-    
-    const url = BASE_URLS.resume_delete_experience.replace('0', expId);
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    });
+    openDeleteModal('experience', expId);
 }
 
 function addBullet(expId) {
@@ -1156,51 +1161,123 @@ function handleBulletKey(event, expId) {
 }
 
 function addEducation() {
-    const degree = prompt('Degree:');
-    const institution = prompt('Institution:');
-    const startDate = prompt('Start Date (YYYY-MM-DD):');
-    
-    if (!degree || !institution) return;
-    
-    const formData = new FormData();
-    formData.append('degree', degree);
-    formData.append('institution', institution);
-    formData.append('start_date', startDate);
-    formData.append('csrfmiddlewaretoken', getCSRFToken());
-    
-    fetch(BASE_URLS.resume_add_education, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    });
+    openEntryModal('education');
 }
 
 function deleteEducation(eduId) {
-    if (!confirm('Delete this education?')) return;
-    
-    const url = BASE_URLS.resume_delete_education.replace('0', eduId);
-    
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': getCSRFToken()
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    });
+    openDeleteModal('education', eduId);
 }
+
+let entryType = 'experience';
+let entryId = null;
+let deleteType = '';
+let deleteId = null;
+const entryModal = document.getElementById('resume-entry-modal');
+const deleteModal = document.getElementById('resume-delete-modal');
+const entryForm = document.getElementById('resume-entry-form');
+const modalTitle = document.getElementById('resume-modal-title');
+const modalError = document.getElementById('resume-modal-error');
+
+function openEntryModal(type, item) {
+    entryType = type;
+    entryId = item ? item.dataset.expId || item.dataset.eduId : null;
+    entryForm.reset();
+    modalError.textContent = '';
+    const experience = type === 'experience';
+    modalTitle.textContent = entryId ? (experience ? 'Edit experience' : 'Edit education') : (experience ? 'Add experience' : 'Add education');
+    document.querySelector('#entry-role').previousElementSibling.textContent = experience ? 'Role / Job Title' : 'Degree / Qualification';
+    document.querySelector('#entry-company').previousElementSibling.textContent = experience ? 'Company' : 'Institution';
+    const fields = item ? item.dataset : {};
+    document.getElementById('entry-role').value = experience ? (fields.role || '') : (fields.degree || '');
+    document.getElementById('entry-company').value = experience ? (fields.company || '') : (fields.institution || '');
+    document.getElementById('entry-location').value = fields.location || '';
+    document.getElementById('entry-start').value = fields.start || '';
+    document.getElementById('entry-end').value = fields.end || '';
+    document.getElementById('entry-current').checked = fields.current === 'true';
+    document.getElementById('entry-details').value = fields.details || '';
+    document.getElementById('entry-bullets').value = fields.bullets || '';
+    document.querySelectorAll('.resume-modal-field').forEach(field => {
+        field.hidden = !experience && ['entry-role', 'entry-location', 'entry-current', 'entry-bullets'].some(id => field.querySelector('#' + id));
+    });
+    entryModal.hidden = false;
+    document.getElementById(experience ? 'entry-role' : 'entry-company').focus();
+}
+
+function editExperience(expId) {
+    openEntryModal('experience', document.querySelector(`[data-exp-id="${expId}"]`));
+}
+
+function editEducation(eduId) {
+    openEntryModal('education', document.querySelector(`[data-edu-id="${eduId}"]`));
+}
+
+function closeResumeModal() {
+    entryModal.hidden = true;
+}
+
+function openDeleteModal(type, id) {
+    deleteType = type;
+    deleteId = id;
+    document.getElementById('delete-modal-copy').textContent = `This ${type} entry will be removed from your resume.`;
+    deleteModal.hidden = false;
+    document.getElementById('delete-confirm-button').focus();
+}
+
+function closeDeleteModal() {
+    deleteModal.hidden = true;
+}
+
+entryForm.addEventListener('submit', function (event) {
+    event.preventDefault();
+    const formData = new FormData();
+    const experience = entryType === 'experience';
+    const requiredFields = experience ? ['entry-role', 'entry-company', 'entry-start'] : ['entry-company', 'entry-role', 'entry-start'];
+    const values = {
+        role: document.getElementById('entry-role').value.trim(),
+        company: document.getElementById('entry-company').value.trim(),
+        location: document.getElementById('entry-location').value.trim(),
+        start_date: document.getElementById('entry-start').value,
+        end_date: document.getElementById('entry-end').value,
+        is_current: document.getElementById('entry-current').checked ? 'on' : 'off',
+        details: document.getElementById('entry-details').value.trim(),
+        bullets: document.getElementById('entry-bullets').value.split('\n').map(item => item.trim()).filter(Boolean)
+    };
+    if (!values.company || !values.role || !values.start_date) {
+        modalError.textContent = experience ? 'Role, company, and start date are required.' : 'Qualification, institution, and start date are required.';
+        return;
+    }
+    formData.append('role', values.role);
+    formData.append('degree', values.role);
+    formData.append('company', values.company);
+    formData.append('institution', values.company);
+    formData.append('location', values.location);
+    formData.append('start_date', values.start_date);
+    formData.append('end_date', values.end_date);
+    formData.append('is_current', values.is_current);
+    formData.append('details', values.details);
+    values.bullets.forEach(bullet => formData.append('bullets[]', bullet));
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    let endpoint = experience ? BASE_URLS.resume_add_experience : BASE_URLS.resume_add_education;
+    if (entryId) {
+        endpoint = (experience ? BASE_URLS.resume_edit_experience : BASE_URLS.resume_edit_education).replace('0', entryId);
+    }
+    fetch(endpoint, {
+        method: 'POST', body: formData, headers: {'X-CSRFToken': getCSRFToken()}
+    }).then(response => response.json()).then(data => {
+        if (data.success) location.reload();
+        else modalError.textContent = data.error || 'Unable to save this entry.';
+    }).catch(() => { modalError.textContent = 'Unable to save this entry. Please try again.'; });
+});
+
+document.getElementById('delete-confirm-button').addEventListener('click', function () {
+    const template = deleteType === 'experience' ? BASE_URLS.resume_delete_experience : BASE_URLS.resume_delete_education;
+    fetch(template.replace('0', deleteId), {method: 'POST', headers: {'X-CSRFToken': getCSRFToken()}})
+        .then(response => response.json()).then(data => { if (data.success) location.reload(); else closeDeleteModal(); });
+});
+
+document.addEventListener('keydown', function (event) {
+    if (event.key === 'Escape') { closeResumeModal(); closeDeleteModal(); }
+});
 
 function analyzeResume() {
     fetch(BASE_URLS.resume_rerun_ai, {

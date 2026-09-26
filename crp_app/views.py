@@ -66,6 +66,12 @@ from .linkedin_coach import (
     build_about, build_headline, completeness_items, profile_data,
     build_job_about, build_job_headline, job_profile_analysis, profile_recommendations,
 )
+from .achievement_service import (
+    calculate_current_streak,
+    calculate_student_points,
+    evaluate_student_badges,
+    refresh_cohort_leaderboard,
+)
 from .resume_review import analyze_resume
 
 
@@ -5219,6 +5225,10 @@ def student_achievements(request):
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
     
+    evaluate_student_badges(student)
+    if student.cohort:
+        refresh_cohort_leaderboard(student.cohort)
+
     # Get student's earned badges
     earned_badges = StudentBadge.objects.filter(student=student, is_displayed=True).select_related('badge')
     earned_badge_ids = set(earned_badges.values_list('badge_id', flat=True))
@@ -5241,12 +5251,7 @@ def student_achievements(request):
             'mark': '★' if is_earned else str(badge.week_earned) if badge.week_earned else '',
         })
     
-    activity_dates = student_activity_dates(student)
-    current_streak = 0
-    cursor = timezone.localdate()
-    while cursor in activity_dates:
-        current_streak += 1
-        cursor -= timedelta(days=1)
+    current_streak = calculate_current_streak(student)
     
     # Generate 21-day streak display
     streak_days = []
@@ -5260,7 +5265,7 @@ def student_achievements(request):
         })
     
     # Get leaderboard for student's cohort
-    leaderboard = Leaderboard.objects.filter(cohort=student.cohort).order_by('rank')
+    leaderboard = Leaderboard.objects.filter(cohort=student.cohort).order_by('rank') if student.cohort else Leaderboard.objects.none()
     
     # Prepare leaderboard data
     leaderboard_data = []
@@ -5279,8 +5284,8 @@ def student_achievements(request):
     ach_stats = [
         {'label': 'Badges earned', 'value': f'{len(earned_badges)} / {all_badges.count()}'},
         {'label': 'Current streak', 'value': f'{current_streak} days' if current_streak else '—'},
-        {'label': 'Cohort rank', 'value': f"{leaderboard.filter(student=student).first().rank if leaderboard.filter(student=student).exists() else '—'} of {leaderboard.count()}"},
-        {'label': 'Points', 'value': str(sum(b.badge.points for b in earned_badges))},
+        {'label': 'Cohort rank',         'value': f"{leaderboard.filter(student=student).first().rank if leaderboard.filter(student=student).exists() else 'No cohort assigned'} of {leaderboard.count()}" if student.cohort else 'No cohort assigned'},
+        {'label': 'Points', 'value': str(calculate_student_points(student))},
     ]
     
     context = {

@@ -14,11 +14,19 @@
     padding: 0;
     max-width: none;
     margin: 0 auto;
+    order: 1;
 }
 
 .review-workspace {
     max-width: none;
     margin: 0 0 28px;
+    order: 2;
+    width: 100%;
+}
+
+.crp-content:has(.resume-container) {
+    display: flex;
+    flex-direction: column;
 }
 
 .review-header,
@@ -586,7 +594,7 @@
         <div>
             <div class="review-eyebrow">Deterministic resume analysis</div>
             <h1 class="review-title" id="resume-review-title">Resume Review</h1>
-            <p class="review-subtitle">Analyze the real content of your resume to find clear, evidence-based improvements.</p>
+            <p class="review-subtitle">Finished building your resume? Analyze it for evidence-based improvements and job alignment.</p>
         </div>
         <div class="review-metrics" aria-label="Resume metrics">
             <div class="review-metric">
@@ -599,6 +607,12 @@
             </div>
         </div>
     </div>
+
+    {% if completeness_score < 50 %}
+    <div class="review-empty" style="margin-top: 16px;" role="status">
+        Your resume is still taking shape. Complete the main resume sections above before relying on this review for job decisions.
+    </div>
+    {% endif %}
 
     <form class="review-job-selector" method="get">
         <label for="review-job">Review for a Job</label>

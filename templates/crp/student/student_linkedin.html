@@ -45,7 +45,15 @@
         </div>
         <div class="linkedin-card">
             <strong>Coach recommendations</strong>
-            <p class="linkedin-muted">Complete the missing checklist items using genuine information in your Resume Builder.</p>
+            {% if job_analysis %}
+                {% if job_analysis.missing %}
+                <p class="linkedin-muted">This role mentions {{ job_analysis.missing|join:", " }}, but these requirements are not evidenced in your current CRP profile. Add them only if you genuinely have that experience.</p>
+                {% endif %}
+            {% else %}
+                {% for recommendation in recommendations %}
+                <p class="linkedin-muted">{{ recommendation }}</p>
+                {% empty %}<p class="linkedin-muted">Your saved profile data is reflected in the coach.</p>{% endfor %}
+            {% endif %}
             <a class="btn btn-secondary" href="{% url 'crp:student_resume' %}">Open Resume Builder</a>
         </div>
     </aside>
@@ -54,8 +62,24 @@
         <div class="linkedin-card linkedin-form">
             <h2>Profile details</h2>
             <p class="linkedin-muted">Edit LinkedIn content here without changing your Resume content.</p>
+            <form method="get" style="margin-bottom:18px;">
+                <label for="job_id">Coach for a real job</label>
+                <select id="job_id" name="job_id" onchange="this.form.submit()">
+                    <option value="">General LinkedIn Coach</option>
+                    {% for job_option in visible_jobs %}
+                    <option value="{{ job_option.id }}" {% if selected_job and selected_job.id == job_option.id %}selected{% endif %}>{{ job_option.title }} · {{ job_option.company }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% if selected_job %}
+            <div class="linkedin-suggestion">
+                <strong>{{ selected_job.title }}</strong> · {{ selected_job.company }}<br>
+                {{ selected_job.location }}{% if selected_job.source %} · {{ selected_job.source.name }}{% endif %}
+            </div>
+            {% endif %}
             <form method="post">
                 {% csrf_token %}
+                {% if selected_job %}<input type="hidden" name="selected_job_id" value="{{ selected_job.id }}">{% endif %}
                 {{ form.non_field_errors }}
                 <label for="{{ form.headline.id_for_label }}">Headline</label>
                 {{ form.headline }}
@@ -64,7 +88,7 @@
                     <button type="button" class="btn btn-secondary" data-copy-target="id_headline">Copy headline</button>
                     <button type="button" class="btn btn-ghost" id="use-headline-suggestion">Use suggested headline</button>
                 </div>
-                <div class="linkedin-suggestion" id="headline-suggestion">{{ headline_suggestion|default:"No suggestion available from current Resume data." }}</div>
+                <div class="linkedin-suggestion" id="headline-suggestion">{% if selected_job %}{{ job_headline_suggestion }}{% else %}{{ headline_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
 
                 <label for="{{ form.about.id_for_label }}" style="display:block; margin-top:18px;">About</label>
                 {{ form.about }}
@@ -73,7 +97,7 @@
                     <button type="button" class="btn btn-secondary" data-copy-target="id_about">Copy About</button>
                     <button type="button" class="btn btn-ghost" id="use-about-suggestion">Use suggested About</button>
                 </div>
-                <div class="linkedin-suggestion" id="about-suggestion">{{ about_suggestion|default:"No suggestion available from current Resume data." }}</div>
+                <div class="linkedin-suggestion" id="about-suggestion">{% if selected_job %}{{ job_about_suggestion }}{% else %}{{ about_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
 
                 <label for="{{ form.linkedin_url.id_for_label }}" style="display:block; margin-top:18px;">LinkedIn profile URL</label>
                 {{ form.linkedin_url }}
@@ -84,6 +108,31 @@
                     <a class="btn btn-secondary" href="{{ resume.linkedin_url }}" target="_blank" rel="noopener noreferrer">Open LinkedIn Profile</a>
                     {% endif %}
                 </div>
+
+                {% if selected_job %}
+                <div class="linkedin-card">
+                    <h2>Job match</h2>
+                    {% if job_analysis.has_reliable_requirements %}
+                    {% if job_analysis.match_percentage is not None %}<div class="linkedin-score">{{ job_analysis.match_percentage }}%</div>{% endif %}
+                    <p class="linkedin-muted">Matched requirements: {{ job_analysis.matched|length }} · Not evidenced: {{ job_analysis.missing|length }}</p>
+                    {% else %}
+                    <p class="linkedin-muted">Not enough structured requirements were available to calculate a reliable match.</p>
+                    {% endif %}
+                    <h3>Skills evidenced in CRP</h3>
+                    <p>{{ skills|join:", "|default:"No skills saved." }}</p>
+                    <h3>Relevant to this job</h3>
+                    <p>{{ job_analysis.relevant_skills|join:", "|default:"No evidenced skills matched." }}</p>
+                    <h3>Already evidenced</h3>
+                    <p>{{ job_analysis.matched|join:", "|default:"None." }}</p>
+                    <h3>Job mentions but not evidenced</h3>
+                    <p>{{ job_analysis.missing|join:", "|default:"None." }}</p>
+                    <div class="linkedin-actions">
+                        <a class="btn btn-ghost" href="{{ job_detail_url }}">Back to Job</a>
+                        <a class="btn btn-secondary" href="{{ tailor_url }}">Tailor Resume for this Job</a>
+                        <form method="post" action="{{ apply_url }}">{% csrf_token %}<button class="btn btn-primary" type="submit">Apply</button></form>
+                    </div>
+                </div>
+                {% endif %}
                 <div class="linkedin-status" id="copy-status" role="status" aria-live="polite"></div>
             </form>
         </div>

@@ -3,9 +3,10 @@ from datetime import date, timedelta
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from .linkedin_coach import build_about, build_headline
-from .models import LinkedInProfile, Resume, ResumeEducation, ResumeExperience, Student
+from .models import JobListing, LinkedInProfile, Resume, ResumeEducation, ResumeExperience, Student
 
 
 class LinkedInCoachTests(TestCase):
@@ -47,6 +48,20 @@ class LinkedInCoachTests(TestCase):
             bullets=['Built a real report'],
         )
         self.client.force_login(self.user)
+
+    def make_job(self, **kwargs):
+        values = {
+            'title': 'Junior Python Analyst',
+            'company': 'Real Employer',
+            'location': 'Sydney',
+            'salary': '$80K',
+            'fields': ['ai'],
+            'skills': ['Python', 'AWS'],
+            'description': 'Python and AWS role.',
+            'posted_date': date.today(),
+        }
+        values.update(kwargs)
+        return JobListing.objects.create(**values)
 
     def test_student_owns_linkedin_profile_and_resume_data(self):
         response = self.client.get(reverse('crp:student_linkedin'))
@@ -130,3 +145,42 @@ class LinkedInCoachTests(TestCase):
         self.assertContains(response, 'LinkedIn Profile Coach')
         self.assertContains(response, 'Copy headline')
         self.assertContains(response, 'Open LinkedIn Profile')
+
+    def test_visible_job_selection_uses_real_data(self):
+        job = self.make_job()
+        response = self.client.get(reverse('crp:student_linkedin'), {'job_id': job.id})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Real Employer')
+        self.assertContains(response, 'Already evidenced', status_code=200)
+        self.assertContains(response, 'AWS')
+        self.assertEqual(response.context['job_analysis']['matched'], ['Python'])
+        self.assertEqual(response.context['job_analysis']['missing'], ['AWS'])
+
+    def test_inactive_or_expired_jobs_are_not_selectable(self):
+        inactive = self.make_job(is_active=False)
+        expired = self.make_job(expires_at=timezone.now() - timedelta(days=1))
+        for job in (inactive, expired):
+            response = self.client.get(reverse('crp:student_linkedin'), {'job_id': job.id})
+            self.assertIsNone(response.context['selected_job'])
+
+    def test_job_suggestions_do_not_add_missing_requirements(self):
+        job = self.make_job()
+        response = self.client.get(reverse('crp:student_linkedin'), {'job_id': job.id})
+        self.assertContains(response, 'Junior Python Analyst')
+        self.assertNotContains(response, 'AWS ·')
+        self.assertNotIn('AWS', response.context['job_about_suggestion'])
+
+    def test_zero_requirements_has_no_fake_match(self):
+        job = self.make_job(
+            title='General Operations Role',
+            skills=[],
+            description='A role with no reliable structured requirements.',
+        )
+        response = self.client.get(reverse('crp:student_linkedin'), {'job_id': job.id})
+        self.assertIsNone(response.context['job_analysis']['match_percentage'])
+        self.assertContains(response, 'Not enough structured requirements')
+
+    def test_job_detail_links_to_linkedin_coach(self):
+        job = self.make_job()
+        response = self.client.get(reverse('crp:student_job_detail', args=[job.id]))
+        self.assertContains(response, f'?job_id={job.id}')

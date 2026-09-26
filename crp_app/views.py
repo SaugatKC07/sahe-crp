@@ -64,6 +64,7 @@ from .job_matching import extract_job_requirements, normalize_requirement, recom
 from .job_sync import sync_job_source
 from .linkedin_coach import (
     build_about, build_headline, completeness_items, profile_data,
+    build_job_about, build_job_headline, job_profile_analysis, profile_recommendations,
 )
 
 
@@ -4107,7 +4108,12 @@ def student_job_detail(request, job_id):
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
     
-    job = get_object_or_404(JobListing, id=job_id)
+    job = get_object_or_404(
+        JobListing.objects.filter(is_active=True).filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+        ),
+        id=job_id,
+    )
 
     # Get student's application status
     application = JobApplication.objects.filter(student=student, job=job).first()
@@ -4145,6 +4151,7 @@ def student_job_detail(request, job_id):
         'gap_note': f'Highlighted skills are already on your resume — add the rest to lift your match.' if missing_skills else 'All required skills are on your resume!',
         'apply_label': 'Interest recorded' if application and application.status == 'applied' else 'Record application',
         'save_label': 'Saved ✓' if application and application.status == 'saved' else 'Save for later',
+        'linkedin_url': f"{reverse('crp:student_linkedin')}?job_id={job.id}",
         'role': 'student',
     }
     return render(request, 'crp/student/student_job_detail.html', context)
@@ -5126,6 +5133,11 @@ def student_linkedin(request):
     linkedin, _ = LinkedInProfile.objects.get_or_create(student=student)
     resume = Resume.objects.filter(student=student).first()
     data = profile_data(student, resume)
+    selected_job_id = request.POST.get('selected_job_id') or request.GET.get('job_id')
+    visible_jobs = JobListing.objects.filter(is_active=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    ).select_related('source').order_by('-posted_date')
+    selected_job = visible_jobs.filter(id=selected_job_id).first() if selected_job_id else None
 
     if request.method == 'POST':
         form = LinkedInProfileForm(request.POST)
@@ -5140,7 +5152,10 @@ def student_linkedin(request):
                 messages.error(request, 'Create your Resume before saving a LinkedIn URL.')
                 return redirect('crp:student_linkedin')
             messages.success(request, 'LinkedIn profile updated.')
-            return redirect('crp:student_linkedin')
+            target = reverse('crp:student_linkedin')
+            if selected_job:
+                target = f'{target}?job_id={selected_job.id}'
+            return redirect(target)
     else:
         form = LinkedInProfileForm(initial={
             'headline': linkedin.headline,
@@ -5165,6 +5180,22 @@ def student_linkedin(request):
     linkedin.save(update_fields=['completeness_items', 'completeness_score', 'forecast_level', 'updated_at'])
     headline_suggestion = build_headline(student, data)
     about_suggestion = build_about(student, resume, data)
+    job_analysis = None
+    job_headline_suggestion = None
+    job_about_suggestion = None
+    if selected_job:
+        job_analysis = job_profile_analysis(selected_job, linkedin, resume, data)
+        job_analysis['job'] = selected_job
+        job_analysis['match_percentage'] = (
+            recommendation_score(student, selected_job, skills=data['skills'])
+            if selected_job.skills else None
+        )
+        if job_analysis['has_reliable_requirements']:
+            job_headline_suggestion = build_job_headline(student, data, selected_job, job_analysis)
+            job_about_suggestion = build_job_about(student, resume, data, job_analysis)
+        else:
+            job_headline_suggestion = build_job_headline(student, data, selected_job, job_analysis)
+            job_about_suggestion = build_about(student, resume, data)
     
     context = {
         'student': student,
@@ -5182,6 +5213,15 @@ def student_linkedin(request):
         'form': form,
         'forecast': linkedin.get_forecast_level_display(),
         'forecast_note': 'Your profile is ready for review.' if completeness_score >= 85 else 'Complete the remaining profile items to improve your presentation.',
+        'recommendations': profile_recommendations(linkedin, resume, data),
+        'visible_jobs': visible_jobs,
+        'selected_job': selected_job,
+        'job_analysis': job_analysis,
+        'job_headline_suggestion': job_headline_suggestion,
+        'job_about_suggestion': job_about_suggestion,
+        'job_detail_url': reverse('crp:student_job_detail', args=[selected_job.id]) if selected_job else '',
+        'tailor_url': reverse('crp:student_tailor_resume', args=[selected_job.id]) if selected_job else '',
+        'apply_url': reverse('crp:student_apply_job', args=[selected_job.id]) if selected_job else '',
         'role': 'student',
     }
     return render(request, 'crp/student/student_linkedin.html', context)

@@ -50,7 +50,10 @@ from .services import (
     student_progress_summary,
     sync_student_progress,
 )
-from .forms import RegistrationForm, CourseForm, InstructorForm, AnnouncementForm, UploadedImageForm
+from .forms import (
+    RegistrationForm, CourseForm, InstructorForm, AnnouncementForm, UploadedImageForm,
+    LinkedInProfileForm,
+)
 from .utils import (
     generate_registration_pdf, export_courses_to_excel, send_registration_email, export_rows_to_excel,
     generate_resume_pdf,
@@ -59,6 +62,9 @@ from .decorators import get_user_role, role_required
 from .material_uploads import validate_material_upload
 from .job_matching import extract_job_requirements, normalize_requirement, recommendation_score
 from .job_sync import sync_job_source
+from .linkedin_coach import (
+    build_about, build_headline, completeness_items, profile_data,
+)
 
 
 def create_notification(user, title, message='', target_url='', category='general'):
@@ -5110,56 +5116,44 @@ def student_interview_session(request, attempt_id):
 
 @role_required('student')
 def student_linkedin(request):
-    """Student LinkedIn profile optimization"""
+    """Student LinkedIn profile coach, scoped to the authenticated student."""
     try:
         student = request.user.student_profile
     except Student.DoesNotExist:
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
     
-    # Get or create LinkedIn profile
-    linkedin, created = LinkedInProfile.objects.get_or_create(
-        student=student,
-        defaults={
-            'completeness_items': {
-                'photo': False,
-                'headline': False,
-                'about': False,
-                'education': False,
-                'skills': False,
-                'projects': False,
-                'recommendations': False,
-                'featured': False,
-            },
-            'completeness_score': 0
-        }
-    )
-    
-    # Completeness items as defined in CRP reference
-    li_items = [
-        {'item': 'Professional photo', 'pts': 10, 'key': 'photo'},
-        {'item': 'Compelling headline', 'pts': 15, 'key': 'headline'},
-        {'item': 'About / summary', 'pts': 20, 'key': 'about'},
-        {'item': 'Education', 'pts': 10, 'key': 'education'},
-        {'item': 'Skills (10+)', 'pts': 10, 'key': 'skills'},
-        {'item': 'Current projects', 'pts': 15, 'key': 'projects', 'tip': 'Add your Week 4 AI project'},
-        {'item': '3+ recommendations', 'pts': 15, 'key': 'recommendations', 'tip': 'Request one from Dr. Wilson'},
-        {'item': 'Featured section', 'pts': 5, 'key': 'featured', 'tip': 'Link your portfolio'},
-    ]
-    
-    # Update completeness items with status
-    for li_item in li_items:
-        li_item['done'] = linkedin.completeness_items.get(li_item['key'], False)
-    
-    # Calculate completeness score
+    linkedin, _ = LinkedInProfile.objects.get_or_create(student=student)
+    resume = Resume.objects.filter(student=student).first()
+    data = profile_data(student, resume)
+
+    if request.method == 'POST':
+        form = LinkedInProfileForm(request.POST)
+        if form.is_valid():
+            linkedin.headline = form.cleaned_data['headline']
+            linkedin.about = form.cleaned_data['about']
+            linkedin.save(update_fields=['headline', 'about', 'updated_at'])
+            if resume is not None:
+                resume.linkedin_url = form.cleaned_data['linkedin_url']
+                resume.save(update_fields=['linkedin_url', 'last_updated'])
+            elif form.cleaned_data['linkedin_url']:
+                messages.error(request, 'Create your Resume before saving a LinkedIn URL.')
+                return redirect('crp:student_linkedin')
+            messages.success(request, 'LinkedIn profile updated.')
+            return redirect('crp:student_linkedin')
+    else:
+        form = LinkedInProfileForm(initial={
+            'headline': linkedin.headline,
+            'about': linkedin.about,
+            'linkedin_url': resume.linkedin_url if resume else '',
+        })
+
+    li_items = completeness_items(student, linkedin, resume, data)
     completed_points = sum(item['pts'] for item in li_items if item['done'])
     total_points = sum(item['pts'] for item in li_items)
     completeness_score = int((completed_points / total_points) * 100) if total_points > 0 else 0
-    
-    # Update profile
+
     linkedin.completeness_score = completeness_score
-    
-    # Determine forecast level
     if completeness_score >= 85:
         linkedin.forecast_level = 'high'
     elif completeness_score >= 60:
@@ -5167,19 +5161,25 @@ def student_linkedin(request):
     else:
         linkedin.forecast_level = 'low'
     
-    linkedin.save()
-    
-    # Preview data
-    headline = linkedin.headline or 'Add a professional headline'
-    about = linkedin.about or 'Add an About summary to complete your LinkedIn profile.'
+    linkedin.completeness_items = {item['key']: item['done'] for item in li_items}
+    linkedin.save(update_fields=['completeness_items', 'completeness_score', 'forecast_level', 'updated_at'])
+    headline_suggestion = build_headline(student, data)
+    about_suggestion = build_about(student, resume, data)
     
     context = {
         'student': student,
         'linkedin': linkedin,
         'li_items': li_items,
         'completeness_score': completeness_score,
-        'headline': headline,
-        'about': about,
+        'headline': linkedin.headline,
+        'about': linkedin.about,
+        'headline_suggestion': headline_suggestion,
+        'about_suggestion': about_suggestion,
+        'resume': resume,
+        'education': data['education'],
+        'experience': data['experience'],
+        'skills': data['skills'],
+        'form': form,
         'forecast': linkedin.get_forecast_level_display(),
         'forecast_note': 'Your profile is ready for review.' if completeness_score >= 85 else 'Complete the remaining profile items to improve your presentation.',
         'role': 'student',

@@ -1,312 +1,136 @@
 {% extends 'crp/student/student_base.html' %}
-{% load static %}
 
-{% block title %}LinkedIn - SAHE CRP{% endblock %}
-
-{% block page_title %}LinkedIn Profile{% endblock %}
+{% block title %}LinkedIn Profile Coach - SAHE CRP{% endblock %}
+{% block page_title %}LinkedIn Profile Coach{% endblock %}
 
 {% block extra_css %}
 <style>
-.linkedin-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 28px;
-    padding: 0;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.linkedin-checklist {
-    display: flex;
-    align-items: flex-end;
-    gap: 14px;
-    border-bottom: 1px solid var(--color-divider);
-    padding-bottom: 12px;
-}
-
-.linkedin-checklist-title {
-    flex: 1;
-}
-
-.linkedin-completeness-score {
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 30px;
-    letter-spacing: -0.02em;
-    color: var(--sahe-blue-600);
-}
-
-.linkedin-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--color-divider);
-}
-
-.linkedin-item-checkbox {
-    width: 20px;
-    height: 20px;
-    flex: none;
-    border: 2px solid var(--color-divider);
-    border-radius: 7px;
-    background: transparent;
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.linkedin-item-checkbox.checked {
-    background: var(--sahe-blue-600);
-    border-color: var(--sahe-blue-600);
-}
-
-.linkedin-item-content {
-    flex: 1;
-}
-
-.linkedin-item-title {
-    font-size: 13px;
-    font-weight: 600;
-}
-
-.linkedin-item-tip {
-    font-size: 11.5px;
-    color: var(--sahe-blue-700);
-    margin-top: 3px;
-}
-
-.linkedin-item-points {
-    font-size: 11.5px;
-    color: var(--gray-400);
-}
-
-.linkedin-preview {
-    border-bottom: 1px solid var(--color-divider);
-    padding-bottom: 12px;
-}
-
-.linkedin-preview-content {
-    background: #ffffff;
-    color: #201e1d;
-    margin-top: 16px;
-    box-shadow: var(--shadow-md);
-}
-
-.linkedin-header {
-    height: 92px;
-    background: linear-gradient(90deg, #201e1d 0%, #444141 100%);
-}
-
-.linkedin-avatar {
-    width: 82px;
-    height: 82px;
-    background: #0f7a5a;
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 26px;
-    margin-top: -41px;
-    border: 3px solid #fff;
-    margin-left: 24px;
-}
-
-.linkedin-body {
-    padding: 0 24px 24px;
-}
-
-.linkedin-name {
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 22px;
-    margin-top: 12px;
-}
-
-.linkedin-headline {
-    font-size: 13px;
-    line-height: 1.5;
-    margin-top: 4px;
-}
-
-.linkedin-location {
-    font-size: 11.5px;
-    color: #666;
-    margin-top: 6px;
-}
-
-.linkedin-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 14px;
-}
-
-.linkedin-connect-btn {
-    background: #0A66C2;
-    color: #fff;
-    padding: 6px 16px;
-    font-size: 12px;
-    font-weight: 700;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.linkedin-message-btn {
-    border: 1px solid #0A66C2;
-    color: #0A66C2;
-    padding: 6px 16px;
-    font-size: 12px;
-    font-weight: 700;
-    border-radius: 4px;
-    cursor: pointer;
-    background: transparent;
-}
-
-.linkedin-divider {
-    height: 1px;
-    background: #e0e0e0;
-    margin: 18px 0;
-}
-
-.linkedin-section {
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #666;
-    margin-bottom: 6px;
-}
-
-.linkedin-about {
-    font-size: 12.5px;
-    line-height: 1.6;
-}
-
-.linkedin-forecast-card {
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    background: var(--color-surface);
-    padding: 18px;
-    box-shadow: var(--shadow-sm);
-    margin-top: 20px;
-}
-
-.linkedin-forecast-header {
-    font-size: 10.5px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--gray-400);
-    margin-bottom: 10px;
-}
-
-.linkedin-forecast-bar {
-    flex: 1;
-    height: 8px;
-    background: color-mix(in srgb, var(--color-text) 12%, transparent);
-}
-
-.linkedin-forecast-bar-fill {
-    height: 100%;
-    border-radius: 99px;
-    background: linear-gradient(90deg, var(--c-1), var(--c-6));
-}
-
-.linkedin-forecast-value {
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 15px;
-}
-
-.linkedin-forecast-note {
-    font-size: 11.5px;
-    color: var(--gray-400);
-    margin-top: 8px;
-}
-
-.linkedin-actions-section {
-    display: flex;
-    gap: 8px;
-    margin-top: 18px;
-    flex-wrap: wrap;
-}
+.linkedin-coach { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 2fr); gap: 28px; max-width: 1200px; margin: 0 auto; }
+.linkedin-card { border: 1px solid var(--color-divider); border-radius: var(--radius-lg); background: var(--color-surface); padding: 20px; box-shadow: var(--shadow-sm); }
+.linkedin-card + .linkedin-card { margin-top: 18px; }
+.linkedin-score { font-size: 34px; font-weight: 800; color: var(--sahe-blue-600); }
+.linkedin-item { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
+.linkedin-check { width: 20px; height: 20px; border: 2px solid var(--color-divider); border-radius: 50%; text-align: center; line-height: 16px; }
+.linkedin-check.done { color: #fff; background: var(--sahe-blue-600); border-color: var(--sahe-blue-600); }
+.linkedin-tip, .linkedin-muted { color: var(--gray-400); font-size: 12px; }
+.linkedin-section { margin-top: 22px; }
+.linkedin-section h3 { margin-bottom: 10px; }
+.linkedin-entry { padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
+.linkedin-entry:last-child { border-bottom: 0; }
+.linkedin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.linkedin-form textarea { min-height: 150px; resize: vertical; }
+.linkedin-form input, .linkedin-form textarea { width: 100%; }
+.linkedin-suggestion { background: color-mix(in srgb, var(--sahe-blue-600) 7%, transparent); padding: 12px; border-radius: var(--radius-md); white-space: pre-wrap; }
+.linkedin-status { margin-top: 8px; font-size: 13px; }
+@media (max-width: 760px) { .linkedin-coach { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="linkedin-container">
-    <div>
-        <div class="linkedin-checklist">
-            <h4 class="linkedin-checklist-title">Profile completeness</h4>
-            <div class="linkedin-completeness-score">{{ completeness_score }}%</div>
-        </div>
-        
-        {% for item in li_items %}
+<div class="linkedin-coach">
+    <aside>
+        <div class="linkedin-card">
+            <div class="linkedin-muted">PROFILE COMPLETENESS</div>
+            <div class="linkedin-score">{{ completeness_score }}%</div>
+            <p class="linkedin-muted">Calculated from your saved LinkedIn content and Resume data.</p>
+            {% for item in li_items %}
             <div class="linkedin-item">
-                <div class="linkedin-item-checkbox {% if item.done %}checked{% endif %}">
-                    {% if item.done %}✓{% endif %}
+                <div class="linkedin-check {% if item.done %}done{% endif %}">{% if item.done %}✓{% endif %}</div>
+                <div>
+                    <strong>{{ item.item }}</strong>
+                    <div class="linkedin-tip">{% if item.done %}Complete{% else %}{{ item.tip }}{% endif %}</div>
                 </div>
-                <div class="linkedin-item-content">
-                    <div class="linkedin-item-title">{{ item.item }}</div>
-                    {% if item.tip %}
-                        <div class="linkedin-item-tip">{{ item.tip }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="linkedin-card">
+            <strong>Coach recommendations</strong>
+            <p class="linkedin-muted">Complete the missing checklist items using genuine information in your Resume Builder.</p>
+            <a class="btn btn-secondary" href="{% url 'crp:student_resume' %}">Open Resume Builder</a>
+        </div>
+    </aside>
+
+    <main>
+        <div class="linkedin-card linkedin-form">
+            <h2>Profile details</h2>
+            <p class="linkedin-muted">Edit LinkedIn content here without changing your Resume content.</p>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.non_field_errors }}
+                <label for="{{ form.headline.id_for_label }}">Headline</label>
+                {{ form.headline }}
+                {{ form.headline.errors }}
+                <div class="linkedin-actions">
+                    <button type="button" class="btn btn-secondary" data-copy-target="id_headline">Copy headline</button>
+                    <button type="button" class="btn btn-ghost" id="use-headline-suggestion">Use suggested headline</button>
+                </div>
+                <div class="linkedin-suggestion" id="headline-suggestion">{{ headline_suggestion|default:"No suggestion available from current Resume data." }}</div>
+
+                <label for="{{ form.about.id_for_label }}" style="display:block; margin-top:18px;">About</label>
+                {{ form.about }}
+                {{ form.about.errors }}
+                <div class="linkedin-actions">
+                    <button type="button" class="btn btn-secondary" data-copy-target="id_about">Copy About</button>
+                    <button type="button" class="btn btn-ghost" id="use-about-suggestion">Use suggested About</button>
+                </div>
+                <div class="linkedin-suggestion" id="about-suggestion">{{ about_suggestion|default:"No suggestion available from current Resume data." }}</div>
+
+                <label for="{{ form.linkedin_url.id_for_label }}" style="display:block; margin-top:18px;">LinkedIn profile URL</label>
+                {{ form.linkedin_url }}
+                {{ form.linkedin_url.errors }}
+                <div class="linkedin-actions">
+                    <button class="btn btn-primary" type="submit">Save LinkedIn profile</button>
+                    {% if resume and resume.linkedin_url %}
+                    <a class="btn btn-secondary" href="{{ resume.linkedin_url }}" target="_blank" rel="noopener noreferrer">Open LinkedIn Profile</a>
                     {% endif %}
                 </div>
-                <div class="linkedin-item-points">+{{ item.pts }}</div>
-            </div>
-        {% endfor %}
-        
-        <div class="linkedin-actions-section">
-            <a href="{% url 'crp:student_messages' %}" class="btn btn-primary">Contact trainer</a>
-            <button type="button" class="btn btn-secondary" id="copy-headline-button">Copy headline</button>
+                <div class="linkedin-status" id="copy-status" role="status" aria-live="polite"></div>
+            </form>
         </div>
-    </div>
-    
-    <div>
-        <div class="linkedin-preview">
-            <h4 style="margin: 0; font-size: 15px;">Live preview</h4>
-        </div>
-        
-        <div class="linkedin-preview-content">
-            <div class="linkedin-header"></div>
-            <div class="linkedin-body">
-                <div class="linkedin-avatar">AC</div>
-                <div class="linkedin-name">{{ student.user.get_full_name }}</div>
-                <div class="linkedin-headline">{{ headline }}</div>
-                <div class="linkedin-location">Add your location · LinkedIn follower count is not synced</div>
-                
-                <div class="linkedin-actions">
-                    <span class="linkedin-connect-btn" aria-disabled="true">Connect</span>
-                    <span class="linkedin-message-btn" aria-disabled="true">Message</span>
-                </div>
-                
-                <div class="linkedin-divider"></div>
-                
-                <div class="linkedin-section">About</div>
-                <div class="linkedin-about">{{ about }}</div>
-            </div>
 
-            <script>
-            document.getElementById('copy-headline-button').addEventListener('click', async function () {
-                await navigator.clipboard.writeText('{{ headline|escapejs }}');
-            });
-            </script>
-        </div>
-        
-        <div class="linkedin-forecast-card">
-            <div class="linkedin-forecast-header">Recruiter visibility forecast</div>
-            <div style="display: flex; align-items: center; gap: 14px;">
-                <div class="linkedin-forecast-bar">
-                    <div class="linkedin-forecast-bar-fill" style="width: {{ completeness_score }}%;"></div>
-                </div>
-                <div class="linkedin-forecast-value">{{ forecast }}</div>
+        <div class="linkedin-card">
+            <h2>Resume data reused for your profile</h2>
+            <div class="linkedin-section">
+                <h3>Education</h3>
+                {% for item in education %}
+                <div class="linkedin-entry"><strong>{{ item.degree }}</strong><br>{{ item.institution }}{% if item.location %} · {{ item.location }}{% endif %}</div>
+                {% empty %}<p class="linkedin-muted">No education entries saved in Resume Builder.</p>{% endfor %}
             </div>
-            <div class="linkedin-forecast-note">{{ forecast_note }}</div>
+            <div class="linkedin-section">
+                <h3>Experience</h3>
+                {% for item in experience %}
+                <div class="linkedin-entry"><strong>{{ item.role }}</strong> · {{ item.company }}{% if item.location %}<br>{{ item.location }}{% endif %}<br><span class="linkedin-muted">{% if item.is_current %}Current{% else %}Completed{% endif %}</span></div>
+                {% empty %}<p class="linkedin-muted">No experience entries saved in Resume Builder.</p>{% endfor %}
+            </div>
+            <div class="linkedin-section">
+                <h3>Skills</h3>
+                {% if skills %}<p>{{ skills|join:", " }}</p>{% else %}<p class="linkedin-muted">No skills saved in Resume Builder.</p>{% endif %}
+            </div>
         </div>
-    </div>
+    </main>
 </div>
+<script>
+(function () {
+    const status = document.getElementById('copy-status');
+    function copyText(id) {
+        const value = document.getElementById(id).value;
+        if (!value) { status.textContent = 'There is no content to copy yet.'; return; }
+        if (!navigator.clipboard) { status.textContent = 'Copy is unavailable in this browser.'; return; }
+        navigator.clipboard.writeText(value).then(function () {
+            status.textContent = 'Copied to clipboard.';
+        }).catch(function () {
+            status.textContent = 'Copy failed. Select the text and copy it manually.';
+        });
+    }
+    document.querySelectorAll('[data-copy-target]').forEach(function (button) {
+        button.addEventListener('click', function () { copyText(button.dataset.copyTarget); });
+    });
+    document.getElementById('use-headline-suggestion').addEventListener('click', function () {
+        document.getElementById('id_headline').value = document.getElementById('headline-suggestion').textContent.trim();
+    });
+    document.getElementById('use-about-suggestion').addEventListener('click', function () {
+        document.getElementById('id_about').value = document.getElementById('about-suggestion').textContent.trim();
+    });
+})();
+</script>
 {% endblock %}

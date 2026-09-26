@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .models import Department, Instructor, Course, Registration, Announcement, FinanceProfile, MarketingProfile, Invoice, Campaign, UploadedImage
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, Div, HTML
+from .linkedin_coach import linkedin_url_is_valid
 
 
 class DepartmentForm(forms.ModelForm):
@@ -124,6 +125,20 @@ class AnnouncementForm(forms.ModelForm):
             Field('published'),
             Submit('submit', 'Save Announcement', css_class='btn btn-sahe')
         )
+
+
+class LinkedInProfileForm(forms.Form):
+    headline = forms.CharField(max_length=200, required=False)
+    about = forms.CharField(required=False, widget=forms.Textarea(attrs={'rows': 8}))
+    linkedin_url = forms.URLField(required=False, max_length=200)
+
+    def clean_linkedin_url(self):
+        value = self.cleaned_data['linkedin_url'].strip()
+        if value and not linkedin_url_is_valid(value):
+            raise forms.ValidationError(
+                'Use a LinkedIn profile URL such as https://www.linkedin.com/in/your-name/.'
+            )
+        return value
 
 
 class FinanceProfileForm(forms.ModelForm):

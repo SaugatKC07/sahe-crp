@@ -1,0 +1,329 @@
+{% extends 'crp/student/student_base.html' %}
+{% block title %}Tailored Resume - SAHE CRP{% endblock %}
+{% block page_title %}Tailored Resume{% endblock %}
+
+{% block extra_css %}
+<style>
+.tailored-workspace {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+.tailored-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--color-divider);
+}
+.tailored-eyebrow,
+.workspace-section-label {
+    color: var(--sahe-blue-600);
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+.tailored-page-title {
+    margin: 5px 0 4px;
+    color: var(--gray-900);
+    font-family: var(--font-heading);
+    font-size: clamp(24px, 3vw, 34px);
+    letter-spacing: -.03em;
+}
+.tailored-page-subtitle {
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 13px;
+}
+.tailored-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+.tailored-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, .72fr) minmax(0, 2fr);
+    gap: 24px;
+    margin-top: 24px;
+    align-items: start;
+}
+.tailored-analysis,
+.tailored-editor {
+    min-width: 0;
+}
+.workspace-section {
+    padding: 0 0 22px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--color-divider);
+}
+.workspace-section:last-child {
+    border-bottom: 0;
+    margin-bottom: 0;
+}
+.workspace-section h2,
+.workspace-section h3 {
+    margin: 6px 0 12px;
+    color: var(--gray-900);
+    font-family: var(--font-heading);
+    font-size: 17px;
+}
+.workspace-copy {
+    color: var(--gray-600);
+    font-size: 13px;
+    line-height: 1.65;
+}
+.skill-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.skill-pill {
+    display: inline-flex;
+    padding: 5px 9px;
+    border: 1px solid var(--color-divider);
+    border-radius: 999px;
+    color: var(--gray-700);
+    font-size: 11px;
+}
+.skill-pill.match {
+    border-color: var(--sahe-blue-600);
+    background: var(--sahe-blue-50);
+    color: var(--sahe-blue-700);
+}
+.skill-pill.missing {
+    border-color: color-mix(in srgb, var(--danger) 50%, var(--color-divider));
+    color: var(--danger);
+}
+.suggestion-list {
+    display: grid;
+    gap: 10px;
+    margin: 0;
+    padding-left: 18px;
+    color: var(--gray-600);
+    font-size: 13px;
+    line-height: 1.55;
+}
+.tailored-editor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr);
+    gap: 24px;
+}
+.editor-pane,
+.preview-pane {
+    min-width: 0;
+}
+.editor-pane form {
+    display: grid;
+    gap: 16px;
+}
+.editor-field {
+    display: grid;
+    gap: 6px;
+}
+.editor-field label {
+    color: var(--gray-700);
+    font-size: 12px;
+    font-weight: 700;
+}
+.editor-field input,
+.editor-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--gray-900);
+    font: inherit;
+    font-size: 13px;
+}
+.editor-field textarea {
+    min-height: 118px;
+    resize: vertical;
+    line-height: 1.55;
+}
+.editor-field textarea.readonly-content {
+    min-height: 150px;
+    background: var(--gray-50);
+}
+.editor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+.editor-note {
+    margin: -5px 0 0;
+    color: var(--gray-500);
+    font-size: 11px;
+    line-height: 1.5;
+}
+.resume-preview {
+    position: sticky;
+    top: 92px;
+    padding: 30px;
+    background: #fff;
+    color: #201e1d;
+    box-shadow: var(--shadow-md);
+}
+.resume-preview h1 {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 28px;
+}
+.resume-preview h2 {
+    margin: 4px 0 0;
+    color: #0f7a5a;
+    font-size: 15px;
+}
+.resume-preview h3 {
+    margin: 22px 0 7px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #d9dfdb;
+    color: #0f7a5a;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+.resume-preview p,
+.resume-preview li {
+    font-size: 12px;
+    line-height: 1.55;
+}
+.resume-preview ul {
+    margin: 5px 0 0;
+    padding-left: 18px;
+}
+@media (max-width: 1200px) {
+    .tailored-editor {
+        grid-template-columns: 1fr;
+    }
+    .resume-preview {
+        position: static;
+    }
+}
+@media (max-width: 900px) {
+    .tailored-page-header,
+    .tailored-layout {
+        display: block;
+    }
+    .tailored-actions {
+        justify-content: flex-start;
+        margin-top: 16px;
+    }
+    .tailored-analysis {
+        margin-bottom: 28px;
+    }
+}
+@media (max-width: 600px) {
+    .editor-grid {
+        grid-template-columns: 1fr;
+    }
+    .resume-preview {
+        padding: 22px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="tailored-workspace">
+    <header class="tailored-page-header">
+        <div>
+            <div class="tailored-eyebrow">Tailored resume workspace</div>
+            <h1 class="tailored-page-title">Tailoring for {{ job.title }}</h1>
+            <p class="tailored-page-subtitle">{{ job.company }}{% if job.location %} · {{ job.location }}{% endif %} · Built from your original resume; the original remains unchanged.</p>
+        </div>
+        <nav class="tailored-actions" aria-label="Tailored resume actions">
+            <a class="btn btn-ghost" href="{% url 'crp:student_job_detail' job.id %}">Back to Job</a>
+            {% if is_saved %}
+                <button class="btn btn-primary" type="submit" form="tailored-editor-form">Save</button>
+                <a class="btn btn-secondary" href="{% url 'crp:student_export_tailored_resume_pdf' tailored.id %}">Export PDF</a>
+                {% if job.apply_url %}<a class="btn btn-primary" href="{{ job.apply_url }}" target="_blank" rel="noopener noreferrer">Apply</a>{% endif %}
+            {% else %}
+                <button class="btn btn-primary" type="submit" form="tailored-save-form">Save tailored version</button>
+            {% endif %}
+        </nav>
+    </header>
+
+    <div class="tailored-layout">
+        <aside class="tailored-analysis" aria-label="Job and resume matching analysis">
+            <section class="workspace-section">
+                <div class="workspace-section-label">Matching analysis</div>
+                <h2>What aligns</h2>
+                <p class="workspace-copy">Requirements are matched only against skills and evidence already present in your source resume.</p>
+                <div class="skill-list">
+                    {% for skill in analysis.matched_skills %}<span class="skill-pill match">{{ skill }}</span>{% empty %}<span class="workspace-copy">No matching requirements found yet.</span>{% endfor %}
+                </div>
+            </section>
+            <section class="workspace-section">
+                <div class="workspace-section-label">Requirements</div>
+                <h2>Needs evidence</h2>
+                <p class="workspace-copy"><strong>Job Skills:</strong> {{ job.skills|join:", "|default:"Extracted from description" }}</p>
+                {% if analysis.requirements_available %}
+                    <div class="skill-list">
+                        {% for requirement in analysis.missing_requirements %}<span class="skill-pill missing">{{ requirement }}</span>{% empty %}<span class="skill-pill match">All extracted requirements covered</span>{% endfor %}
+                    </div>
+                {% else %}
+                    <p class="workspace-copy">No reliable structured requirements were available. Review the job description before tailoring.</p>
+                {% endif %}
+            </section>
+            <section class="workspace-section">
+                <div class="workspace-section-label">Suggestions</div>
+                <ul class="suggestion-list">{% for recommendation in analysis.recommendations %}<li>{{ recommendation }}</li>{% endfor %}</ul>
+            </section>
+            <section class="workspace-section">
+                <div class="workspace-section-label">Job context</div>
+                <h2>{{ job.title }} at {{ job.company }}</h2>
+                <p class="workspace-copy">{{ job.description }}</p>
+            </section>
+        </aside>
+
+        <section class="tailored-editor" aria-label="Tailored resume editor and preview">
+            <div class="editor-pane">
+                <div class="workspace-section-label">Resume editor</div>
+                {% if is_saved %}
+                <form id="tailored-editor-form" method="post">
+                    {% csrf_token %}
+                    <div class="editor-field"><label for="headline">Headline</label><input id="headline" name="headline" value="{{ draft.headline }}"></div>
+                    <div class="editor-field"><label for="summary">Professional summary</label><textarea id="summary" name="summary">{{ draft.summary }}</textarea></div>
+                    <div class="editor-field"><label for="skills">Skills</label><input id="skills" name="skills" value="{{ draft.skills|join:', ' }}"><p class="editor-note">Use only skills you genuinely have. Missing requirements are not added automatically.</p></div>
+                    <div class="editor-grid">
+                        <div class="editor-field"><label for="contact_email">Email</label><input id="contact_email" type="email" name="contact_email" value="{{ draft.contact_email }}"></div>
+                        <div class="editor-field"><label for="contact_phone">Phone</label><input id="contact_phone" name="contact_phone" value="{{ draft.contact_phone }}"></div>
+                        <div class="editor-field"><label for="contact_location">Location</label><input id="contact_location" name="contact_location" value="{{ draft.contact_location }}"></div>
+                    </div>
+                    <div class="editor-field"><label for="experience">Experience</label><textarea id="experience" class="readonly-content" readonly>{% for exp in draft.experience %}{{ exp.role }} — {{ exp.company }}{% for bullet in exp.bullets %}
+• {{ bullet }}{% endfor %}{% if not forloop.last %}
+
+{% endif %}{% endfor %}</textarea><p class="editor-note">Experience is carried over from your original resume. Edit the original resume to change its source evidence.</p></div>
+                    <div class="editor-field"><label for="education">Education</label><textarea id="education" class="readonly-content" readonly>{% for edu in draft.education %}{{ edu.degree }} — {{ edu.institution }}{% if not forloop.last %}
+
+{% endif %}{% endfor %}</textarea><p class="editor-note">Education is carried over from your original resume and is not fabricated.</p></div>
+                </form>
+                {% else %}
+                <div class="workspace-section">
+                    <h2>Review the generated copy</h2>
+                    <p class="workspace-copy">Save this copy to open the editor. Only verified content from your current resume will be carried forward.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="preview-pane">
+                <div class="workspace-section-label">Live preview</div>
+                <article class="resume-preview">
+                    <h1>{{ student.user.get_full_name }}</h1>
+                    <h2>{{ draft.headline|default:"Professional Title" }}</h2>
+                    {% if draft.contact_email or draft.contact_phone or draft.contact_location %}<p>{{ draft.contact_email }}{% if draft.contact_phone %} · {{ draft.contact_phone }}{% endif %}{% if draft.contact_location %} · {{ draft.contact_location }}{% endif %}</p>{% endif %}
+                    {% if draft.summary %}<h3>Summary</h3><p>{{ draft.summary }}</p>{% endif %}
+                    {% if draft.skills %}<h3>Skills</h3><p>{{ draft.skills|join:", " }}</p>{% endif %}
+                    {% if draft.experience %}<h3>Experience</h3>{% for exp in draft.experience %}<p><strong>{{ exp.role }} — {{ exp.company }}</strong></p><ul>{% for bullet in exp.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>{% endfor %}{% endif %}
+                    {% if draft.education %}<h3>Education</h3>{% for edu in draft.education %}<p><strong>{{ edu.degree }}</strong> — {{ edu.institution }}</p>{% endfor %}{% endif %}
+                </article>
+            </div>
+        </section>
+    </div>
+</main>
+{% if not is_saved %}<form id="tailored-save-form" method="post">{% csrf_token %}</form>{% endif %}
+{% endblock %}

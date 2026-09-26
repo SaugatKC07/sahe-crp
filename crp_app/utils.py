@@ -1,5 +1,6 @@
 from io import BytesIO
 from datetime import datetime
+from xml.sax.saxutils import escape
 from django.template.loader import render_to_string
 from django.conf import settings
 from django.core.mail import send_mail
@@ -22,6 +23,52 @@ try:
     EXCEL_AVAILABLE = True
 except ImportError:
     EXCEL_AVAILABLE = False
+
+
+def generate_resume_pdf(name, resume, title='Resume'):
+    """Render a tailored resume snapshot as a PDF."""
+    if not PDF_AVAILABLE:
+        return None
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=54, bottomMargin=36)
+    styles = getSampleStyleSheet()
+    story = [
+        Paragraph(escape(name), styles['Title']),
+        Paragraph(escape(resume.get('headline', '') or title), styles['Heading2']),
+    ]
+    contact = ' · '.join(
+        value for value in (
+            resume.get('contact_email', ''),
+            resume.get('contact_phone', ''),
+            resume.get('contact_location', ''),
+        ) if value
+    )
+    if contact:
+        story.append(Paragraph(escape(contact), styles['Normal']))
+    if resume.get('summary'):
+        story.extend([Paragraph('Summary', styles['Heading3']), Paragraph(escape(resume['summary']), styles['BodyText'])])
+    if resume.get('skills'):
+        story.extend([Paragraph('Skills', styles['Heading3']), Paragraph(escape(', '.join(resume['skills'])), styles['BodyText'])])
+    if resume.get('experience'):
+        story.append(Paragraph('Experience', styles['Heading3']))
+        for experience in resume['experience']:
+            story.append(Paragraph(
+                escape(f"{experience.get('role', '')} — {experience.get('company', '')}"),
+                styles['Heading4'],
+            ))
+            for bullet in experience.get('bullets', []):
+                story.append(Paragraph(escape(f"• {bullet}"), styles['BodyText']))
+    if resume.get('education'):
+        story.append(Paragraph('Education', styles['Heading3']))
+        for education in resume['education']:
+            story.append(Paragraph(
+                escape(f"{education.get('degree', '')} — {education.get('institution', '')}"),
+                styles['BodyText'],
+            ))
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 from .models import Registration, Course
 

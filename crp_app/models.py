@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.core.exceptions import ValidationError
 from django.utils.text import slugify
 from django.utils import timezone
 import os
@@ -1456,6 +1457,42 @@ class Resume(models.Model):
         indexes = [
             models.Index(fields=['completeness_score']),
         ]
+
+class TailoredResume(models.Model):
+    """A student-owned, immutable-at-source snapshot tailored to one job."""
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='tailored_resumes')
+    job = models.ForeignKey(JobListing, on_delete=models.CASCADE, related_name='tailored_resumes')
+    source_resume = models.ForeignKey(Resume, on_delete=models.PROTECT, related_name='tailored_versions')
+    headline = models.CharField(max_length=200, blank=True)
+    summary = models.TextField(blank=True)
+    skills = models.JSONField(default=list)
+    contact_email = models.EmailField(blank=True)
+    contact_phone = models.CharField(max_length=20, blank=True)
+    contact_location = models.CharField(max_length=200, blank=True)
+    experience = models.JSONField(default=list)
+    education = models.JSONField(default=list)
+    analysis = models.JSONField(default=dict)
+    version = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['student', 'job', 'source_resume', 'version'],
+                name='unique_tailored_resume_version',
+            ),
+        ]
+        indexes = [models.Index(fields=['student', 'job'])]
+
+    def clean(self):
+        if self.source_resume_id and self.student_id:
+            if self.source_resume.student_id != self.student_id:
+                raise ValidationError('A tailored resume must use the same student’s source resume.')
+
+    def __str__(self):
+        return f"{self.student.user.username} - {self.job.title} v{self.version}"
 
 class ResumeExperience(models.Model):
     """Work experience entries in resume"""

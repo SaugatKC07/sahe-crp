@@ -1,4 +1,6 @@
-"""Student-specific job matching and recommendation scoring."""
+"""Student-specific job matching and deterministic requirement extraction."""
+
+import re
 
 from .models import Resume
 
@@ -10,6 +12,106 @@ SPECIALISATION_FIELDS = {
     'project_management': {'pm'},
     'information_systems': {'data', 'cybersecurity'},
 }
+
+
+RELIABLE_REQUIREMENT_PHRASES = {
+    'Software Development': 'software development',
+    'Machine Learning': 'machine learning',
+    'Deep Learning': 'deep learning',
+    'Data Analysis': 'data analysis',
+    'Data Analytics': 'data analytics',
+    'Data Science': 'data science',
+    'Project Management': 'project management',
+    'Product Management': 'product management',
+    'Software Engineering': 'software engineering',
+    'Web Development': 'web development',
+    'Cloud Computing': 'cloud computing',
+    'Cybersecurity': 'cybersecurity',
+    'Information Security': 'information security',
+    'Artificial Intelligence': 'artificial intelligence',
+    'Natural Language Processing': 'natural language processing',
+    'REST APIs': 'rest apis',
+    'REST API': 'rest api',
+    'Azure DevOps': 'azure devops',
+    'Amazon Web Services': 'amazon web services',
+    'Google Cloud': 'google cloud',
+    'Continuous Integration': 'continuous integration',
+    'Continuous Delivery': 'continuous delivery',
+    'Version Control': 'version control',
+    'Problem Solving': 'problem solving',
+    'Communication': 'communication',
+    'Teamwork': 'teamwork',
+    'Leadership': 'leadership',
+    'Time Management': 'time management',
+    'Python': 'python',
+    'Java': 'java',
+    'JavaScript': 'javascript',
+    'TypeScript': 'typescript',
+    'C#': 'c#',
+    'C++': 'c++',
+    'SQL': 'sql',
+    'NoSQL': 'nosql',
+    'HTML': 'html',
+    'CSS': 'css',
+    'React': 'react',
+    'Angular': 'angular',
+    'Vue': 'vue',
+    'Django': 'django',
+    'Flask': 'flask',
+    'FastAPI': 'fastapi',
+    'Node.js': 'node.js',
+    'Node': 'node',
+    'Git': 'git',
+    'GitHub': 'github',
+    'GitLab': 'gitlab',
+    'Docker': 'docker',
+    'Kubernetes': 'kubernetes',
+    'Terraform': 'terraform',
+    'Linux': 'linux',
+    'AWS': 'aws',
+    'Azure': 'azure',
+    'GCP': 'gcp',
+    'Spark': 'spark',
+    'Hadoop': 'hadoop',
+    'Tableau': 'tableau',
+    'Power BI': 'power bi',
+    'Excel': 'excel',
+    'PostgreSQL': 'postgresql',
+    'MySQL': 'mysql',
+    'MongoDB': 'mongodb',
+    'Redis': 'redis',
+}
+
+
+def normalize_requirement(value):
+    """Normalize a requirement for case-insensitive comparison."""
+    return re.sub(r'[^a-z0-9]+', '', str(value).casefold())
+
+
+def extract_job_requirements(job):
+    """Return structured skills or reliable phrases evidenced in job text."""
+    structured = [
+        str(skill).strip() for skill in (job.skills or [])
+        if str(skill).strip()
+    ]
+    if structured:
+        return structured
+
+    job_text = f'{job.title or ""} {job.description or ""}'
+    lowered_text = job_text.casefold()
+    requirements = []
+    seen = set()
+    for label, phrase in sorted(
+        RELIABLE_REQUIREMENT_PHRASES.items(),
+        key=lambda item: len(item[1]),
+        reverse=True,
+    ):
+        pattern = r'(?<![a-z0-9])' + re.escape(phrase) + r'(?![a-z0-9])'
+        if re.search(pattern, lowered_text) and normalize_requirement(label) not in seen:
+            requirements.append(label)
+            seen.add(normalize_requirement(label))
+
+    return requirements
 
 
 def recommendation_score(student, job, preferences=None, skills=None):

@@ -37,7 +37,7 @@ from .models import (
     StudentCommunityPost, StudentCommunityComment, StudentPreference, SupportTicket,
     SupportTicketComment, SuccessStory,
     # Career Section Models - Phase 2B
-    JobListing, JobApplication, Resume, ResumeExperience, ResumeEducation,
+    JobListing, JobApplication, Resume, TailoredResume, ResumeExperience, ResumeEducation,
     InterviewSet, InterviewQuestion, InterviewAttempt,
     LinkedInProfile, Badge, StudentBadge, Streak, Leaderboard,
     JobSource, JobSyncRun,
@@ -51,10 +51,13 @@ from .services import (
     sync_student_progress,
 )
 from .forms import RegistrationForm, CourseForm, InstructorForm, AnnouncementForm, UploadedImageForm
-from .utils import generate_registration_pdf, export_courses_to_excel, send_registration_email, export_rows_to_excel
+from .utils import (
+    generate_registration_pdf, export_courses_to_excel, send_registration_email, export_rows_to_excel,
+    generate_resume_pdf,
+)
 from .decorators import get_user_role, role_required
 from .material_uploads import validate_material_upload
-from .job_matching import recommendation_score
+from .job_matching import extract_job_requirements, normalize_requirement, recommendation_score
 from .job_sync import sync_job_source
 
 
@@ -4341,7 +4344,7 @@ def student_export_resume(request):
 
 @role_required('student')
 def student_tailor_resume(request, job_id):
-    """Tailor resume for a specific job"""
+    """Review a deterministic, student-owned tailored resume draft."""
     try:
         student = request.user.student_profile
     except Student.DoesNotExist:
@@ -4350,7 +4353,7 @@ def student_tailor_resume(request, job_id):
     
     job = get_object_or_404(JobListing, id=job_id)
     
-    # Get or create resume
+    # The source is always the authenticated student's resume.
     resume, created = Resume.objects.get_or_create(
         student=student,
         defaults={
@@ -4359,79 +4362,160 @@ def student_tailor_resume(request, job_id):
         }
     )
     
-    # Get resume experience and education
-    experience = resume.experience.all().order_by('-is_current', '-start_date')
-    education = resume.education.all().order_by('-is_current', '-end_date')
-    
-    # Calculate completeness score
-    completeness_items = {
-        'headline': bool(resume.headline),
-        'summary': bool(resume.summary),
-        'skills': len(resume.skills) >= 5,
-        'experience': experience.count() >= 1,
-        'education': education.count() >= 1,
-        'contact': bool(resume.contact_phone),
-    }
-    
-    completed_items = sum(1 for item in completeness_items.values() if item)
-    completeness_score = int((completed_items / len(completeness_items)) * 100)
-    
-    # AI score (deterministic based on completeness - no randomness)
-    base_ai_score = 65 + (completeness_score // 4)
-    ai_score = min(98, base_ai_score)
-    
-    # AI feedback scores (deterministic based on completeness)
-    keywords_score = min(98, ai_score + 2)
-    structure_score = min(98, ai_score + 1)
-    impact_score = max(60, ai_score - 5)
-    clarity_score = min(98, ai_score + 3)
-    
-    ai_feedback = [
-        {'label': 'Keywords', 'value': keywords_score, 'note': 'Strong alignment with job descriptions' if keywords_score > 70 else 'Add more industry-specific terms'},
-        {'label': 'Structure', 'value': structure_score, 'note': 'Clear sections and good formatting'},
-        {'label': 'Impact', 'value': impact_score, 'note': 'Use more metrics and numbers'},
-        {'label': 'Clarity', 'value': clarity_score, 'note': 'Concise and well-written'},
+    source_skills = list(resume.skills or [])
+    requirements = extract_job_requirements(job)
+    requirement_terms = {normalize_requirement(term) for term in requirements}
+    job_text = ' '.join([job.title or '', job.description or ''] + [str(s) for s in requirements])
+    job_terms = {normalize_requirement(term) for term in job_text.split() if len(normalize_requirement(term)) > 2}
+    matching_skills = [
+        skill for skill in source_skills
+        if normalize_requirement(skill) in requirement_terms
     ]
-    
-    # Job-specific tailoring analysis
-    job_skills = job.skills if job.skills else []
-    student_skills = [skill.lower() for skill in resume.skills]
-    
-    matching_skills = [skill for skill in job_skills if skill.lower() in student_skills]
-    missing_skills = [skill for skill in job_skills if skill.lower() not in student_skills]
-    
-    # Tailoring recommendations
-    tailoring_recommendations = []
-    if missing_skills:
-        tailoring_recommendations.append(f"Add these job-specific skills: {', '.join(missing_skills[:3])}")
-    if not matching_skills:
-        tailoring_recommendations.append("Add relevant skills to match job requirements")
-    if job.description and 'Python' in job.description.lower() and 'python' not in student_skills:
-        tailoring_recommendations.append("Emphasize Python experience in your summary")
-    
-    # Update resume scores
-    resume.completeness_score = completeness_score
-    resume.ai_score = ai_score
-    resume.ai_feedback = {'scores': ai_feedback}
-    resume.save()
-    
-    context = {
-        'student': student,
-        'resume': resume,
-        'experience': experience,
-        'education': education,
-        'completeness_score': completeness_score,
-        'ai_score': ai_score,
-        'ai_feedback': ai_feedback,
-        'completeness_items': completeness_items,
-        'job': job,
-        'matching_skills': matching_skills,
-        'missing_skills': missing_skills,
-        'tailoring_recommendations': tailoring_recommendations,
-        'is_tailoring': True,
-        'role': 'student',
+    remaining_skills = [skill for skill in source_skills if skill not in matching_skills]
+    ordered_experience = sorted(
+        resume.experience.all(), key=lambda exp: (
+            -sum(1 for word in job_terms if word in normalize_requirement(
+                ' '.join([exp.role, exp.company] + list(exp.bullets or []))
+            )),
+            -int(exp.is_current), exp.order,
+        ),
+    )
+    experience_data = [
+        {'role': exp.role, 'company': exp.company, 'location': exp.location,
+         'start_date': exp.start_date.isoformat(), 'end_date': exp.end_date.isoformat() if exp.end_date else '',
+         'is_current': exp.is_current, 'bullets': list(exp.bullets or [])}
+        for exp in ordered_experience
+    ]
+    education_data = [
+        {'degree': edu.degree, 'institution': edu.institution, 'location': edu.location,
+         'start_date': edu.start_date.isoformat(), 'end_date': edu.end_date.isoformat() if edu.end_date else '',
+         'is_current': edu.is_current, 'details': edu.details}
+        for edu in resume.education.all()
+    ]
+    source_skill_terms = {normalize_requirement(skill) for skill in source_skills}
+    missing_skills = [
+        skill for skill in requirements
+        if normalize_requirement(skill) not in source_skill_terms
+    ]
+    requirements_available = bool(requirements)
+    analysis = {
+        'job_title': job.title,
+        'requirements_available': requirements_available,
+        'matched_skills': matching_skills,
+        'missing_requirements': missing_skills,
+        'matched_job_terms': sorted({
+            term for term in job_terms
+            if any(term in normalize_requirement(str(value)) for value in source_skills)
+        }),
+        'recommendations': [
+            f"Review evidence for: {', '.join(missing_skills)}." if missing_skills else (
+                'Your existing skills cover the listed requirements.'
+                if requirements_available else
+                'No reliable structured requirements were available. Review the job description before tailoring.'
+            ),
+            'Only existing resume content is included; add evidence in the source resume before tailoring again.',
+        ],
     }
-    return render(request, 'crp/student/student_resume.html', context)
+    draft = {
+        'headline': resume.headline,
+        'summary': resume.summary,
+        'skills': matching_skills + remaining_skills,
+        'experience': experience_data,
+        'education': education_data,
+    }
+    if request.method == 'POST':
+        latest = TailoredResume.objects.filter(student=student, job=job, source_resume=resume).order_by('-version').first()
+        version = (latest.version + 1) if latest else 1
+        tailored = TailoredResume.objects.create(
+            student=student, job=job, source_resume=resume, version=version,
+            headline=draft['headline'], summary=draft['summary'], skills=draft['skills'],
+            contact_email=resume.contact_email, contact_phone=resume.contact_phone,
+            contact_location=resume.contact_location,
+            experience=draft['experience'], education=draft['education'], analysis=analysis,
+        )
+        return redirect('crp:student_tailored_resume', tailored_id=tailored.id)
+    return render(request, 'crp/student/tailored_resume.html', {
+        'student': student, 'job': job, 'resume': resume, 'draft': draft, 'analysis': analysis,
+        'is_saved': False, 'role': 'student',
+    })
+
+@role_required('student')
+def student_tailored_resume(request, tailored_id):
+    student = get_object_or_404(Student, user=request.user)
+    tailored = get_object_or_404(TailoredResume.objects.select_related('job', 'source_resume'), id=tailored_id, student=student)
+    if request.method == 'POST':
+        tailored.headline = request.POST.get('headline', '').strip()
+        tailored.summary = request.POST.get('summary', '').strip()
+        tailored.skills = [
+            skill.strip() for skill in request.POST.get('skills', '').split(',')
+            if skill.strip()
+        ]
+        tailored.contact_email = request.POST.get('contact_email', '').strip()
+        tailored.contact_phone = request.POST.get('contact_phone', '').strip()
+        tailored.contact_location = request.POST.get('contact_location', '').strip()
+        tailored.save(update_fields=[
+            'headline', 'summary', 'skills', 'contact_email', 'contact_phone',
+            'contact_location', 'updated_at',
+        ])
+        messages.success(request, 'Tailored resume saved.')
+        return redirect('crp:student_tailored_resume', tailored_id=tailored.id)
+    return render(request, 'crp/student/tailored_resume.html', {
+        'student': student, 'job': tailored.job, 'tailored': tailored, 'draft': tailored,
+        'analysis': tailored.analysis, 'is_saved': True, 'role': 'student',
+    })
+
+@role_required('student')
+def student_export_tailored_resume(request, tailored_id):
+    student = get_object_or_404(Student, user=request.user)
+    tailored = get_object_or_404(TailoredResume, id=tailored_id, student=student)
+    lines = [f"# {student.user.get_full_name()}", tailored.headline, '']
+    contact = ' · '.join(value for value in (
+        tailored.contact_email, tailored.contact_phone, tailored.contact_location,
+    ) if value)
+    if contact:
+        lines += [contact, '']
+    if tailored.summary: lines += ['## Summary', tailored.summary, '']
+    if tailored.skills: lines += ['## Skills', ', '.join(tailored.skills), '']
+    if tailored.experience:
+        lines += ['## Experience']
+        for exp in tailored.experience:
+            lines += [f"### {exp['role']} — {exp['company']}"]
+            lines += [f"- {bullet}" for bullet in exp.get('bullets', [])]
+        lines.append('')
+    if tailored.education:
+        lines += ['## Education'] + [f"### {edu['degree']} — {edu['institution']}" for edu in tailored.education]
+    response = HttpResponse('\n'.join(lines), content_type='text/markdown')
+    response['Content-Disposition'] = f'attachment; filename="{student.user.get_full_name().replace(" ", "_")}_{tailored.job.id}_tailored.md"'
+    return response
+
+
+@role_required('student')
+def student_export_tailored_resume_pdf(request, tailored_id):
+    student = get_object_or_404(Student, user=request.user)
+    tailored = get_object_or_404(TailoredResume, id=tailored_id, student=student)
+    content = generate_resume_pdf(
+        student.user.get_full_name(),
+        {
+            'headline': tailored.headline,
+            'summary': tailored.summary,
+            'skills': tailored.skills,
+            'contact_email': tailored.contact_email,
+            'contact_phone': tailored.contact_phone,
+            'contact_location': tailored.contact_location,
+            'experience': tailored.experience,
+            'education': tailored.education,
+        },
+        title=f'{tailored.job.title} resume',
+    )
+    if content is None:
+        messages.error(request, 'PDF export is unavailable in this installation.')
+        return redirect('crp:student_tailored_resume', tailored_id=tailored.id)
+    response = HttpResponse(content, content_type='application/pdf')
+    response['Content-Disposition'] = (
+        f'attachment; filename="{student.user.get_full_name().replace(" ", "_")}_'
+        f'{tailored.job.id}_tailored.pdf"'
+    )
+    return response
 
 @role_required('student')
 @require_POST

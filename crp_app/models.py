@@ -969,6 +969,17 @@ class SubmissionFile(models.Model):
     class Meta:
         ordering = ['-uploaded_at']
 
+class AssessmentAttachment(models.Model):
+    """Trainer-provided resources attached to an assessment."""
+    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name='attachments')
+    file = models.FileField(upload_to='assessment_resources/%Y/%m/')
+    original_filename = models.CharField(max_length=255)
+    uploaded_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name='assessment_attachments')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-uploaded_at']
+
 class StudentTask(models.Model):
     """Personal tasks for students"""
     PRIORITY_CHOICES = [

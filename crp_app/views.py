@@ -41,7 +41,7 @@ from .models import (
     JobListing, JobApplication, Resume, TailoredResume, ResumeExperience, ResumeEducation,
     InterviewSet, InterviewQuestion, InterviewAttempt,
     LinkedInProfile, Badge, StudentBadge, Streak, Leaderboard,
-    JobSource, JobSyncRun,
+    JobSource, JobSyncRun, AssessmentAttachment,
 )
 from .services import (
     eligible_assessments,
@@ -60,7 +60,7 @@ from .utils import (
     generate_resume_pdf,
 )
 from .decorators import get_user_role, role_required
-from .material_uploads import validate_material_upload
+from .material_uploads import validate_assessment_resource_upload, validate_material_upload
 from .job_matching import extract_job_requirements, normalize_requirement, recommendation_score
 from .job_sync import sync_job_source
 from .linkedin_coach import (
@@ -496,6 +496,7 @@ def trainer_assessments(request):
     assessments = Assessment.objects.filter(course_code__in=course_codes).select_related('week', 'course').annotate(
         submission_count=Count('submissions'),
         marked_count=Count('submissions', filter=Q(submissions__status='marked')),
+        attachment_count=Count('attachments', distinct=True),
     )
     search = request.GET.get('q', '').strip()
     if search:
@@ -570,6 +571,18 @@ def trainer_assessment_save(request, assessment_id=None):
     assessment.required_file_count = max(1, int(request.POST.get('required_file_count') or 1))
     assessment.max_file_size_mb = max(1, int(request.POST.get('max_file_size_mb') or 500))
     assessment.save()
+    for uploaded_file in request.FILES.getlist('resources'):
+        try:
+            validate_assessment_resource_upload(uploaded_file)
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+            continue
+        AssessmentAttachment.objects.create(
+            assessment=assessment,
+            file=uploaded_file,
+            original_filename=uploaded_file.name.rsplit('\\', 1)[-1].rsplit('/', 1)[-1][:255],
+            uploaded_by=request.user,
+        )
     messages.success(request, 'Assignment saved.')
     return redirect('crp:trainer_assessments')
 
@@ -597,6 +610,38 @@ def trainer_assessment_archive(request, assessment_id):
 
 
 @role_required('trainer')
+def trainer_assessment_attachment_remove(request, attachment_id):
+    if request.method == 'POST':
+        attachment = get_object_or_404(
+            AssessmentAttachment,
+            id=attachment_id,
+            assessment__course_code__in=_get_trainer_courses(request.user).values('code'),
+        )
+        attachment.file.delete(save=False)
+        attachment.delete()
+        messages.success(request, 'Resource removed.')
+    return redirect('crp:trainer_assessment_detail', assessment_id=attachment.assessment_id)
+
+
+@login_required
+def assessment_attachment_download(request, attachment_id):
+    attachment = get_object_or_404(
+        AssessmentAttachment.objects.select_related('assessment'),
+        id=attachment_id,
+    )
+    role = get_user_role(request.user)
+    if role == 'trainer':
+        allowed = attachment.assessment.course_code in _get_trainer_courses(request.user).values_list('code', flat=True)
+    elif role == 'student':
+        allowed = eligible_assessments(request.user.student_profile).filter(id=attachment.assessment_id).exists()
+    else:
+        allowed = role == 'admin'
+    if not allowed:
+        raise Http404
+    return redirect(attachment.file.url)
+
+
+@role_required('trainer')
 def trainer_assessment_detail(request, assessment_id):
     """View one assessment and all student submissions for the assigned course."""
     trainer_courses = _get_trainer_courses(request.user)
@@ -605,6 +650,21 @@ def trainer_assessment_detail(request, assessment_id):
     if assessment.course_code not in trainer_course_codes:
         messages.error(request, "This assessment is not in your assigned courses.")
         return redirect('crp:trainer_assessments')
+    if request.method == 'POST' and request.POST.get('action') == 'upload_resource':
+        for uploaded_file in request.FILES.getlist('resources'):
+            try:
+                validate_assessment_resource_upload(uploaded_file)
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+                continue
+            AssessmentAttachment.objects.create(
+                assessment=assessment,
+                file=uploaded_file,
+                original_filename=uploaded_file.name.rsplit('\\', 1)[-1].rsplit('/', 1)[-1][:255],
+                uploaded_by=request.user,
+            )
+        messages.success(request, 'Resources uploaded.')
+        return redirect('crp:trainer_assessment_detail', assessment_id=assessment.id)
 
     rubric = getattr(assessment, 'rubric', None)
     submissions = AssessmentSubmission.objects.filter(
@@ -614,6 +674,7 @@ def trainer_assessment_detail(request, assessment_id):
         'assessment': assessment,
         'rubric': rubric,
         'submissions': submissions,
+        'attachments': assessment.attachments.all(),
         'role': 'trainer',
     }
     return render(request, 'crp/trainer/trainer_assessment_detail.html', context)
@@ -2963,6 +3024,7 @@ def student_assessment_detail(request, assessment_id):
         'assessment': assessment,
         'submission': submission,
         'rubric': rubric_data,
+        'attachments': assessment.attachments.all(),
         'role': 'student',
     }
     return render(request, 'crp/student/student_assessment_detail.html', context)

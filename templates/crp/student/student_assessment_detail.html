@@ -98,6 +98,12 @@
     </div>
 
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 28px; margin-top: 22px;">
+        {% if attachments %}
+        <div style="grid-column: 1 / -1; border-bottom: 1px solid var(--color-divider); padding-bottom: 16px;">
+            <h4 style="margin: 0 0 12px; font-size: 15px;">Assignment Resources</h4>
+            {% for attachment in attachments %}<div style="padding: 8px 0;"><i class="bi bi-file-earmark"></i> {{ attachment.original_filename }} · <a href="{% url 'crp:assessment_attachment_download' attachment.id %}">Download</a></div>{% endfor %}
+        </div>
+        {% endif %}
         <div>
             <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid var(--color-divider); padding-bottom: 10px;">
                 <h4 style="margin: 0; font-size: 15px; flex: 1;">Marking rubric</h4>

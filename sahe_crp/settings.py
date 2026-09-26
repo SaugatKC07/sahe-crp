@@ -153,8 +153,9 @@ STATIC_ROOT = Path(os.environ.get('STATIC_ROOT', _default_static_root))
 MEDIA_URL = os.environ.get('MEDIA_URL', '/media/').strip() or '/media/'
 MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', BASE_DIR / 'media'))
 MAX_LEARNING_MATERIAL_UPLOAD_MB = int(os.environ.get('MAX_LEARNING_MATERIAL_UPLOAD_MB', '250'))
+MAX_ASSESSMENT_RESOURCE_UPLOAD_MB = int(os.environ.get('MAX_ASSESSMENT_RESOURCE_UPLOAD_MB', '50'))
 
-# Cloud Storage Configuration (Cloudflare R2 / AWS S3)
+# Cloud Storage Configuration (Backblaze B2 / S3-compatible)
 USE_S3 = os.environ.get('USE_S3', '').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 STORAGES = {
@@ -167,20 +168,25 @@ STORAGES = {
 }
 
 if USE_S3:
-    # AWS S3 / Cloudflare R2 Configuration
+    # Backblaze B2 and other S3-compatible object storage providers.
     AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
     AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME')
-    AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL')  # For Cloudflare R2
-    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'auto')
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN')  # Optional custom domain
+    AWS_S3_ENDPOINT_URL = os.environ.get('AWS_S3_ENDPOINT_URL')
+    AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'us-east-005')
+    AWS_S3_SIGNATURE_VERSION = os.environ.get('AWS_S3_SIGNATURE_VERSION', 's3v4')
+    AWS_S3_ADDRESSING_STYLE = os.environ.get('AWS_S3_ADDRESSING_STYLE', 'path')
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = int(os.environ.get('AWS_QUERYSTRING_EXPIRE', '3600'))
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '').strip() or None
     
     STORAGES['default'] = {
         'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage',
     }
     
-    MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/" if AWS_S3_CUSTOM_DOMAIN else f"https://{AWS_STORAGE_BUCKET_NAME}.s3.amazonaws.com/"
+    if AWS_S3_CUSTOM_DOMAIN:
+        MEDIA_URL = f"https://{AWS_S3_CUSTOM_DOMAIN}/"
 
 # Django requires separate URL prefixes for static and media files.
 if MEDIA_URL.rstrip('/') == STATIC_URL.rstrip('/'):

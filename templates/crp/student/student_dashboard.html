@@ -268,7 +268,7 @@
                                 <div style="width: {{ top_job_match.match_percentage }}%; height: 8px; background: var(--color-accent);"></div>
                             </div>
                         </div>
-                        <a href="{% url 'crp:student_job_detail' top_job_match.id %}" class="btn btn-secondary btn-block" style="margin-top: 12px;">View and apply →</a>
+                        <a href="{% url 'crp:student_job_detail' top_job_match.title|slugify %}" class="btn btn-secondary btn-block" style="margin-top: 12px;">View and apply →</a>
                     </div>
                 </div>
                 {% else %}

@@ -6,6 +6,7 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.contrib import messages
 from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
+from django.utils.text import slugify
 from django.http import Http404, HttpResponse, JsonResponse, HttpResponseForbidden
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
@@ -4107,8 +4108,12 @@ def student_job_preferences(request):
     })
 
 
+def job_detail_slug(job):
+    return slugify(job.title)
+
+
 @role_required('student')
-def student_job_detail(request, job_id):
+def student_job_detail(request, job_slug):
     """Detailed view of a specific job"""
     try:
         student = request.user.student_profile
@@ -4116,12 +4121,18 @@ def student_job_detail(request, job_id):
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
     
-    job = get_object_or_404(
-        JobListing.objects.filter(is_active=True).filter(
-            Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
-        ),
-        id=job_id,
+    visible_jobs = JobListing.objects.filter(is_active=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
     )
+    if job_slug.isdigit():
+        job = get_object_or_404(visible_jobs, id=int(job_slug))
+    else:
+        job = next(
+            (listing for listing in visible_jobs if job_detail_slug(listing) == job_slug),
+            None,
+        )
+        if job is None:
+            raise Http404
 
     # Get student's application status
     application = JobApplication.objects.filter(student=student, job=job).first()
@@ -4195,7 +4206,7 @@ def student_save_job(request, job_id):
             application.save()
             messages.success(request, f"Job '{job.title}' saved successfully")
     
-    return redirect('crp:student_job_detail', job_id=job_id)
+    return redirect('crp:student_job_detail', job_slug=job_detail_slug(job))
 
 @role_required('student')
 @require_POST
@@ -4210,7 +4221,7 @@ def student_apply_job(request, job_id):
     job = get_object_or_404(JobListing, id=job_id)
     if not job.is_active or (job.expires_at and job.expires_at <= timezone.now()):
         messages.error(request, 'This job is no longer accepting applications.')
-        return redirect('crp:student_job_detail', job_id=job_id)
+        return redirect('crp:student_job_detail', job_slug=job_detail_slug(job))
     
     application, created = JobApplication.objects.get_or_create(
         student=student,
@@ -4231,7 +4242,7 @@ def student_apply_job(request, job_id):
     
     if job.apply_url:
         return redirect(job.apply_url)
-    return redirect('crp:student_job_detail', job_id=job_id)
+    return redirect('crp:student_job_detail', job_slug=job_detail_slug(job))
 
 @role_required('student')
 def student_resume(request):
@@ -5210,7 +5221,7 @@ def student_linkedin(request):
         'job_analysis': job_analysis,
         'job_headline_suggestion': job_headline_suggestion,
         'job_about_suggestion': job_about_suggestion,
-        'job_detail_url': reverse('crp:student_job_detail', args=[selected_job.id]) if selected_job else '',
+        'job_detail_url': reverse('crp:student_job_detail', args=[job_detail_slug(selected_job)]) if selected_job else '',
         'tailor_url': reverse('crp:student_tailor_resume', args=[selected_job.id]) if selected_job else '',
         'apply_url': reverse('crp:student_apply_job', args=[selected_job.id]) if selected_job else '',
         'role': 'student',

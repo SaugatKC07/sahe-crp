@@ -778,7 +778,7 @@
         </div>
         <div class="review-actions">
             <a class="btn btn-secondary" href="#resume-editor">Edit Resume</a>
-            {% if selected_job %}<a class="btn btn-secondary" href="{% url 'crp:student_job_detail' selected_job.id %}">Back to Job</a>{% endif %}
+            {% if selected_job %}<a class="btn btn-secondary" href="{% url 'crp:student_job_detail' selected_job.title|slugify %}">Back to Job</a>{% endif %}
             <button class="btn btn-primary" type="button" onclick="analyzeResume()">Analyze Resume</button>
         </div>
     </section>

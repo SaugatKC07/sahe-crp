@@ -302,7 +302,7 @@
         <div>
             {% if job_rows %}
                 {% for job in job_rows %}
-                    <a href="{% url 'crp:student_job_detail' job.id %}" class="job-card">
+                    <a href="{% url 'crp:student_job_detail' job.title|slugify %}" class="job-card">
                         <div class="job-card-header">
                             <div style="flex: 1;">
                                 <div class="job-title">{{ job.title }}</div>

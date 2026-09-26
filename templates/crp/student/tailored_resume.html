@@ -237,7 +237,7 @@
             <p class="tailored-page-subtitle">{{ job.company }}{% if job.location %} · {{ job.location }}{% endif %} · Built from your original resume; the original remains unchanged.</p>
         </div>
         <nav class="tailored-actions" aria-label="Tailored resume actions">
-            <a class="btn btn-ghost" href="{% url 'crp:student_job_detail' job.id %}">Back to Job</a>
+            <a class="btn btn-ghost" href="{% url 'crp:student_job_detail' job.title|slugify %}">Back to Job</a>
             {% if is_saved %}
                 <button class="btn btn-primary" type="submit" form="tailored-editor-form">Save</button>
                 <a class="btn btn-secondary" href="{% url 'crp:student_export_tailored_resume_pdf' tailored.id %}">Export PDF</a>

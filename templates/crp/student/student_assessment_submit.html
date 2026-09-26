@@ -97,6 +97,11 @@
     background: color-mix(in srgb, var(--c-1) 7%, transparent);
 }
 
+.upload-zone.dragging {
+    border-color: var(--color-accent);
+    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
+}
+
 .file-item {
     display: flex;
     align-items: center;
@@ -213,10 +218,10 @@
                     {% csrf_token %}
                     <div class="upload-zone {% if files %}has-files{% endif %}" id="upload-zone" onclick="document.getElementById('file-input').click()">
                         <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px;">
-                            {% if files %}Add another file{% else %}Drop your {{ assessment.accepted_formats.0 }} here{% endif %}
+                            Drop your files here
                         </div>
                         <div style="font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 78%, transparent); margin-top: 6px;">
-                            Accepted for this assessment: {{ assessment.accepted_formats|join:", " }} · up to {{ assessment.max_file_size_mb }} MB · {{ assessment.required_file_count }} file(s) maximum
+                            or browse files · Accepted: {{ assessment.accepted_formats|join:", " }} · up to {{ assessment.max_file_size_mb }} MB · {{ assessment.required_file_count }} file(s) maximum
                         </div>
                         <input type="file" name="submission_file" id="file-input" style="display: none;" onchange="handleFileUpload(this)">
                     </div>
@@ -229,12 +234,14 @@
                         </div>
                         <div style="flex: 1; font-size: 12.5px; font-weight: 600;">{{ file.file_name }}</div>
                         <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">{{ file.file_size }}</div>
+                        <button type="submit" form="remove-file-{{ file.id }}" class="btn btn-secondary" style="padding:6px 10px">Remove</button>
                     </div>
+                    <form method="post" id="remove-file-{{ file.id }}" style="display:none">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.id }}"></form>
                     {% endfor %}
                     
                     <div class="field" style="margin-top: 16px;">
                         <label>Comment to your marker (optional)</label>
-                        <textarea class="input" name="comment" style="min-height: 80px;" placeholder="Add any notes for your marker..."></textarea>
+                        <textarea class="input" name="comment" style="min-height: 100px;width:100%;" placeholder="Add any notes for your marker...">{{ submission.feedback }}</textarea>
                     </div>
                     
                     {% if assessment.turnitin_enabled %}
@@ -266,10 +273,18 @@
                     {% endif %}
                     
                     <div style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
-                        <button type="submit" name="action" value="submit" class="btn btn-primary">
+                        <button type="submit" name="action" value="submit" class="btn btn-primary" id="submit-for-marking">
                             {% if submission.status == 'marked' %}Resubmit{% else %}Submit for marking{% endif %}
                         </button>
                         <button type="submit" name="action" value="save_draft" class="btn btn-secondary">Save draft</button>
+                    </div>
+
+                    <div id="submit-dialog" role="dialog" aria-modal="true" aria-labelledby="submit-dialog-title" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;place-items:center;padding:20px">
+                        <div class="panel" style="max-width:430px;background:var(--color-surface);padding:24px;border-radius:var(--radius-lg)">
+                            <h2 id="submit-dialog-title">Submit assessment for marking?</h2>
+                            <p style="line-height:1.6">You are about to submit this assessment. Your files and notes will be sent to your marker.</p>
+                            <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn btn-secondary" id="cancel-submit">Cancel</button><button type="button" class="btn btn-primary" id="confirm-submit">Submit for marking</button></div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -334,6 +349,38 @@ function handleFileUpload(input) {
                 feedback.style.display = 'block';
                 feedback.style.color = 'var(--c-danger, #b42318)';
             }
+
+            const uploadZone = document.getElementById('upload-zone');
+            ['dragenter', 'dragover'].forEach(eventName => uploadZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                uploadZone.classList.add('dragging');
+            }));
+            ['dragleave', 'drop'].forEach(eventName => uploadZone.addEventListener(eventName, event => {
+                event.preventDefault();
+                uploadZone.classList.remove('dragging');
+            }));
+            uploadZone.addEventListener('drop', event => {
+                const input = document.getElementById('file-input');
+                input.files = event.dataTransfer.files;
+                handleFileUpload(input);
+            });
+
+            const submitButton = document.getElementById('submit-for-marking');
+            const submitDialog = document.getElementById('submit-dialog');
+            const submissionForm = document.getElementById('submission-form');
+            submitButton.addEventListener('click', event => {
+                event.preventDefault();
+                submitDialog.style.display = 'grid';
+            });
+            document.getElementById('cancel-submit').addEventListener('click', () => submitDialog.style.display = 'none');
+            document.getElementById('confirm-submit').addEventListener('click', () => {
+                const action = document.createElement('input');
+                action.type = 'hidden';
+                action.name = 'action';
+                action.value = 'submit';
+                submissionForm.appendChild(action);
+                submissionForm.submit();
+            });
         })
         .catch(error => {
             console.error('Error:', error);

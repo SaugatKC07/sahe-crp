@@ -2931,55 +2931,102 @@ def student_assessments(request):
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
     
-    assessments = eligible_assessments(student).order_by('week__week_number')
+    assessments = eligible_assessments(student).order_by('due_date', 'week__week_number')
     
     # Assessment statistics
     submissions = AssessmentSubmission.objects.filter(student=student)
-    submitted_count = submissions.filter(status__in=['submitted', 'marked']).count()
-    marked_submissions = submissions.filter(status='marked', assessment__results_released=True)
-    if marked_submissions:
-        average_mark = int(sum(sub.marks_awarded for sub in marked_submissions) / len(marked_submissions))
-    else:
-        average_mark = 0
+    submitted_count = submissions.filter(status__in=['submitted', 'marked', 'returned']).count()
+    marked_submissions = list(
+        submissions.filter(status__in=['marked', 'returned'], assessment__results_released=True)
+        .exclude(marks_awarded__isnull=True)
+    )
+    average_mark = (
+        int(sum((sub.marks_awarded / sub.assessment.max_marks) * 100 for sub in marked_submissions) / len(marked_submissions))
+        if marked_submissions else 0
+    )
     
     assess_stats = [
         {'label': 'Submitted', 'value': f'{submitted_count} / {assessments.count()}'},
-        {'label': 'Average mark', 'value': f'{int(average_mark)}%'},
-        {'label': 'Awaiting marks', 'value': str(submissions.filter(status='submitted').count())},
-        {'label': 'Integrity flags', 'value': str(submissions.filter(turnitin_similarity__isnull=False, turnitin_similarity__gt=30).count())},
+        {'label': 'Awaiting marking', 'value': str(submissions.filter(status='submitted').count())},
+        {'label': 'Average mark', 'value': f'{average_mark}%'},
+        {'label': 'Due soon', 'value': str(assessments.filter(due_date__lte=timezone.now() + timedelta(days=7), due_date__gte=timezone.now()).count())},
     ]
     
     assess_rows = []
     for assessment in assessments:
         submission = submissions.filter(assessment=assessment).first()
         
-        status = 'Open'
-        if submission:
-            status = submission.get_status_display()
+        now = timezone.now()
+        if submission and submission.status in ('marked', 'returned'):
+            status = 'Marked'
+        elif submission and submission.status == 'submitted':
+            status = 'Awaiting Marking'
+        elif submission and submission.status == 'draft':
+            status = 'Draft Submission'
+        elif assessment.due_date < now:
+            status = 'Late'
+        elif assessment.due_date <= now + timedelta(days=3):
+            status = 'Due Soon'
+        else:
+            status = 'Upcoming'
+        if submission and submission.status in ('marked', 'returned') and not assessment.results_released:
+            status = 'Awaiting Marking'
+        action_label = (
+            'View Feedback' if submission and submission.status in ('marked', 'returned') and assessment.results_released
+            else 'View Submission' if submission and submission.status == 'submitted'
+            else 'Continue Draft' if submission and submission.status == 'draft'
+            else 'Submit Work' if assessment.due_date >= now
+            else 'View Assignment'
+        )
         
         marks_label = (
             f'{submission.marks_awarded}/{assessment.max_marks}'
             if submission and assessment.results_released and submission.marks_awarded is not None
             else '—'
         )
+        percentage = (
+            round((submission.marks_awarded / assessment.max_marks) * 100, 1)
+            if submission and submission.marks_awarded is not None and assessment.max_marks
+            else None
+        )
         
         assess_rows.append({
             'week': assessment.week.week_number,
             'title': assessment.title,
             'assessment_type': assessment.get_assessment_type_display(),
-            'meta': f"{assessment.course_code} · due {assessment.due_date.strftime('%d %b %Y')} · {assessment.max_marks} marks",
+            'course': assessment.course_code,
+            'meta': f"{assessment.course_code} · due {assessment.due_date.strftime('%d %b %Y, %H:%M')} · {assessment.max_marks} marks",
             'status': status,
-            'status_label': status.capitalize(),
+            'status_label': status,
             'marks_label': marks_label,
+            'percentage': percentage,
+            'due_date': assessment.due_date,
+            'weight': assessment.weight_percentage,
+            'max_marks': assessment.max_marks,
+            'resource_count': assessment.attachments.count(),
+            'action_label': action_label,
             'assessment_id': assessment.id,
             'has_submission': submission is not None,
             'submission_id': submission.id if submission else None,
         })
+
+    selected_filter = request.GET.get('filter', 'all')
+    if selected_filter != 'all':
+        assess_rows = [
+            row for row in assess_rows
+            if (
+                selected_filter == 'upcoming' and row['status'] in ('Upcoming', 'Due Soon')
+                or selected_filter == 'submitted' and row['status'] in ('Submitted', 'Awaiting Marking', 'Marked', 'Awaiting Marking')
+                or selected_filter == 'awaiting' and row['status'] == 'Awaiting Marking'
+                or selected_filter == 'marked' and row['status'] == 'Marked'
+            )
+        ]
     
     context = {
         'student': student,
         'assess_stats': assess_stats,
         'assess_rows': assess_rows,
+        'selected_filter': selected_filter,
         'role': 'student',
     }
     return render(request, 'crp/student/student_assessments.html', context)
@@ -3023,6 +3070,12 @@ def student_assessment_detail(request, assessment_id):
         'student': student,
         'assessment': assessment,
         'submission': submission,
+        'submission_percentage': (
+            round((submission.marks_awarded / assessment.max_marks) * 100, 1)
+            if submission and submission.marks_awarded is not None and assessment.max_marks
+            else None
+        ),
+        'submitted_success': request.GET.get('submitted') == '1',
         'rubric': rubric_data,
         'attachments': assessment.attachments.all(),
         'role': 'student',
@@ -3072,6 +3125,7 @@ def student_assessment_submit(request, assessment_id):
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'save_draft':
+            submission.feedback = request.POST.get('comment', submission.feedback).strip()
             submission.save()
             messages.success(request, "Draft saved.")
             return redirect('crp:student_assessment_submit', assessment_id=assessment.id)
@@ -3086,6 +3140,8 @@ def student_assessment_submit(request, assessment_id):
             }
             if accepted_formats and extension not in accepted_formats:
                 messages.error(request, 'This file type is not accepted for the assessment.')
+            elif uploaded_file.size <= 0:
+                messages.error(request, 'Empty files cannot be uploaded.')
             elif uploaded_file.size > assessment.max_file_size_mb * 1024 * 1024:
                 messages.error(request, f'Files must be {assessment.max_file_size_mb} MB or smaller.')
             elif submission.files.count() >= assessment.required_file_count:
@@ -3101,9 +3157,18 @@ def student_assessment_submit(request, assessment_id):
                 if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                     return JsonResponse({'success': True})
                 messages.success(request, f"File '{uploaded_file.name}' uploaded successfully")
+
+        if action == 'delete_file':
+            file_id = request.POST.get('file_id')
+            submission_file = get_object_or_404(SubmissionFile, id=file_id, submission=submission)
+            if submission.status in ('draft', 'submitted', 'marked', 'returned'):
+                submission_file.file.delete(save=False)
+                submission_file.delete()
+                messages.success(request, 'File removed.')
         
         # Handle submission
         if action == 'submit':
+            submission.feedback = request.POST.get('comment', submission.feedback).strip()
             if assessment.required_submission and submission.files.count() < assessment.required_file_count:
                 messages.error(request, "Please upload at least one file before submitting.")
             else:
@@ -3111,7 +3176,7 @@ def student_assessment_submit(request, assessment_id):
                 submission.submitted_at = timezone.now()
                 submission.save()
                 messages.success(request, "Assessment submitted successfully!")
-                return redirect('crp:student_assessments')
+                return redirect(f"{reverse('crp:student_assessment_detail', args=[assessment.id])}?submitted=1")
         
         if action == 'turnitin' and assessment.turnitin_enabled:
             messages.info(request, "Originality checking is not configured for this deployment.")

@@ -9,12 +9,61 @@
 <style>
 .resume-container {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 28px;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, 1fr);
+    gap: 24px;
     padding: 0;
     max-width: none;
     margin: 0 auto;
     order: 1;
+    width: 100%;
+}
+
+.builder-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
+    padding: 24px 28px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(120deg, color-mix(in srgb, var(--sahe-blue-600) 10%, var(--color-surface)), var(--color-surface));
+}
+
+.builder-header-eyebrow {
+    color: var(--sahe-blue-700);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.builder-header h1 {
+    margin: 4px 0 6px;
+    font: 800 clamp(24px, 3vw, 34px) var(--font-heading);
+}
+
+.builder-header p {
+    margin: 0;
+    color: var(--gray-500);
+    font-size: 14px;
+}
+
+.builder-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.builder-completeness {
+    padding: 10px 14px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    font-size: 13px;
+    font-weight: 700;
 }
 
 .review-workspace {
@@ -284,7 +333,11 @@
         gap: 8px;
     }
     .resume-container {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr) minmax(300px, .9fr);
+    }
+    .builder-header {
+        align-items: flex-start;
+        flex-direction: column;
     }
 }
 
@@ -304,10 +357,17 @@
         justify-content: stretch;
         flex-direction: column;
     }
+    .resume-container {
+        grid-template-columns: 1fr;
+    }
+    .resume-preview-content {
+        min-height: 0;
+        padding: 28px;
+    }
 }
 
 .resume-editor {
-    data-print-hide;
+    min-width: 0;
 }
 
 .resume-editor-header {
@@ -319,7 +379,7 @@
 }
 
 .resume-preview {
-    data-print-doc;
+    min-width: 0;
 }
 
 .resume-preview-header {
@@ -451,7 +511,8 @@
 .resume-preview-content {
     background: #ffffff;
     color: #201e1d;
-    padding: 40px;
+    min-height: 920px;
+    padding: 52px;
     margin-top: 16px;
     box-shadow: var(--shadow-md);
     font-size: 12.5px;
@@ -589,6 +650,17 @@
 
 {% block content %}
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+<header class="builder-header" aria-labelledby="resume-builder-title">
+    <div>
+        <div class="builder-header-eyebrow">Professional resume workspace</div>
+        <h1 id="resume-builder-title">Resume Builder</h1>
+        <p>Build and preview your professional resume. Changes are saved automatically.</p>
+    </div>
+    <div class="builder-header-meta">
+        <span class="builder-completeness">Completeness: {{ completeness_score }}%</span>
+        <span class="completeness-indicator" id="builder-autosave-status">Autosaved</span>
+    </div>
+</header>
 <section class="review-workspace" aria-labelledby="resume-review-title">
     <div class="review-header">
         <div>

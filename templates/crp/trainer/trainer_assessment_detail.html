@@ -22,6 +22,25 @@
             </ul>
         </div>
     </div>
+    {% if not assessment.is_published and not assessment.is_archived %}
+    <div class="card shadow-sm border-0 mb-4" id="edit">
+        <div class="card-body">
+            <h5>Edit draft</h5>
+            <form method="post" action="{% url 'crp:trainer_assessment_edit' assessment.id %}" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-6"><label class="form-label">Title</label><input class="form-control" name="title" value="{{ assessment.title }}" required></div>
+                <div class="col-md-3"><label class="form-label">Due date/time</label><input class="form-control" type="datetime-local" name="due_date" value="{{ assessment.due_date|date:'Y-m-d\\TH:i' }}" required></div>
+                <div class="col-md-2"><label class="form-label">Maximum marks</label><input class="form-control" type="number" name="max_marks" value="{{ assessment.max_marks }}" min="1" required></div>
+                <div class="col-md-1"><label class="form-label">Weight</label><input class="form-control" type="number" name="weight_percentage" value="{{ assessment.weight_percentage }}" min="1" max="100" required></div>
+                <input type="hidden" name="week" value="{{ assessment.week_id }}">
+                <input type="hidden" name="assessment_type" value="{{ assessment.assessment_type }}">
+                <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3">{{ assessment.description }}</textarea></div>
+                <div class="col-12"><label class="form-label">Instructions</label><textarea class="form-control" name="instructions" rows="3">{{ assessment.instructions }}</textarea></div>
+                <div class="col-12"><button class="btn btn-primary" type="submit">Save draft changes</button></div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
 
     <div class="card shadow-sm border-0">
         <div class="card-body">

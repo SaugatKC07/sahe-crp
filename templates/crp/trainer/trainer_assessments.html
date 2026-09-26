@@ -1,64 +1,57 @@
 {% extends 'crp/trainer/trainer_base.html' %}
-{% block title %}Assessments - Trainer Portal{% endblock %}
-{% block page_title %}Assessments{% endblock %}
+{% block title %}Assignments - Trainer Portal{% endblock %}
+{% block page_title %}Assignments{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <h2 class="mb-4">Course Assessments</h2>
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body">
-            <h3 class="h5 mb-3">Create assignment</h3>
-            {% if weeks %}
-            <form method="post" action="{% url 'crp:assessment_create' %}" class="row g-3">
-                {% csrf_token %}
-                <div class="col-md-6">
-                    <label class="form-label">Course week</label>
-                    <select class="form-select" name="week" id="assignment-week" required>
-                        <option value="">Select an assigned course week</option>
-                        {% for week in weeks %}<option value="{{ week.id }}" data-course-code="{{ week.course.code }}">{{ week.course.code }} · Week {{ week.week_number }} · {{ week.title }}</option>{% endfor %}
-                    </select>
-                    <input type="hidden" name="course_code" id="assignment-course-code">
-                </div>
-                <div class="col-md-6"><label class="form-label">Title</label><input class="form-control" name="title" required></div>
-                <div class="col-md-4"><label class="form-label">Type</label><select class="form-select" name="assessment_type">{% for value,label in assessment_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
-                <div class="col-md-4"><label class="form-label">Due date</label><input class="form-control" type="datetime-local" name="due_date" required></div>
-                <div class="col-md-2"><label class="form-label">Maximum marks</label><input class="form-control" type="number" name="max_marks" value="100" min="1" required></div>
-                <div class="col-md-2"><label class="form-label">Weight %</label><input class="form-control" type="number" name="weight_percentage" value="10" min="0" max="100"></div>
-                <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"></textarea></div>
-                <div class="col-12"><button class="btn btn-primary" type="submit">Save assignment as draft</button></div>
-            </form>
-            {% else %}
-            <div class="alert alert-info mb-0">No learning weeks exist for your assigned courses. Ask an administrator to create the course week first.</div>
-            {% endif %}
-        </div>
-    </div>
-    {% if assessments %}
-    <div class="table-responsive">
-        <table class="table table-striped align-middle">
-            <thead>
-                <tr><th>Course</th><th>Assessment</th><th>Type</th><th>Due</th><th>Action</th></tr>
-            </thead>
-            <tbody>
-                {% for assessment in assessments %}
-                <tr>
-                    <td>{{ assessment.course_code }}</td>
-                    <td>{{ assessment.title }}</td>
-                    <td>{{ assessment.get_assessment_type_display }}</td>
-                    <td>{{ assessment.due_date }}</td>
-                    <td><a href="{% url 'crp:trainer_assessment_detail' assessment.id %}" class="btn btn-sm btn-primary">Review</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="alert alert-info">No assessments are currently assigned to your courses.</div>
-    {% endif %}
+<style>
+.assignment-workspace{max-width:1500px;margin:0 auto}.assignment-header{display:flex;justify-content:space-between;gap:16px;align-items:center;margin-bottom:24px}.assignment-card{border:1px solid var(--color-divider);border-radius:var(--radius-lg);background:var(--color-surface);padding:24px;box-shadow:var(--shadow-sm);margin-bottom:24px}.assignment-table th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--gray-500);white-space:nowrap}.assignment-table td{vertical-align:middle}.status-badge{display:inline-flex;padding:4px 9px;border-radius:99px;font-size:11px;font-weight:700}.status-draft{background:#fff3cd;color:#856404}.status-published{background:#d1e7dd;color:#0f5132}.status-closed{background:#e2e3e5;color:#41464b}.status-archived{background:#f8d7da;color:#842029}.assignment-actions{display:flex;gap:6px;flex-wrap:wrap;min-width:180px}@media(max-width:900px){.assignment-header{align-items:flex-start;flex-direction:column}.assignment-table{min-width:950px}}
+</style>
+<div class="assignment-workspace">
+  <div class="assignment-header">
+    <div><h1 class="h3 mb-1">Assignment Management</h1><p class="text-muted mb-0">Create, publish, and mark assignments for your assigned courses.</p></div>
+    <a class="btn btn-primary" href="#assignment-form">Create Assignment</a>
+  </div>
+  <div class="assignment-card" id="assignment-form">
+    <h2 class="h5 mb-3">Create assignment</h2>
+    {% if weeks %}
+    <form method="post" action="{% url 'crp:trainer_assessment_create' %}" class="row g-3">
+      {% csrf_token %}
+      <div class="col-md-6"><label class="form-label">Course / week</label><select class="form-select" name="week" required><option value="">Select assigned course week</option>{% for week in weeks %}<option value="{{ week.id }}">{{ week.course.code }} · Week {{ week.week_number }} · {{ week.title }}</option>{% endfor %}</select></div>
+      <div class="col-md-6"><label class="form-label">Title</label><input class="form-control" name="title" required maxlength="200"></div>
+      <div class="col-md-3"><label class="form-label">Assessment type</label><select class="form-select" name="assessment_type">{% for value,label in assessment_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-3"><label class="form-label">Due date/time</label><input class="form-control" type="datetime-local" name="due_date" required></div>
+      <div class="col-md-2"><label class="form-label">Max marks</label><input class="form-control" type="number" name="max_marks" min="1" value="100" required></div>
+      <div class="col-md-2"><label class="form-label">Weight %</label><input class="form-control" type="number" name="weight_percentage" min="1" max="100" value="10" required></div>
+      <div class="col-md-2"><label class="form-label">Max file MB</label><input class="form-control" type="number" name="max_file_size_mb" min="1" max="500" value="500"></div>
+      <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+      <div class="col-12"><label class="form-label">Instructions</label><textarea class="form-control" name="instructions" rows="3"></textarea></div>
+      <div class="col-12"><label class="form-check"><input class="form-check-input" type="checkbox" name="required_submission" checked> <span class="form-check-label">Require submission</span></label></div>
+      <div class="col-12"><button class="btn btn-primary" type="submit">Save as Draft</button></div>
+    </form>
+    {% else %}<div class="alert alert-info mb-0">No assigned course weeks are available.</div>{% endif %}
+  </div>
+  <div class="assignment-card">
+    <form method="get" class="row g-2 align-items-end mb-4">
+      <div class="col-md-3"><label class="form-label">Search</label><input class="form-control" name="q" value="{{ filters.q }}" placeholder="Assignment title"></div>
+      <div class="col-md-2"><label class="form-label">Course</label><select class="form-select" name="course"><option value="">All courses</option>{% for course in courses %}<option value="{{ course.id }}" {% if filters.course == course.id|stringformat:"s" %}selected{% endif %}>{{ course.code }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><label class="form-label">Week</label><select class="form-select" name="week"><option value="">All weeks</option>{% for week in weeks %}<option value="{{ week.id }}">{{ week.course.code }} · {{ week.week_number }}</option>{% endfor %}</select></div>
+      <div class="col-md-2"><label class="form-label">Status</label><select class="form-select" name="status"><option value="">All statuses</option><option value="draft">Draft</option><option value="published">Published</option><option value="archived">Archived</option></select></div>
+      <div class="col-md-2"><label class="form-label">Type</label><select class="form-select" name="type"><option value="">All types</option>{% for value,label in assessment_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+      <div class="col-md-1"><button class="btn btn-secondary w-100" type="submit">Filter</button></div>
+    </form>
+    <div class="table-responsive"><table class="table assignment-table">
+      <thead><tr><th>Assignment</th><th>Course / week</th><th>Type</th><th>Due</th><th>Status</th><th>Submissions</th><th>Marks</th><th>Max</th><th>Weight</th><th>Actions</th></tr></thead>
+      <tbody>
+      {% for assignment in assessments %}
+      <tr>
+        <td><strong>{{ assignment.title }}</strong></td><td>{{ assignment.course_code }} · Week {{ assignment.week.week_number }}</td><td>{{ assignment.get_assessment_type_display }}</td><td>{{ assignment.due_date|date:"d M Y H:i" }}</td>
+        <td>{% if assignment.is_archived %}<span class="status-badge status-archived">Archived</span>{% elif assignment.is_published and assignment.due_date <= now %}<span class="status-badge status-closed">Closed</span>{% elif assignment.is_published %}<span class="status-badge status-published">Published</span>{% else %}<span class="status-badge status-draft">Draft</span>{% endif %}</td>
+        <td>{{ assignment.submission_count }}</td><td>{{ assignment.marked_count }}</td><td>{{ assignment.max_marks }}</td><td>{{ assignment.weight_percentage }}%</td>
+        <td><div class="assignment-actions"><a class="btn btn-sm btn-outline-primary" href="{% url 'crp:trainer_assessment_detail' assignment.id %}">View / Mark</a>{% if not assignment.is_published and not assignment.is_archived %}<a class="btn btn-sm btn-outline-secondary" href="{% url 'crp:trainer_assessment_detail' assignment.id %}#edit">Edit</a><form method="post" action="{% url 'crp:trainer_assessment_publish' assignment.id %}">{% csrf_token %}<button class="btn btn-sm btn-success" type="submit">Publish</button></form>{% endif %}{% if not assignment.is_archived %}<form method="post" action="{% url 'crp:trainer_assessment_archive' assignment.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Archive</button></form>{% endif %}</div></td>
+      </tr>
+      {% empty %}<tr><td colspan="10" class="text-center text-muted py-4">No assignments match your filters.</td></tr>{% endfor %}
+      </tbody>
+    </table></div>
+  </div>
 </div>
-<script>
-document.getElementById('assignment-week')?.addEventListener('change', function () {
-    const option = this.options[this.selectedIndex];
-    document.getElementById('assignment-course-code').value = option.dataset.courseCode || '';
-});
-</script>
 {% endblock %}

@@ -493,7 +493,26 @@ def trainer_assessments(request):
     """List all assessments for courses assigned to the trainer."""
     trainer_courses = _get_trainer_courses(request.user)
     course_codes = list(trainer_courses.values_list('code', flat=True))
-    assessments = Assessment.objects.filter(course_code__in=course_codes).select_related('week').order_by('week__week_number', 'due_date')
+    assessments = Assessment.objects.filter(course_code__in=course_codes).select_related('week', 'course').annotate(
+        submission_count=Count('submissions'),
+        marked_count=Count('submissions', filter=Q(submissions__status='marked')),
+    )
+    search = request.GET.get('q', '').strip()
+    if search:
+        assessments = assessments.filter(title__icontains=search)
+    if request.GET.get('course'):
+        assessments = assessments.filter(course_id=request.GET['course'])
+    if request.GET.get('week'):
+        assessments = assessments.filter(week_id=request.GET['week'])
+    if request.GET.get('type'):
+        assessments = assessments.filter(assessment_type=request.GET['type'])
+    if request.GET.get('status') == 'archived':
+        assessments = assessments.filter(is_archived=True)
+    elif request.GET.get('status') == 'published':
+        assessments = assessments.filter(is_published=True, is_archived=False)
+    elif request.GET.get('status') == 'draft':
+        assessments = assessments.filter(is_published=False, is_archived=False)
+    assessments = assessments.order_by('week__week_number', 'due_date')
     weeks = LearningWeek.objects.filter(
         course__in=trainer_courses,
         is_archived=False,
@@ -504,8 +523,77 @@ def trainer_assessments(request):
         'weeks': weeks,
         'assessment_types': Assessment.ASSESSMENT_TYPES,
         'role': 'trainer',
+        'filters': request.GET,
+        'now': timezone.now(),
     }
     return render(request, 'crp/trainer/trainer_assessments.html', context)
+
+
+def _trainer_assessment_for_request(request, assessment_id):
+    return get_object_or_404(
+        Assessment.objects.select_related('week', 'course'),
+        id=assessment_id,
+        course_code__in=_get_trainer_courses(request.user).values('code'),
+    )
+
+
+@role_required('trainer')
+def trainer_assessment_save(request, assessment_id=None):
+    if request.method != 'POST':
+        return redirect('crp:trainer_assessments')
+    courses = _get_trainer_courses(request.user)
+    week = get_object_or_404(LearningWeek, id=request.POST.get('week'), course__in=courses, is_archived=False)
+    title = request.POST.get('title', '').strip()
+    try:
+        due_date = timezone.make_aware(datetime.fromisoformat(request.POST.get('due_date', '')))
+        max_marks = int(request.POST.get('max_marks', '0'))
+        weight = int(request.POST.get('weight_percentage', '0'))
+    except (ValueError, TypeError):
+        messages.error(request, 'Enter a valid due date, maximum marks, and weighting.')
+        return redirect('crp:trainer_assessments')
+    if not title or due_date <= timezone.now() or max_marks <= 0 or not 1 <= weight <= 100:
+        messages.error(request, 'Title, future due date, positive maximum marks, and weighting from 1 to 100 are required.')
+        return redirect('crp:trainer_assessments')
+    assessment = _trainer_assessment_for_request(request, assessment_id) if assessment_id else Assessment()
+    assessment.week = week
+    assessment.course = week.course
+    assessment.course_code = week.course.code
+    assessment.title = title
+    assessment.assessment_type = request.POST.get('assessment_type', 'assignment')
+    assessment.due_date = due_date
+    assessment.max_marks = max_marks
+    assessment.weight_percentage = weight
+    assessment.description = request.POST.get('description', '').strip()
+    assessment.instructions = request.POST.get('instructions', '').strip()
+    assessment.accepted_formats = request.POST.getlist('accepted_formats')
+    assessment.required_submission = request.POST.get('required_submission') == 'on'
+    assessment.required_file_count = max(1, int(request.POST.get('required_file_count') or 1))
+    assessment.max_file_size_mb = max(1, int(request.POST.get('max_file_size_mb') or 500))
+    assessment.save()
+    messages.success(request, 'Assignment saved.')
+    return redirect('crp:trainer_assessments')
+
+
+@role_required('trainer')
+def trainer_assessment_publish(request, assessment_id):
+    if request.method == 'POST':
+        assessment = _trainer_assessment_for_request(request, assessment_id)
+        if not assessment.is_archived:
+            assessment.is_published = True
+            assessment.save(update_fields=['is_published', 'updated_at'])
+            messages.success(request, 'Assignment published.')
+    return redirect('crp:trainer_assessments')
+
+
+@role_required('trainer')
+def trainer_assessment_archive(request, assessment_id):
+    if request.method == 'POST':
+        assessment = _trainer_assessment_for_request(request, assessment_id)
+        assessment.is_archived = True
+        assessment.is_published = False
+        assessment.save(update_fields=['is_archived', 'is_published', 'updated_at'])
+        messages.success(request, 'Assignment archived.')
+    return redirect('crp:trainer_assessments')
 
 
 @role_required('trainer')

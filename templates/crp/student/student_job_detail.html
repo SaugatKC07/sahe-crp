@@ -280,6 +280,7 @@
                     </form>
                     <a href="{% url 'crp:student_tailor_resume' job.id %}" class="btn btn-secondary">Tailor resume</a>
                     <a href="{{ linkedin_url }}" class="btn btn-secondary">Improve LinkedIn for this job</a>
+                    <a href="{% url 'crp:student_resume' %}?job_id={{ job.id }}" class="btn btn-secondary">Review Resume for this Job</a>
                 </div>
             </div>
         </div>

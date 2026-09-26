@@ -427,7 +427,20 @@
         <button class="btn btn-secondary btn-block" style="margin-top: 12px;" onclick="addEducation()">+ Add Education</button>
         
         <div class="ai-review-card">
-            <div class="ai-review-header">AI resume review · score {{ ai_score }}</div>
+            <div class="ai-review-header">Resume Review · {{ ai_score }}/100</div>
+            <div class="ai-score-note">Resume completeness: {{ completeness_score }}%</div>
+            <form method="get" style="margin: 12px 0;">
+                <label for="review-job">Review for a job</label>
+                <select id="review-job" name="job_id" onchange="this.form.submit()">
+                    <option value="">General Resume Review</option>
+                    {% for job_option in visible_jobs %}
+                    <option value="{{ job_option.id }}" {% if selected_job and selected_job.id == job_option.id %}selected{% endif %}>{{ job_option.title }} · {{ job_option.company }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            {% if selected_job %}
+            <div class="ai-score-note">Selected job: {{ selected_job.title }} · {{ selected_job.company }}</div>
+            {% endif %}
             {% for score_item in ai_feedback %}
                 <div class="ai-score-item">
                     <div class="ai-score-item-header">
@@ -440,7 +453,14 @@
                     <div class="ai-score-note">{{ score_item.note }}</div>
                 </div>
             {% endfor %}
-            <button class="btn btn-primary btn-block" style="margin-top: 16px;" onclick="rerunAI()">Re-run AI review</button>
+            <ul class="ai-score-note">
+                {% for recommendation in review_recommendations %}<li>{{ recommendation }}</li>{% empty %}<li>No issues detected by the deterministic checks.</li>{% endfor %}
+            </ul>
+            {% if selected_job %}
+            <div class="ai-score-note">Matched requirements: {{ review.matched_requirements|join:", "|default:"None" }}</div>
+            <div class="ai-score-note">Not evidenced: {{ review.missing_requirements|join:", "|default:"None" }}</div>
+            {% endif %}
+            <button class="btn btn-primary btn-block" style="margin-top: 16px;" onclick="analyzeResume()">Analyze Resume</button>
         </div>
     </div>
     
@@ -513,7 +533,8 @@ const BASE_URLS = {
 };
 
 const getCSRFToken = () => {
-    return getCSRFToken();
+    const cookie = document.cookie.split('; ').find(row => row.startsWith('csrftoken='));
+    return cookie ? decodeURIComponent(cookie.split('=')[1]) : '';
 };
 
 let autosaveTimeout;
@@ -747,18 +768,23 @@ function deleteEducation(eduId) {
     });
 }
 
-function rerunAI() {
+function analyzeResume() {
     fetch(BASE_URLS.resume_rerun_ai, {
         method: 'POST',
         headers: {
             'X-CSRFToken': getCSRFToken()
-        }
+        },
+        body: new URLSearchParams({
+            job_id: '{{ selected_job.id|default:"" }}'
+        })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
             location.reload();
         }
+    }).catch(() => {
+        document.getElementById('autosave-status').textContent = 'Resume analysis failed';
     });
 }
 </script>

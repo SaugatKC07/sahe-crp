@@ -66,6 +66,7 @@ from .linkedin_coach import (
     build_about, build_headline, completeness_items, profile_data,
     build_job_about, build_job_headline, job_profile_analysis, profile_recommendations,
 )
+from .resume_review import analyze_resume
 
 
 def create_notification(user, title, message='', target_url='', category='general'):
@@ -4247,7 +4248,12 @@ def student_resume(request):
     experience = resume.experience.all().order_by('-is_current', '-start_date')
     education = resume.education.all().order_by('-is_current', '-end_date')
     
-    # Calculate completeness score (deterministic logic)
+    visible_jobs = JobListing.objects.filter(is_active=True).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    ).select_related('source').order_by('-posted_date')
+    selected_job_id = request.GET.get('job_id')
+    selected_job = visible_jobs.filter(id=selected_job_id).first() if selected_job_id else None
+    review = analyze_resume(resume, selected_job)
     completeness_items = {
         'headline': bool(resume.headline),
         'summary': bool(resume.summary),
@@ -4256,31 +4262,13 @@ def student_resume(request):
         'education': education.count() >= 1,
         'contact': bool(resume.contact_phone),
     }
-    
     completed_items = sum(1 for item in completeness_items.values() if item)
     completeness_score = int((completed_items / len(completeness_items)) * 100)
-    
-    # AI score (deterministic based on completeness - no randomness)
-    base_ai_score = 65 + (completeness_score // 4)
-    ai_score = min(98, base_ai_score)
-    
-    # AI feedback scores (deterministic based on completeness)
-    keywords_score = min(98, ai_score + 2)
-    structure_score = min(98, ai_score + 1)
-    impact_score = max(60, ai_score - 5)
-    clarity_score = min(98, ai_score + 3)
-    
-    ai_feedback = [
-        {'label': 'Keywords', 'value': keywords_score, 'note': 'Strong alignment with job descriptions' if keywords_score > 70 else 'Add more industry-specific terms'},
-        {'label': 'Structure', 'value': structure_score, 'note': 'Clear sections and good formatting'},
-        {'label': 'Impact', 'value': impact_score, 'note': 'Use more metrics and numbers'},
-        {'label': 'Clarity', 'value': clarity_score, 'note': 'Concise and well-written'},
-    ]
-    
-    # Update resume scores
+    ai_score = review['overall_score']
+    ai_feedback = review['scores']
     resume.completeness_score = completeness_score
     resume.ai_score = ai_score
-    resume.ai_feedback = {'scores': ai_feedback}
+    resume.ai_feedback = {'scores': ai_feedback, 'recommendations': review['recommendations']}
     resume.save()
     
     context = {
@@ -4291,6 +4279,10 @@ def student_resume(request):
         'completeness_score': completeness_score,
         'ai_score': ai_score,
         'ai_feedback': ai_feedback,
+        'review_recommendations': review['recommendations'],
+        'review': review,
+        'visible_jobs': visible_jobs,
+        'selected_job': selected_job,
         'completeness_items': completeness_items,
         'is_tailoring': False,
         'role': 'student',
@@ -4856,7 +4848,7 @@ def resume_delete_education(request, edu_id):
 @role_required('student')
 @require_POST
 def resume_rerun_ai(request):
-    """Re-run AI resume review"""
+    """Analyze the authenticated student's Resume deterministically."""
     try:
         student = request.user.student_profile
     except Student.DoesNotExist:
@@ -4864,7 +4856,13 @@ def resume_rerun_ai(request):
     
     resume = get_object_or_404(Resume, student=student)
     
-    # Recalculate completeness score
+    selected_job_id = request.POST.get('job_id')
+    job = JobListing.objects.filter(
+        is_active=True,
+    ).filter(
+        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
+    ).filter(id=selected_job_id).first() if selected_job_id else None
+    review = analyze_resume(resume, job)
     experience = resume.experience.all()
     education = resume.education.all()
     
@@ -4880,34 +4878,20 @@ def resume_rerun_ai(request):
     completed_items = sum(1 for item in completeness_items.values() if item)
     completeness_score = int((completed_items / len(completeness_items)) * 100)
     
-    # AI score (deterministic based on completeness - no randomness)
-    base_ai_score = 65 + (completeness_score // 4)
-    ai_score = min(98, base_ai_score)
-    
-    # AI feedback scores (deterministic based on completeness)
-    keywords_score = min(98, ai_score + 2)
-    structure_score = min(98, ai_score + 1)
-    impact_score = max(60, ai_score - 5)
-    clarity_score = min(98, ai_score + 3)
-    
-    ai_feedback = [
-        {'label': 'Keywords', 'value': keywords_score, 'note': 'Strong alignment with job descriptions' if keywords_score > 70 else 'Add more industry-specific terms'},
-        {'label': 'Structure', 'value': structure_score, 'note': 'Clear sections and good formatting'},
-        {'label': 'Impact', 'value': impact_score, 'note': 'Use more metrics and numbers'},
-        {'label': 'Clarity', 'value': clarity_score, 'note': 'Concise and well-written'},
-    ]
-    
-    # Update resume scores
+    ai_score = review['overall_score']
+    ai_feedback = review['scores']
     resume.completeness_score = completeness_score
     resume.ai_score = ai_score
-    resume.ai_feedback = {'scores': ai_feedback}
+    resume.ai_feedback = {'scores': ai_feedback, 'recommendations': review['recommendations']}
     resume.save()
     
     return JsonResponse({
         'success': True,
         'ai_score': ai_score,
         'completeness_score': completeness_score,
-        'ai_feedback': ai_feedback
+        'ai_feedback': ai_feedback,
+        'recommendations': review['recommendations'],
+        'review': review,
     })
 
 @role_required('student')

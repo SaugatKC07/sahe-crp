@@ -5,181 +5,144 @@
 
 {% block extra_css %}
 <style>
-.linkedin-coach { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(0, 2fr); gap: 28px; max-width: 1200px; margin: 0 auto; }
-.linkedin-card { border: 1px solid var(--color-divider); border-radius: var(--radius-lg); background: var(--color-surface); padding: 20px; box-shadow: var(--shadow-sm); }
-.linkedin-card + .linkedin-card { margin-top: 18px; }
-.linkedin-score { font-size: 34px; font-weight: 800; color: var(--sahe-blue-600); }
-.linkedin-item { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
-.linkedin-check { width: 20px; height: 20px; border: 2px solid var(--color-divider); border-radius: 50%; text-align: center; line-height: 16px; }
-.linkedin-check.done { color: #fff; background: var(--sahe-blue-600); border-color: var(--sahe-blue-600); }
-.linkedin-tip, .linkedin-muted { color: var(--gray-400); font-size: 12px; }
-.linkedin-section { margin-top: 22px; }
-.linkedin-section h3 { margin-bottom: 10px; }
-.linkedin-entry { padding: 12px 0; border-bottom: 1px solid var(--color-divider); }
-.linkedin-entry:last-child { border-bottom: 0; }
-.linkedin-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.linkedin-form textarea { min-height: 150px; resize: vertical; }
-.linkedin-form input, .linkedin-form textarea { width: 100%; }
-.linkedin-suggestion { background: color-mix(in srgb, var(--sahe-blue-600) 7%, transparent); padding: 12px; border-radius: var(--radius-md); white-space: pre-wrap; }
-.linkedin-status { margin-top: 8px; font-size: 13px; }
-@media (max-width: 760px) { .linkedin-coach { grid-template-columns: 1fr; } }
+.profile-page { max-width: 1240px; margin: 0 auto; }
+.profile-hero, .profile-section, .coach-panel { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); }
+.profile-hero { overflow: hidden; }
+.profile-cover { height: 150px; background: linear-gradient(120deg, var(--sahe-blue-700), var(--c-6)); }
+.profile-identity { display: flex; align-items: flex-end; gap: 18px; padding: 0 28px 24px; }
+.profile-avatar { display: grid; place-items: center; width: 92px; height: 92px; margin-top: -46px; border: 5px solid var(--color-surface); border-radius: 50%; background: var(--sahe-blue-600); color: #fff; font: 800 30px var(--font-heading); }
+.profile-name { margin: 0; font: 800 28px var(--font-heading); }
+.profile-headline { margin: 5px 0 0; color: var(--gray-500); }
+.profile-location { margin: 8px 0 0; color: var(--gray-400); font-size: 13px; }
+.profile-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+.profile-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; margin-top: 20px; }
+.profile-section, .coach-panel { padding: 24px; margin-bottom: 20px; }
+.profile-section h2, .coach-panel h2 { margin: 0 0 14px; font: 750 19px var(--font-heading); }
+.profile-muted { color: var(--gray-500); font-size: 13px; }
+.profile-about { white-space: pre-wrap; line-height: 1.65; }
+.profile-entry { padding: 15px 0; border-top: 1px solid var(--color-divider); }
+.profile-entry:first-of-type { border-top: 0; }
+.profile-entry-title { font-weight: 750; }
+.profile-entry-meta { color: var(--gray-500); font-size: 13px; margin-top: 3px; }
+.profile-skills { display: flex; flex-wrap: wrap; gap: 8px; }
+.profile-skill, .profile-chip { padding: 6px 11px; border-radius: 999px; font-size: 12px; font-weight: 650; }
+.profile-skill { background: var(--gray-100); }
+.profile-chip { background: var(--sahe-blue-50); color: var(--sahe-blue-700); }
+.profile-chip.missing { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
+.coach-panel + .coach-panel { margin-top: 0; }
+.coach-score { color: var(--sahe-blue-600); font: 800 35px var(--font-heading); }
+.coach-progress { height: 9px; margin: 8px 0 16px; overflow: hidden; border-radius: 99px; background: var(--gray-100); }
+.coach-progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--c-1), var(--c-6)); }
+.coach-check { display: flex; gap: 9px; padding: 10px 0; border-top: 1px solid var(--color-divider); font-size: 13px; }
+.coach-check-mark { color: var(--gray-400); }
+.coach-check-mark.done { color: var(--sahe-blue-600); }
+.coach-job { padding: 14px; border-radius: var(--radius-md); background: color-mix(in srgb, var(--sahe-blue-600) 7%, transparent); }
+.coach-job strong { display: block; margin-bottom: 4px; }
+.coach-job-meta { color: var(--gray-500); font-size: 12px; }
+.coach-section-title { margin: 18px 0 7px; font-size: 13px; }
+.profile-form { margin-top: 20px; }
+.profile-form label { display: block; margin-top: 14px; margin-bottom: 5px; font-weight: 650; font-size: 13px; }
+.profile-form input, .profile-form textarea, .profile-form select { width: 100%; }
+.profile-form textarea { min-height: 130px; resize: vertical; }
+.profile-suggestion { margin-top: 8px; padding: 12px; border-radius: var(--radius-md); background: var(--gray-50); white-space: pre-wrap; font-size: 13px; }
+.profile-form-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.profile-status { margin-top: 8px; color: var(--gray-500); font-size: 13px; }
+@media (max-width: 900px) { .profile-layout { grid-template-columns: 1fr; } .profile-identity { align-items: flex-start; flex-wrap: wrap; } .profile-actions { margin-left: 0; width: 100%; } }
+@media (max-width: 560px) { .profile-cover { height: 110px; } .profile-identity, .profile-section, .coach-panel { padding: 20px; } .profile-avatar { width: 76px; height: 76px; margin-top: -38px; font-size: 24px; } .profile-name { font-size: 23px; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="linkedin-coach">
-    <aside>
-        <div class="linkedin-card">
-            <div class="linkedin-muted">PROFILE COMPLETENESS</div>
-            <div class="linkedin-score">{{ completeness_score }}%</div>
-            <p class="linkedin-muted">Calculated from your saved LinkedIn content and Resume data.</p>
-            {% for item in li_items %}
-            <div class="linkedin-item">
-                <div class="linkedin-check {% if item.done %}done{% endif %}">{% if item.done %}✓{% endif %}</div>
-                <div>
-                    <strong>{{ item.item }}</strong>
-                    <div class="linkedin-tip">{% if item.done %}Complete{% else %}{{ item.tip }}{% endif %}</div>
-                </div>
+<div class="profile-page">
+    <section class="profile-hero" aria-labelledby="profile-name">
+        <div class="profile-cover" aria-hidden="true"></div>
+        <div class="profile-identity">
+            <div class="profile-avatar" aria-hidden="true">{{ student.user.first_name|first }}{{ student.user.last_name|first }}</div>
+            <div>
+                <h1 class="profile-name" id="profile-name">{{ student.user.get_full_name }}</h1>
+                <p class="profile-headline">{{ linkedin.headline|default:"Add a professional headline to introduce your focus." }}</p>
+                <p class="profile-location">{{ resume.contact_location|default:"Location not added" }}</p>
             </div>
-            {% endfor %}
-        </div>
-        <div class="linkedin-card">
-            <strong>Coach recommendations</strong>
-            {% if job_analysis %}
-                {% if job_analysis.missing %}
-                <p class="linkedin-muted">This role mentions {{ job_analysis.missing|join:", " }}, but these requirements are not evidenced in your current CRP profile. Add them only if you genuinely have that experience.</p>
-                {% endif %}
-            {% else %}
-                {% for recommendation in recommendations %}
-                <p class="linkedin-muted">{{ recommendation }}</p>
-                {% empty %}<p class="linkedin-muted">Your saved profile data is reflected in the coach.</p>{% endfor %}
-            {% endif %}
-            <a class="btn btn-secondary" href="{% url 'crp:student_resume' %}">Open Resume Builder</a>
-        </div>
-    </aside>
-
-    <main>
-        <div class="linkedin-card linkedin-form">
-            <h2>Profile details</h2>
-            <p class="linkedin-muted">Edit LinkedIn content here without changing your Resume content.</p>
-            <form method="get" style="margin-bottom:18px;">
-                <label for="job_id">Coach for a real job</label>
-                <select id="job_id" name="job_id" onchange="this.form.submit()">
-                    <option value="">General LinkedIn Coach</option>
-                    {% for job_option in visible_jobs %}
-                    <option value="{{ job_option.id }}" {% if selected_job and selected_job.id == job_option.id %}selected{% endif %}>{{ job_option.title }} · {{ job_option.company }}</option>
-                    {% endfor %}
-                </select>
-            </form>
-            {% if selected_job %}
-            <div class="linkedin-suggestion">
-                <strong>{{ selected_job.title }}</strong> · {{ selected_job.company }}<br>
-                {{ selected_job.location }}{% if selected_job.source %} · {{ selected_job.source.name }}{% endif %}
+            <div class="profile-actions">
+                {% if resume and resume.linkedin_url %}<a class="btn btn-primary" href="{{ resume.linkedin_url }}" target="_blank" rel="noopener noreferrer">Open LinkedIn Profile</a>{% endif %}
+                <a class="btn btn-secondary" href="#edit-profile">Edit profile</a>
             </div>
-            {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                {% if selected_job %}<input type="hidden" name="selected_job_id" value="{{ selected_job.id }}">{% endif %}
-                {{ form.non_field_errors }}
-                <label for="{{ form.headline.id_for_label }}">Headline</label>
-                {{ form.headline }}
-                {{ form.headline.errors }}
-                <div class="linkedin-actions">
-                    <button type="button" class="btn btn-secondary" data-copy-target="id_headline">Copy headline</button>
-                    <button type="button" class="btn btn-ghost" id="use-headline-suggestion">Use suggested headline</button>
-                </div>
-                <div class="linkedin-suggestion" id="headline-suggestion">{% if selected_job %}{{ job_headline_suggestion }}{% else %}{{ headline_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
-
-                <label for="{{ form.about.id_for_label }}" style="display:block; margin-top:18px;">About</label>
-                {{ form.about }}
-                {{ form.about.errors }}
-                <div class="linkedin-actions">
-                    <button type="button" class="btn btn-secondary" data-copy-target="id_about">Copy About</button>
-                    <button type="button" class="btn btn-ghost" id="use-about-suggestion">Use suggested About</button>
-                </div>
-                <div class="linkedin-suggestion" id="about-suggestion">{% if selected_job %}{{ job_about_suggestion }}{% else %}{{ about_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
-
-                <label for="{{ form.linkedin_url.id_for_label }}" style="display:block; margin-top:18px;">LinkedIn profile URL</label>
-                {{ form.linkedin_url }}
-                {{ form.linkedin_url.errors }}
-                <div class="linkedin-actions">
-                    <button class="btn btn-primary" type="submit">Save LinkedIn profile</button>
-                    {% if resume and resume.linkedin_url %}
-                    <a class="btn btn-secondary" href="{{ resume.linkedin_url }}" target="_blank" rel="noopener noreferrer">Open LinkedIn Profile</a>
-                    {% endif %}
-                </div>
-
-                {% if selected_job %}
-                <div class="linkedin-card">
-                    <h2>Job match</h2>
-                    {% if job_analysis.has_reliable_requirements %}
-                    {% if job_analysis.match_percentage is not None %}<div class="linkedin-score">{{ job_analysis.match_percentage }}%</div>{% endif %}
-                    <p class="linkedin-muted">Matched requirements: {{ job_analysis.matched|length }} · Not evidenced: {{ job_analysis.missing|length }}</p>
-                    {% else %}
-                    <p class="linkedin-muted">Not enough structured requirements were available to calculate a reliable match.</p>
-                    {% endif %}
-                    <h3>Skills evidenced in CRP</h3>
-                    <p>{{ skills|join:", "|default:"No skills saved." }}</p>
-                    <h3>Relevant to this job</h3>
-                    <p>{{ job_analysis.relevant_skills|join:", "|default:"No evidenced skills matched." }}</p>
-                    <h3>Already evidenced</h3>
-                    <p>{{ job_analysis.matched|join:", "|default:"None." }}</p>
-                    <h3>Job mentions but not evidenced</h3>
-                    <p>{{ job_analysis.missing|join:", "|default:"None." }}</p>
-                    <div class="linkedin-actions">
-                        <a class="btn btn-ghost" href="{{ job_detail_url }}">Back to Job</a>
-                        <a class="btn btn-secondary" href="{{ tailor_url }}">Tailor Resume for this Job</a>
-                        <form method="post" action="{{ apply_url }}">{% csrf_token %}<button class="btn btn-primary" type="submit">Apply</button></form>
-                    </div>
-                </div>
-                {% endif %}
-                <div class="linkedin-status" id="copy-status" role="status" aria-live="polite"></div>
-            </form>
         </div>
+    </section>
 
-        <div class="linkedin-card">
-            <h2>Resume data reused for your profile</h2>
-            <div class="linkedin-section">
-                <h3>Education</h3>
-                {% for item in education %}
-                <div class="linkedin-entry"><strong>{{ item.degree }}</strong><br>{{ item.institution }}{% if item.location %} · {{ item.location }}{% endif %}</div>
-                {% empty %}<p class="linkedin-muted">No education entries saved in Resume Builder.</p>{% endfor %}
-            </div>
-            <div class="linkedin-section">
-                <h3>Experience</h3>
+    <div class="profile-layout">
+        <main>
+            <section class="profile-section" aria-labelledby="about-title">
+                <h2 id="about-title">About</h2>
+                {% if linkedin.about %}<p class="profile-about">{{ linkedin.about }}</p>{% else %}<p class="profile-muted">No About section saved yet. Use the editor below to add one.</p>{% endif %}
+            </section>
+
+            <section class="profile-section" aria-labelledby="experience-title">
+                <h2 id="experience-title">Experience</h2>
                 {% for item in experience %}
-                <div class="linkedin-entry"><strong>{{ item.role }}</strong> · {{ item.company }}{% if item.location %}<br>{{ item.location }}{% endif %}<br><span class="linkedin-muted">{% if item.is_current %}Current{% else %}Completed{% endif %}</span></div>
-                {% empty %}<p class="linkedin-muted">No experience entries saved in Resume Builder.</p>{% endfor %}
-            </div>
-            <div class="linkedin-section">
-                <h3>Skills</h3>
-                {% if skills %}<p>{{ skills|join:", " }}</p>{% else %}<p class="linkedin-muted">No skills saved in Resume Builder.</p>{% endif %}
-            </div>
-        </div>
-    </main>
+                <div class="profile-entry"><div class="profile-entry-title">{{ item.role }}</div><div class="profile-entry-meta">{{ item.company }}{% if item.location %} · {{ item.location }}{% endif %} · {% if item.is_current %}Current{% else %}Completed{% endif %}</div>{% for bullet in item.bullets %}<p class="profile-muted">• {{ bullet }}</p>{% endfor %}</div>
+                {% empty %}<p class="profile-muted">Experience from Resume Builder will appear here.</p>{% endfor %}
+            </section>
+
+            <section class="profile-section" aria-labelledby="education-title">
+                <h2 id="education-title">Education</h2>
+                {% for item in education %}<div class="profile-entry"><div class="profile-entry-title">{{ item.degree }}</div><div class="profile-entry-meta">{{ item.institution }}{% if item.location %} · {{ item.location }}{% endif %}</div></div>{% empty %}<p class="profile-muted">Education from Resume Builder will appear here.</p>{% endfor %}
+            </section>
+
+            <section class="profile-section" aria-labelledby="skills-title">
+                <h2 id="skills-title">Skills</h2>
+                <div class="profile-skills">{% for skill in skills %}<span class="profile-skill">{{ skill }}</span>{% empty %}<span class="profile-muted">No skills saved in Resume Builder.</span>{% endfor %}</div>
+            </section>
+
+            <section class="profile-section profile-form" id="edit-profile" aria-labelledby="edit-title">
+                <h2 id="edit-title">Edit profile</h2>
+                <p class="profile-muted">Edit LinkedIn content here without changing your Resume content.</p>
+                <form method="get"><label for="job_id">Improve for a selected job</label><select id="job_id" name="job_id" onchange="this.form.submit()"><option value="">General LinkedIn Coach</option>{% for job_option in visible_jobs %}<option value="{{ job_option.id }}" {% if selected_job and selected_job.id == job_option.id %}selected{% endif %}>{{ job_option.title }} · {{ job_option.company }}</option>{% endfor %}</select></form>
+                <form method="post">
+                    {% csrf_token %}{% if selected_job %}<input type="hidden" name="selected_job_id" value="{{ selected_job.id }}">{% endif %}
+                    {{ form.non_field_errors }}
+                    <label for="{{ form.headline.id_for_label }}">Headline</label>{{ form.headline }}{{ form.headline.errors }}
+                    <div class="profile-form-actions"><button type="button" class="btn btn-secondary" data-copy-target="id_headline">Copy headline</button><button type="button" class="btn btn-ghost" id="use-headline-suggestion">Use suggestion</button></div>
+                    <div class="profile-suggestion" id="headline-suggestion">{% if selected_job %}{{ job_headline_suggestion }}{% else %}{{ headline_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
+                    <label for="{{ form.about.id_for_label }}">About</label>{{ form.about }}{{ form.about.errors }}
+                    <div class="profile-form-actions"><button type="button" class="btn btn-secondary" data-copy-target="id_about">Copy About</button><button type="button" class="btn btn-ghost" id="use-about-suggestion">Use suggestion</button></div>
+                    <div class="profile-suggestion" id="about-suggestion">{% if selected_job %}{{ job_about_suggestion }}{% else %}{{ about_suggestion|default:"No suggestion available from current Resume data." }}{% endif %}</div>
+                    <label for="{{ form.linkedin_url.id_for_label }}">LinkedIn profile URL</label>{{ form.linkedin_url }}{{ form.linkedin_url.errors }}
+                    <div class="profile-form-actions"><button class="btn btn-primary" type="submit">Save LinkedIn profile</button>{% if resume and resume.linkedin_url %}<a class="btn btn-secondary" href="{{ resume.linkedin_url }}" target="_blank" rel="noopener noreferrer">Open LinkedIn Profile</a>{% endif %}</div>
+                    <div class="profile-status" id="copy-status" role="status" aria-live="polite"></div>
+                </form>
+            </section>
+        </main>
+
+        <aside>
+            <section class="coach-panel" aria-labelledby="completeness-title">
+                <h2 id="completeness-title">Profile completeness</h2><div class="coach-score">{{ completeness_score }}%</div><div class="coach-progress"><div class="coach-progress-fill" style="width: {{ completeness_score }}%;"></div></div>
+                {% for item in li_items %}<div class="coach-check"><span class="coach-check-mark {% if item.done %}done{% endif %}">{% if item.done %}✓{% else %}○{% endif %}</span><span><strong>{{ item.item }}</strong><br><span class="profile-muted">{% if item.done %}Complete{% else %}{{ item.tip }}{% endif %}</span></span></div>{% endfor %}
+            </section>
+            <section class="coach-panel" aria-labelledby="recommendations-title">
+                <h2 id="recommendations-title">Coach recommendations</h2>
+                {% if job_analysis and job_analysis.missing %}<p class="profile-muted">This role mentions {{ job_analysis.missing|join:", " }}, but these requirements are not evidenced in your current CRP profile. Add them only if you genuinely have that experience.</p>{% else %}{% for recommendation in recommendations %}<p class="profile-muted">{{ recommendation }}</p>{% empty %}<p class="profile-muted">Your saved profile data is reflected in the coach.</p>{% endfor %}{% endif %}
+                <a class="btn btn-secondary" href="{% url 'crp:student_resume' %}">Open Resume Builder</a>
+            </section>
+            {% if selected_job %}
+            <section class="coach-panel" aria-labelledby="job-title">
+                <h2 id="job-title">Improve for this job</h2><div class="coach-job"><strong>{{ selected_job.title }}</strong><span class="coach-job-meta">{{ selected_job.company }}{% if selected_job.location %} · {{ selected_job.location }}{% endif %}{% if selected_job.source %} · {{ selected_job.source.name }}{% endif %}</span></div>
+                {% if job_analysis.has_reliable_requirements %}<div class="coach-score">{{ job_analysis.match_percentage|default:"—" }}%</div><p class="profile-muted">Matched: {{ job_analysis.matched|length }} · Not evidenced: {{ job_analysis.missing|length }}</p>{% else %}<p class="profile-muted">Not enough structured requirements were available to calculate a reliable match.</p>{% endif %}
+                <h3 class="coach-section-title">Already evidenced</h3><div class="profile-skills">{% for item in job_analysis.matched %}<span class="profile-chip">{{ item }}</span>{% empty %}<span class="profile-muted">None yet.</span>{% endfor %}</div>
+                <h3 class="coach-section-title">Not evidenced</h3><div class="profile-skills">{% for item in job_analysis.missing %}<span class="profile-chip missing">{{ item }}</span>{% empty %}<span class="profile-muted">None detected.</span>{% endfor %}</div>
+                <div class="profile-form-actions"><a class="btn btn-ghost" href="{{ job_detail_url }}">Back to Job</a><a class="btn btn-secondary" href="{{ tailor_url }}">Tailor Resume</a><form method="post" action="{{ apply_url }}">{% csrf_token %}<button class="btn btn-primary" type="submit">Apply</button></form></div>
+            </section>
+            {% endif %}
+        </aside>
+    </div>
 </div>
 <script>
 (function () {
     const status = document.getElementById('copy-status');
-    function copyText(id) {
-        const value = document.getElementById(id).value;
-        if (!value) { status.textContent = 'There is no content to copy yet.'; return; }
-        if (!navigator.clipboard) { status.textContent = 'Copy is unavailable in this browser.'; return; }
-        navigator.clipboard.writeText(value).then(function () {
-            status.textContent = 'Copied to clipboard.';
-        }).catch(function () {
-            status.textContent = 'Copy failed. Select the text and copy it manually.';
-        });
-    }
-    document.querySelectorAll('[data-copy-target]').forEach(function (button) {
-        button.addEventListener('click', function () { copyText(button.dataset.copyTarget); });
-    });
-    document.getElementById('use-headline-suggestion').addEventListener('click', function () {
-        document.getElementById('id_headline').value = document.getElementById('headline-suggestion').textContent.trim();
-    });
-    document.getElementById('use-about-suggestion').addEventListener('click', function () {
-        document.getElementById('id_about').value = document.getElementById('about-suggestion').textContent.trim();
-    });
+    function copyText(id) { const value = document.getElementById(id).value; if (!value) { status.textContent = 'There is no content to copy yet.'; return; } if (!navigator.clipboard) { status.textContent = 'Copy is unavailable in this browser.'; return; } navigator.clipboard.writeText(value).then(function () { status.textContent = 'Copied to clipboard.'; }).catch(function () { status.textContent = 'Copy failed. Select the text and copy it manually.'; }); }
+    document.querySelectorAll('[data-copy-target]').forEach(function (button) { button.addEventListener('click', function () { copyText(button.dataset.copyTarget); }); });
+    document.getElementById('use-headline-suggestion').addEventListener('click', function () { document.getElementById('id_headline').value = document.getElementById('headline-suggestion').textContent.trim(); });
+    document.getElementById('use-about-suggestion').addEventListener('click', function () { document.getElementById('id_about').value = document.getElementById('about-suggestion').textContent.trim(); });
 })();
 </script>
 {% endblock %}

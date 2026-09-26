@@ -60,7 +60,11 @@ from .utils import (
     generate_resume_pdf,
 )
 from .decorators import get_user_role, role_required
-from .material_uploads import validate_assessment_resource_upload, validate_material_upload
+from .material_uploads import (
+    validate_assessment_resource_upload,
+    validate_assessment_submission_upload,
+    validate_material_upload,
+)
 from .job_matching import extract_job_requirements, normalize_requirement, recommendation_score
 from .job_sync import sync_job_source
 from .linkedin_coach import (
@@ -3054,6 +3058,7 @@ def student_assessment_detail(request, assessment_id):
         rubric_criteria = []
         for criterion in criteria:
             rubric_criteria.append({
+                'id': criterion.id,
                 'name': criterion.name,
                 'max_marks': criterion.max_marks,
                 'weight': criterion.weight_percentage,
@@ -3065,7 +3070,20 @@ def student_assessment_detail(request, assessment_id):
             'description': rubric.description,
             'criteria': rubric_criteria,
         }
-    
+    rubric_results = []
+    if submission and submission.marker_comments and rubric_data:
+        for criterion in rubric_data['criteria']:
+            result = submission.marker_comments.get(str(criterion.get('id'))) if isinstance(submission.marker_comments, dict) else None
+            if result is not None:
+                rubric_results.append({'name': criterion['name'], 'result': result})
+
+    attachment_rows = []
+    for attachment in assessment.attachments.all():
+        try:
+            size = attachment.file.size
+        except (OSError, ValueError):
+            size = None
+        attachment_rows.append({'attachment': attachment, 'size': size})
     context = {
         'student': student,
         'assessment': assessment,
@@ -3077,7 +3095,8 @@ def student_assessment_detail(request, assessment_id):
         ),
         'submitted_success': request.GET.get('submitted') == '1',
         'rubric': rubric_data,
-        'attachments': assessment.attachments.all(),
+        'rubric_results': rubric_results,
+        'attachments': attachment_rows,
         'role': 'student',
     }
     return render(request, 'crp/student/student_assessment_detail.html', context)
@@ -3133,30 +3152,27 @@ def student_assessment_submit(request, assessment_id):
         # Handle file upload
         uploaded_file = request.FILES.get('submission_file')
         if uploaded_file and action == 'upload':
-            extension = uploaded_file.name.rsplit('.', 1)[-1].lower() if '.' in uploaded_file.name else ''
-            accepted_formats = {
-                str(file_format).lower().lstrip('.')
-                for file_format in (assessment.accepted_formats or [])
-            }
-            if accepted_formats and extension not in accepted_formats:
-                messages.error(request, 'This file type is not accepted for the assessment.')
-            elif uploaded_file.size <= 0:
-                messages.error(request, 'Empty files cannot be uploaded.')
-            elif uploaded_file.size > assessment.max_file_size_mb * 1024 * 1024:
-                messages.error(request, f'Files must be {assessment.max_file_size_mb} MB or smaller.')
-            elif submission.files.count() >= assessment.required_file_count:
-                messages.error(request, f'You may upload up to {assessment.required_file_count} file(s) for this assessment.')
-            else:
-                SubmissionFile.objects.create(
-                    submission=submission,
-                    file=uploaded_file,
-                    file_name=uploaded_file.name,
-                    file_type=extension.upper(),
-                    file_size=f"{uploaded_file.size / (1024*1024):.1f} MB"
+            try:
+                validate_assessment_submission_upload(
+                    uploaded_file, assessment.accepted_formats, assessment.max_file_size_mb
                 )
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    return JsonResponse({'success': True})
-                messages.success(request, f"File '{uploaded_file.name}' uploaded successfully")
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+            else:
+                extension = uploaded_file.name.rsplit('.', 1)[-1].upper() if '.' in uploaded_file.name else ''
+                if submission.files.count() >= assessment.required_file_count:
+                    messages.error(request, f'You may upload up to {assessment.required_file_count} file(s) for this assessment.')
+                else:
+                    SubmissionFile.objects.create(
+                        submission=submission,
+                        file=uploaded_file,
+                        file_name=uploaded_file.name,
+                        file_type=extension,
+                        file_size=f"{uploaded_file.size / (1024*1024):.1f} MB"
+                    )
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        return JsonResponse({'success': True})
+                    messages.success(request, f"File '{uploaded_file.name}' uploaded successfully")
 
         if action == 'delete_file':
             file_id = request.POST.get('file_id')
@@ -3165,6 +3181,7 @@ def student_assessment_submit(request, assessment_id):
                 submission_file.file.delete(save=False)
                 submission_file.delete()
                 messages.success(request, 'File removed.')
+                return redirect('crp:student_assessment_submit', assessment_id=assessment.id)
         
         # Handle submission
         if action == 'submit':
@@ -3186,14 +3203,34 @@ def student_assessment_submit(request, assessment_id):
         {'label': 'Weight', 'value': f'{assessment.weight_percentage}%'},
         {'label': 'Due', 'value': assessment.due_date.strftime('%d %b %Y')},
         {'label': 'Type', 'value': assessment.get_assessment_type_display()},
-        {'label': 'Status', 'value': submission.get_status_display()},
+        {'label': 'Submission Status', 'value': submission.get_status_display()},
     ]
     
+    attachment_rows = []
+    for attachment in assessment.attachments.all():
+        try:
+            size = attachment.file.size
+        except (OSError, ValueError):
+            size = None
+        attachment_rows.append({'attachment': attachment, 'size': size})
     context = {
         'student': student,
         'assessment': assessment,
         'submission': submission,
+        'attachments': attachment_rows,
+        'editable_submission': not submission or submission.status == 'draft' or request.GET.get('edit') == '1',
+        'submission_percentage': (
+            round((submission.marks_awarded / assessment.max_marks) * 100, 1)
+            if submission and submission.marks_awarded is not None and assessment.max_marks
+            else None
+        ),
         'rubric': rubric_data,
+        'rubric_results': [
+            {'name': criterion['name'], 'result': submission.marker_comments.get(str(criterion.get('id')))}
+            for criterion in (rubric_data or {}).get('criteria', [])
+            if submission.marker_comments and isinstance(submission.marker_comments, dict)
+            and str(criterion.get('id')) in submission.marker_comments
+        ],
         'sub_facts': sub_facts,
         'files': submission.files.all(),
         'role': 'student',

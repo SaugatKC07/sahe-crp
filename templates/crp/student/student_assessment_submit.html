@@ -1,413 +1,84 @@
 {% extends 'crp/student/student_base.html' %}
-{% load static %}
 
-{% block title %}Submit Assessment - SAHE CRP{% endblock %}
-
+{% block title %}{{ assessment.title }} - Submit Assessment{% endblock %}
 {% block page_title %}Submit Assessment{% endblock %}
 
 {% block extra_css %}
 <style>
-.submit-container {
-    padding: 0;
-    max-width: 1000px;
-    margin: 0 auto;
-}
-
-.submit-header {
-    display: flex;
-    gap: 12px;
-    align-items: flex-end;
-    border-bottom: 1px solid var(--color-divider);
-    padding-bottom: 14px;
-    flex-wrap: wrap;
-}
-
-.fact-chip {
-    padding: 7px 13px;
-    border-radius: 99px;
-    cursor: pointer;
-    border: 1px solid var(--color-divider);
-    background: transparent;
-    font-family: var(--font-heading);
-    font-weight: 800;
-    font-size: 11px;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-}
-
-.fact-chip.active {
-    border-color: var(--color-accent);
-    background: var(--color-accent);
-    color: var(--color-bg);
-}
-
-.fact-box {
-    padding: 12px 16px;
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-}
-
-.rubric-criterion {
-    padding: 18px;
-    margin-top: 12px;
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-}
-
-.criterion-checkbox {
-    width: 20px;
-    height: 20px;
-    flex: none;
-    border: 2px solid color-mix(in srgb, var(--color-text) 35%, transparent);
-    border-radius: 7px;
-    background: transparent;
-    color: #fff;
-    display: grid;
-    place-items: center;
-    font-size: 11px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.criterion-checkbox.checked {
-    border-color: var(--color-accent);
-    background: var(--color-accent);
-}
-
-.upload-zone {
-    border: 2px dashed color-mix(in srgb, var(--color-text) 22%, transparent);
-    border-radius: var(--radius-lg);
-    padding: 26px 20px;
-    text-align: center;
-    cursor: pointer;
-    margin-top: 12px;
-    background: transparent;
-    transition: all 0.3s ease;
-}
-
-.upload-zone:hover {
-    border-color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 7%, transparent);
-}
-
-.upload-zone.has-files {
-    border-color: var(--c-1);
-    background: color-mix(in srgb, var(--c-1) 7%, transparent);
-}
-
-.upload-zone.dragging {
-    border-color: var(--color-accent);
-    background: color-mix(in srgb, var(--color-accent) 9%, transparent);
-}
-
-.file-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 14px;
-    margin-top: 8px;
-    border-radius: var(--radius-md);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-}
-
-.turnitin-card {
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    box-shadow: var(--shadow-sm);
-    padding: 18px;
-    margin-top: 16px;
-}
-
-.turnitin-bar {
-    height: 8px;
-    border-radius: 99px;
-    background: color-mix(in srgb, var(--color-text) 10%, transparent);
-    margin-top: 12px;
-    overflow: hidden;
-}
-
-.turnitin-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--c-2), var(--c-5));
-}
+.submit-shell{max-width:1180px;margin:auto}.submit-header,.submit-grid{display:grid;gap:16px}.submit-header{grid-template-columns:1fr auto;align-items:start}.submit-grid{grid-template-columns:minmax(0,1.15fr) minmax(340px,.85fr);margin-top:20px}.panel{background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm)}.facts{display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:10px;margin-top:18px}.fact{padding:14px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-accent) 7%,var(--color-surface))}.label,.muted{font-size:11px;color:color-mix(in srgb,var(--color-text) 72%,transparent)}.label{text-transform:uppercase;letter-spacing:.08em}.section+.section{margin-top:16px}.resource,.file-item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--color-divider)}.resource:last-child,.file-item:last-child{border-bottom:0}.upload-zone{border:2px dashed color-mix(in srgb,var(--color-text) 24%,transparent);border-radius:var(--radius-lg);padding:30px 20px;text-align:center;cursor:pointer;margin-top:14px}.upload-zone:hover,.upload-zone.dragging{border-color:var(--color-accent);background:color-mix(in srgb,var(--color-accent) 8%,transparent)}.actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:18px}@media(max-width:850px){.submit-grid{grid-template-columns:1fr}.facts{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.submit-header{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}.actions>*{width:100%}}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="submit-container">
+<div class="submit-shell">
     <div class="submit-header">
-        <div style="flex: 1; min-width: 240px;">
-            <div style="font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 8px;">
-                Assessment
-            </div>
-            <div style="font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
-                WEEK {{ assessment.week.week_number }} · {{ assessment.title }}
-            </div>
+        <div>
+            <div class="label" style="color:var(--color-accent)">Assessment submission</div>
+            <h1 style="margin:6px 0 8px">{{ assessment.title }}</h1>
+            <div class="muted">{{ assessment.course_code }} · Week {{ assessment.week.week_number }} · {{ assessment.get_assessment_type_display }}</div>
         </div>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            {% for fact in sub_facts %}
-            <div class="fact-box">
-                <div style="font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
-                    {{ fact.label }}
-                </div>
-                <div style="font-family: var(--font-heading); font-weight: 800; font-size: 18px; margin-top: 3px;">
-                    {{ fact.value }}
-                </div>
-            </div>
-            {% endfor %}
-        </div>
+        <a class="btn btn-secondary" href="{% url 'crp:student_assessment_detail' assessment.id %}">View Assignment</a>
+    </div>
+    <div class="facts">
+        <div class="fact"><div class="label">Due date</div><strong>{{ assessment.due_date|date:"d M Y, H:i" }}</strong></div>
+        <div class="fact"><div class="label">Weight</div><strong>{{ assessment.weight_percentage }}%</strong></div>
+        <div class="fact"><div class="label">Maximum marks</div><strong>{{ assessment.max_marks }}</strong></div>
+        <div class="fact"><div class="label">Submission status</div><strong>{% if submission %}{{ submission.get_status_display }}{% else %}Not started{% endif %}</strong></div>
+        <div class="fact"><div class="label">Files</div><strong>{{ files|length }} / {{ assessment.required_file_count }}</strong></div>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 28px; margin-top: 22px;">
+    {% if submission and submission.status != 'draft' and not editable_submission %}
+    <div class="panel" style="margin-top:20px">
+        <div class="label" style="color:var(--color-accent)">Submission receipt</div>
+        <h2 style="margin:7px 0">Submitted successfully</h2>
+        <p class="muted">Status: Awaiting Marking{% if submission.submitted_at %} · {{ submission.submitted_at|date:"d M Y, H:i" }}{% endif %}</p>
+        <h3>Submitted files</h3>
+        {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ file.file_name }}</span><span class="muted">{{ file.file_size }}</span></div>{% empty %}<p class="muted">No files attached.</p>{% endfor %}
+        {% if submission.feedback %}<h3>Comment to your marker</h3><p style="white-space:pre-line">{{ submission.feedback }}</p>{% endif %}
+        {% if submission.status == 'marked' and assessment.results_released %}<hr><h3>Marked result</h3><p><strong>{{ submission.marks_awarded }}/{{ assessment.max_marks }}</strong> · {{ submission_percentage }}%</p>{% if submission.feedback %}<p style="white-space:pre-line">{{ submission.feedback }}</p>{% endif %}{% if rubric_results %}<h3>Rubric results</h3>{% for result in rubric_results %}<div class="resource"><span style="flex:1">{{ result.name }}</span><strong>{{ result.result }}</strong></div>{% endfor %}{% endif %}{% if submission.marked_at %}<p class="muted">Marked {{ submission.marked_at|date:"d M Y, H:i" }}</p>{% endif %}{% endif %}
+        <div class="actions"><a class="btn btn-secondary" href="{% url 'crp:student_assessments' %}">Back to Assessments</a><a class="btn btn-primary" href="?edit=1">Update Submission</a></div>
+    </div>
+    {% else %}
+    <div class="submit-grid">
         <div>
-            <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid var(--color-divider); padding-bottom: 10px;">
-                <h4 style="margin: 0; font-size: 15px; flex: 1;">Marking rubric — tick as you go</h4>
-                <div style="font-size: 12px; color: color-mix(in srgb, var(--color-text) 78%, transparent);">
-                    <span id="checked-count">0</span> of <span id="total-criteria">{% if rubric %}{{ rubric.criteria|length }}{% else %}0{% endif %}</span> addressed
-                </div>
-            </div>
-            <div style="height: 8px; border-radius: 99px; background: color-mix(in srgb, var(--color-text) 10%, transparent); margin-top: 12px; overflow: hidden;">
-                <div id="ready-bar" style="width: 0%; height: 8px; border-radius: 99px; background: linear-gradient(90deg, var(--c-1), var(--c-6)); transition: width 0.3s ease;"></div>
-            </div>
-            
-            {% if rubric %}
-            {% for criterion in rubric.criteria %}
-            <div class="rubric-criterion" id="criterion-{{ criterion.id }}">
-                <div style="display: flex; align-items: flex-start; gap: 12px;">
-                    <div class="criterion-checkbox" id="checkbox-{{ criterion.id }}" onclick="toggleCriterion({{ criterion.id }})">
-                        
-                    </div>
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;">
-                            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px; flex: 1;">
-                                {{ criterion.name }}
-                            </div>
-                            <div style="font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: color-mix(in srgb, var(--c-2) 12%, transparent); color: color-mix(in srgb, var(--c-2) 88%, var(--color-text));">
-                                {{ criterion.weight }}% · {{ criterion.max_marks }} marks
-                            </div>
-                        </div>
-                        <div style="font-size: 11.5px; color: var(--color-accent-700); margin-top: 8px;">
-                            Aim for "Excellent" — that is {{ criterion.max_marks }} of {{ assessment.weight_percentage }} marks for this criterion.
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div style="padding: 20px 0; font-size: 13px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">
-                No rubric available for this assessment.
-            </div>
-            {% endif %}
+            {% if assessment.description %}<section class="panel section"><h2>Assignment Description</h2><p style="white-space:pre-line;line-height:1.7">{{ assessment.description }}</p></section>{% endif %}
+            {% if assessment.instructions %}<section class="panel section"><h2>Instructions</h2><p style="white-space:pre-line;line-height:1.7">{{ assessment.instructions }}</p></section>{% endif %}
+            {% if attachments %}<section class="panel section"><h2>Assignment Resources</h2>{% for resource in attachments %}{% with attachment=resource.attachment %}<div class="resource"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ attachment.original_filename }}{% if resource.size %}<br><span class="muted">{{ resource.size|filesizeformat }}</span>{% endif %}</span><a class="btn btn-secondary" href="{% url 'crp:assessment_attachment_download' attachment.id %}">Download</a></div>{% endwith %}{% endfor %}</section>{% endif %}
+            <section class="panel section"><h2>Submission Requirements</h2><p class="muted">Accepted formats</p><div>{% for format in assessment.accepted_formats %}<span class="tag tag-outline">{{ format }}</span> {% empty %}<span class="muted">No format restriction specified</span>{% endfor %}</div><p class="muted" style="margin-bottom:0">Maximum file size: {{ assessment.max_file_size_mb }} MB per file<br>Maximum files: {{ assessment.required_file_count }}<br>Due: {{ assessment.due_date|date:"d M Y, H:i" }}</p></section>
+            {% if rubric %}<section class="panel section"><h2>{{ rubric.name }}</h2><p class="muted">{{ rubric.description }}</p>{% for criterion in rubric.criteria %}<div class="resource"><span style="flex:1"><strong>{{ criterion.name }}</strong><br><span class="muted">{{ criterion.description }}</span></span><strong>{{ criterion.max_marks }} marks</strong></div>{% endfor %}{% if rubric_results %}<h3>Rubric results</h3>{% for result in rubric_results %}<div class="resource"><span style="flex:1">{{ result.name }}</span><strong>{{ result.result }}</strong></div>{% endfor %}{% endif %}</section>{% else %}<section class="panel section"><p class="muted" style="margin:0">No marking rubric has been provided for this assessment.</p></section>{% endif %}
         </div>
-
         <div>
-            <div style="border-bottom: 1px solid var(--color-divider); padding-bottom: 10px;">
-                <h4 style="margin: 0; font-size: 15px;">Your submission</h4>
-            </div>
-            <div style="padding-top: 16px;">
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                    {% for format in assessment.accepted_formats %}
-                    <span class="tag tag-outline">{{ format }}</span>
-                    {% endfor %}
-                </div>
-                
-                <form method="post" enctype="multipart/form-data" id="submission-form">
-                    {% csrf_token %}
-                    <div class="upload-zone {% if files %}has-files{% endif %}" id="upload-zone" onclick="document.getElementById('file-input').click()">
-                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 15px;">
-                            Drop your files here
-                        </div>
-                        <div style="font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 78%, transparent); margin-top: 6px;">
-                            or browse files · Accepted: {{ assessment.accepted_formats|join:", " }} · up to {{ assessment.max_file_size_mb }} MB · {{ assessment.required_file_count }} file(s) maximum
-                        </div>
-                        <input type="file" name="submission_file" id="file-input" style="display: none;" onchange="handleFileUpload(this)">
+            <section class="panel"><h2>Your Submission</h2>
+                <form method="post" enctype="multipart/form-data" id="submission-form">{% csrf_token %}
+                    <div class="upload-zone {% if files %}has-files{% endif %}" id="upload-zone">
+                        <i class="bi bi-cloud-arrow-up" style="font-size:28px;color:var(--color-accent)"></i>
+                        <div style="font-weight:800;margin-top:8px">Drop your files here</div>
+                        <label for="file-input" style="display:inline-block;margin-top:8px;color:var(--color-accent);font-weight:700;cursor:pointer">Browse Files</label>
+                        <div class="muted" style="margin-top:10px">Accepted: {{ assessment.accepted_formats|join:", " }} · {{ assessment.max_file_size_mb }} MB maximum · {{ assessment.required_file_count }} file{{ assessment.required_file_count|pluralize }}</div>
+                        <input type="file" name="submission_file" id="file-input" style="display:none">
                     </div>
-                    <div id="upload-feedback" role="status" aria-live="polite" style="display: none; margin-top: 10px;"></div>
-                    
-                    {% for file in files %}
-                    <div class="file-item">
-                        <div style="font-family: var(--font-heading); font-weight: 800; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 5px 9px; border-radius: 7px; flex: none; background: color-mix(in srgb, var(--c-2) 14%, transparent); color: color-mix(in srgb, var(--c-2) 88%, var(--color-text));">
-                            {{ file.file_type }}
-                        </div>
-                        <div style="flex: 1; font-size: 12.5px; font-weight: 600;">{{ file.file_name }}</div>
-                        <div style="font-size: 11.5px; color: color-mix(in srgb, var(--color-text) 74%, transparent);">{{ file.file_size }}</div>
-                        <button type="submit" form="remove-file-{{ file.id }}" class="btn btn-secondary" style="padding:6px 10px">Remove</button>
-                    </div>
-                    <form method="post" id="remove-file-{{ file.id }}" style="display:none">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.id }}"></form>
-                    {% endfor %}
-                    
-                    <div class="field" style="margin-top: 16px;">
-                        <label>Comment to your marker (optional)</label>
-                        <textarea class="input" name="comment" style="min-height: 100px;width:100%;" placeholder="Add any notes for your marker...">{{ submission.feedback }}</textarea>
-                    </div>
-                    
-                    {% if assessment.turnitin_enabled %}
-                    <div class="turnitin-card">
-                        <div style="display: flex; align-items: baseline; gap: 10px;">
-                            <div style="font-family: var(--font-heading); font-weight: 800; font-size: 14px; flex: 1;">
-                                Turnitin originality check
-                            </div>
-                            <span class="tag tag-{% if submission.turnitin_similarity == 100 %}success{% elif submission.turnitin_similarity %}neutral{% else %}outline{% endif %}">
-                                {% if submission.turnitin_similarity == 100 %}Cleared{% elif submission.turnitin_similarity %}{{ submission.turnitin_similarity }}%{% else %}Not run{% endif %}
-                            </span>
-                        </div>
-                        <div class="turnitin-bar">
-                            <div class="turnitin-fill" style="width: {% if submission.turnitin_similarity %}{{ submission.turnitin_similarity }}{% else %}0{% endif %}%; transition: width 0.3s ease;"></div>
-                        </div>
-                        <div style="font-size: 12.5px; line-height: 1.6; color: color-mix(in srgb, var(--color-text) 82%, transparent); margin-top: 10px;">
-                            {% if submission.turnitin_similarity == 100 %}
-                                Similarity is within the acceptable range. Matches are correctly quoted and referenced.
-                            {% elif submission.turnitin_similarity %}
-                                Current similarity: {{ submission.turnitin_similarity }}%. Run the check before submitting for best results.
-                            {% else %}
-                                Run the check before submitting. You can see your similarity and AI-writing report and fix issues first.
-                            {% endif %}
-                        </div>
-                        <button type="submit" name="action" value="turnitin" class="btn btn-secondary btn-block" style="margin-top: 12px;">
-                            {% if submission.turnitin_similarity %}View full report{% else %}Run Turnitin check{% endif %}
-                        </button>
-                    </div>
-                    {% endif %}
-                    
-                    <div style="display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap;">
-                        <button type="submit" name="action" value="submit" class="btn btn-primary" id="submit-for-marking">
-                            {% if submission.status == 'marked' %}Resubmit{% else %}Submit for marking{% endif %}
-                        </button>
-                        <button type="submit" name="action" value="save_draft" class="btn btn-secondary">Save draft</button>
-                    </div>
-
-                    <div id="submit-dialog" role="dialog" aria-modal="true" aria-labelledby="submit-dialog-title" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;place-items:center;padding:20px">
-                        <div class="panel" style="max-width:430px;background:var(--color-surface);padding:24px;border-radius:var(--radius-lg)">
-                            <h2 id="submit-dialog-title">Submit assessment for marking?</h2>
-                            <p style="line-height:1.6">You are about to submit this assessment. Your files and notes will be sent to your marker.</p>
-                            <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn btn-secondary" id="cancel-submit">Cancel</button><button type="button" class="btn btn-primary" id="confirm-submit">Submit for marking</button></div>
-                        </div>
-                    </div>
+                    <div id="upload-feedback" role="status" aria-live="polite" style="margin-top:10px"></div>
+                    {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ file.file_name }}</span><span class="muted">{{ file.file_size }}</span><button type="submit" form="remove-file-{{ file.id }}" class="btn btn-secondary" style="padding:6px 10px">Remove</button></div><form method="post" id="remove-file-{{ file.id }}" style="display:none">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.id }}"></form>{% endfor %}
+                    <label style="display:block;margin-top:18px;font-weight:700">Comment to your marker (optional)</label>
+                    <textarea class="input" name="comment" style="width:100%;min-height:110px;margin-top:8px" placeholder="Add any notes for your marker...">{{ submission.feedback }}</textarea>
+                    <div class="actions"><button type="submit" name="action" value="save_draft" class="btn btn-secondary">Save Draft</button><button type="button" id="submit-for-marking" class="btn btn-primary">Submit for Marking</button></div>
                 </form>
-            </div>
+            </section>
         </div>
     </div>
-    
-    <div style="margin-top: 24px;">
-        <a href="{% url 'crp:student_assessments' %}" class="btn btn-secondary">← Back to assessments</a>
-    </div>
+    {% endif %}
+    <a class="btn btn-secondary" style="margin-top:18px" href="{% url 'crp:student_assessments' %}">Back to Assessments</a>
 </div>
 
+<div id="submit-dialog" role="dialog" aria-modal="true" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;place-items:center;padding:20px"><div class="panel" style="max-width:430px"><h2>Submit assessment for marking?</h2><p style="line-height:1.6">Your files and notes will be sent to your marker.</p><div class="actions"><button type="button" class="btn btn-secondary" id="cancel-submit">Cancel</button><button type="button" class="btn btn-primary" id="confirm-submit">Submit for marking</button></div></div></div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-let checkedCriteria = new Set();
-const totalCriteria = {% if rubric %}{{ rubric.criteria|length }}{% else %}0{% endif %};
-
-function toggleCriterion(criterionId) {
-    const checkbox = document.getElementById(`checkbox-${criterionId}`);
-    const criterion = document.getElementById(`criterion-${criterionId}`);
-    
-    if (checkedCriteria.has(criterionId)) {
-        checkedCriteria.delete(criterionId);
-        checkbox.classList.remove('checked');
-        checkbox.textContent = '';
-        criterion.style.boxShadow = 'var(--shadow-sm)';
-    } else {
-        checkedCriteria.add(criterionId);
-        checkbox.classList.add('checked');
-        checkbox.textContent = '✓';
-        criterion.style.boxShadow = 'inset 0 0 0 1px color-mix(in srgb, var(--c-1) 34%, transparent), var(--shadow-sm)';
-    }
-    
-    updateProgress();
-}
-
-function updateProgress() {
-    const checkedCount = checkedCriteria.size;
-    const percentage = (checkedCount / totalCriteria) * 100;
-    
-    document.getElementById('checked-count').textContent = checkedCount;
-    document.getElementById('ready-bar').style.width = `${percentage}%`;
-}
-
-function handleFileUpload(input) {
-    if (input.files && input.files[0]) {
-        const form = document.getElementById('submission-form');
-        const feedback = document.getElementById('upload-feedback');
-        // Create a new FormData with just the file
-        const formData = new FormData();
-        formData.append('submission_file', input.files[0]);
-        formData.append('action', 'upload');
-        formData.append('csrfmiddlewaretoken', getCookie('csrftoken'));
-        
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData,
-        })
-        .then(response => {
-            if (response.ok) {
-                location.reload();
-            } else {
-                feedback.textContent = 'File upload failed. Please try again.';
-                feedback.style.display = 'block';
-                feedback.style.color = 'var(--c-danger, #b42318)';
-            }
-
-            const uploadZone = document.getElementById('upload-zone');
-            ['dragenter', 'dragover'].forEach(eventName => uploadZone.addEventListener(eventName, event => {
-                event.preventDefault();
-                uploadZone.classList.add('dragging');
-            }));
-            ['dragleave', 'drop'].forEach(eventName => uploadZone.addEventListener(eventName, event => {
-                event.preventDefault();
-                uploadZone.classList.remove('dragging');
-            }));
-            uploadZone.addEventListener('drop', event => {
-                const input = document.getElementById('file-input');
-                input.files = event.dataTransfer.files;
-                handleFileUpload(input);
-            });
-
-            const submitButton = document.getElementById('submit-for-marking');
-            const submitDialog = document.getElementById('submit-dialog');
-            const submissionForm = document.getElementById('submission-form');
-            submitButton.addEventListener('click', event => {
-                event.preventDefault();
-                submitDialog.style.display = 'grid';
-            });
-            document.getElementById('cancel-submit').addEventListener('click', () => submitDialog.style.display = 'none');
-            document.getElementById('confirm-submit').addEventListener('click', () => {
-                const action = document.createElement('input');
-                action.type = 'hidden';
-                action.name = 'action';
-                action.value = 'submit';
-                submissionForm.appendChild(action);
-                submissionForm.submit();
-            });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            feedback.textContent = 'File upload failed. Please try again.';
-            feedback.style.display = 'block';
-            feedback.style.color = 'var(--c-danger, #b42318)';
-        });
-    }
-}
-
-function saveDraft() {
-    document.getElementById('submission-form').requestSubmit();
-}
-
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
+const zone=document.getElementById('upload-zone'), input=document.getElementById('file-input'), form=document.getElementById('submission-form');
+function showPreview(file){let preview=document.getElementById('selected-preview');if(!preview){preview=document.createElement('div');preview.id='selected-preview';preview.className='file-item';zone.after(preview)}preview.innerHTML='<i class="bi bi-file-earmark"></i><span style="flex:1">'+file.name+'</span><span class="muted">'+(file.size/1024/1024).toFixed(1)+' MB</span><button type="button" class="btn btn-secondary" style="padding:6px 10px">Cancel</button>';preview.querySelector('button').onclick=()=>{input.value='';preview.remove()};}
+if(zone){zone.addEventListener('click',e=>{if(e.target.tagName!=='LABEL')input.click()});['dragenter','dragover'].forEach(n=>zone.addEventListener(n,e=>{e.preventDefault();zone.classList.add('dragging')}));['dragleave','drop'].forEach(n=>zone.addEventListener(n,e=>{e.preventDefault();zone.classList.remove('dragging')}));zone.addEventListener('drop',e=>{input.files=e.dataTransfer.files;input.dispatchEvent(new Event('change'))});input.addEventListener('change',()=>{if(input.files.length){const file=input.files[0];showPreview(file);const data=new FormData();data.append('submission_file',file);data.append('action','upload');data.append('csrfmiddlewaretoken',form.querySelector('[name=csrfmiddlewaretoken]').value);fetch(location.href,{method:'POST',body:data,headers:{'X-Requested-With':'XMLHttpRequest'}}).then(r=>r.ok?location.reload():Promise.reject()).catch(()=>{document.getElementById('upload-feedback').textContent='File upload failed. Please try again.'})})}
+const dialog=document.getElementById('submit-dialog'), submit=document.getElementById('submit-for-marking');
+if(submit){submit.addEventListener('click',()=>dialog.style.display='grid');document.getElementById('cancel-submit').addEventListener('click',()=>dialog.style.display='none');document.getElementById('confirm-submit').addEventListener('click',()=>{const action=document.createElement('input');action.type='hidden';action.name='action';action.value='submit';form.appendChild(action);form.submit()})}
 </script>
 {% endblock %}

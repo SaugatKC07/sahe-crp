@@ -778,6 +778,15 @@ def trainer_submission_detail(request, submission_id):
             messages.success(request, 'Submission marked successfully.')
             return redirect('crp:trainer_submission_detail', submission_id=submission.id)
 
+    stored_comments = submission.marker_comments if isinstance(submission.marker_comments, dict) else {}
+    student_comment = stored_comments.get('_student_comment', '')
+    if not student_comment and submission.status in ('draft', 'submitted') and not existing_results:
+        student_comment = submission.feedback
+    marking_has_started = bool(
+        existing_results
+        or submission.status in ('marked', 'returned')
+        or (student_comment and submission.feedback != student_comment)
+    )
     context = {
         'submission': submission,
         'files': submission.files.all(),
@@ -785,6 +794,8 @@ def trainer_submission_detail(request, submission_id):
         'rubric_active': rubric_active,
         'criteria': criteria,
         'criterion_rows': criterion_rows,
+        'student_comment': student_comment,
+        'overall_feedback': submission.feedback if marking_has_started else '',
         'role': 'trainer',
     }
     return render(request, 'crp/trainer/trainer_submission_detail.html', context)
@@ -803,6 +814,22 @@ def trainer_submission_file_download(request, file_id):
     )
     if submission_file.submission.assessment.course_code not in trainer_course_codes:
         raise Http404
+    return redirect(submission_file.file.url)
+
+
+@role_required('student')
+def student_submission_file_download(request, file_id):
+    """Redirect a student to a private file belonging to their own eligible submission."""
+    try:
+        student = request.user.student_profile
+    except Student.DoesNotExist:
+        raise Http404
+    submission_file = get_object_or_404(
+        SubmissionFile.objects.select_related('submission__assessment'),
+        id=file_id,
+        submission__student=student,
+        submission__assessment__in=eligible_assessments(student),
+    )
     return redirect(submission_file.file.url)
 
 
@@ -3059,36 +3086,56 @@ def student_assessments(request):
         submission = submissions.filter(assessment=assessment).first()
         
         now = timezone.now()
-        if submission and submission.status in ('marked', 'returned'):
-            status = 'Marked'
+        result_is_released = bool(
+            submission
+            and submission.status in ('marked', 'returned')
+            and assessment.results_released
+            and submission.marks_awarded is not None
+        )
+        if result_is_released:
+            status = 'released'
+            status_label = 'Results Released'
+            state_label = 'Marked'
+        elif submission and submission.status in ('marked', 'returned'):
+            status = 'pending_release'
+            status_label = 'Results Pending Release'
+            state_label = 'Marked'
         elif submission and submission.status == 'submitted':
-            status = 'Awaiting Marking'
+            status = 'awaiting_marking'
+            status_label = 'Awaiting Marking'
+            state_label = 'Submitted'
         elif submission and submission.status == 'draft':
-            status = 'Draft Submission'
+            status = 'draft'
+            status_label = 'Draft Submission'
+            state_label = 'Draft'
         elif assessment.due_date < now:
-            status = 'Late'
+            status = 'late'
+            status_label = 'Late'
+            state_label = 'Not submitted'
         elif assessment.due_date <= now + timedelta(days=3):
-            status = 'Due Soon'
+            status = 'due_soon'
+            status_label = 'Due Soon'
+            state_label = 'Open'
         else:
-            status = 'Upcoming'
-        if submission and submission.status in ('marked', 'returned') and not assessment.results_released:
-            status = 'Awaiting Marking'
+            status = 'upcoming'
+            status_label = 'Upcoming'
+            state_label = 'Open'
         action_label = (
-            'View Feedback' if submission and submission.status in ('marked', 'returned') and assessment.results_released
-            else 'View Submission' if submission and submission.status == 'submitted'
+            'View Results' if result_is_released
+            else 'View Submission' if submission and submission.status in ('submitted', 'marked', 'returned')
             else 'Continue Draft' if submission and submission.status == 'draft'
             else 'Submit Work' if assessment.due_date >= now
             else 'View Assignment'
         )
         
         marks_label = (
-            f'{submission.marks_awarded}/{assessment.max_marks}'
-            if submission and assessment.results_released and submission.marks_awarded is not None
+            f'{format(submission.marks_awarded.normalize(), "f")}/{assessment.max_marks}'
+            if result_is_released
             else '—'
         )
         percentage = (
             round((submission.marks_awarded / assessment.max_marks) * 100, 1)
-            if submission and submission.marks_awarded is not None and assessment.max_marks
+            if result_is_released and assessment.max_marks
             else None
         )
         
@@ -3099,7 +3146,8 @@ def student_assessments(request):
             'course': assessment.course_code,
             'meta': f"{assessment.course_code} · due {assessment.due_date.strftime('%d %b %Y, %H:%M')} · {assessment.max_marks} marks",
             'status': status,
-            'status_label': status,
+            'status_label': status_label,
+            'state_label': state_label,
             'marks_label': marks_label,
             'percentage': percentage,
             'due_date': assessment.due_date,
@@ -3117,10 +3165,10 @@ def student_assessments(request):
         assess_rows = [
             row for row in assess_rows
             if (
-                selected_filter == 'upcoming' and row['status'] in ('Upcoming', 'Due Soon')
-                or selected_filter == 'submitted' and row['status'] in ('Submitted', 'Awaiting Marking', 'Marked', 'Awaiting Marking')
-                or selected_filter == 'awaiting' and row['status'] == 'Awaiting Marking'
-                or selected_filter == 'marked' and row['status'] == 'Marked'
+                selected_filter == 'upcoming' and row['status'] in ('upcoming', 'due_soon')
+                or selected_filter == 'submitted' and row['status'] in ('awaiting_marking', 'pending_release', 'released')
+                or selected_filter == 'awaiting' and row['status'] == 'awaiting_marking'
+                or selected_filter == 'marked' and row['status'] in ('pending_release', 'released')
             )
         ]
     
@@ -3147,7 +3195,27 @@ def student_assessment_detail(request, assessment_id):
         student=student,
         assessment=assessment
     ).first()
-    
+
+    result_is_released = bool(
+        submission
+        and submission.status in ('marked', 'returned')
+        and assessment.results_released
+        and submission.marks_awarded is not None
+    )
+    submission_view = None
+    student_comment = ''
+    if submission:
+        stored_comments = submission.marker_comments if isinstance(submission.marker_comments, dict) else {}
+        student_comment = stored_comments.get('_student_comment', '')
+        if submission.status == 'draft' and not student_comment:
+            student_comment = submission.feedback
+        submission_view = {
+            'id': submission.id,
+            'status': submission.status,
+            'status_label': submission.get_status_display(),
+            'submitted_at': submission.submitted_at,
+        }
+
     rubric_data = None
     if hasattr(assessment, 'rubric') and assessment.rubric.is_published:
         rubric = assessment.rubric
@@ -3169,8 +3237,6 @@ def student_assessment_detail(request, assessment_id):
             'description': rubric.description,
             'criteria': rubric_criteria,
         }
-    rubric_results = []
-
     attachment_rows = []
     for attachment in assessment.attachments.all():
         try:
@@ -3178,21 +3244,59 @@ def student_assessment_detail(request, assessment_id):
         except (OSError, ValueError):
             size = None
         attachment_rows.append({'attachment': attachment, 'size': size})
+    files = submission.files.all() if submission else SubmissionFile.objects.none()
     context = {
         'student': student,
         'assessment': assessment,
-        'submission': submission,
-        'submission_percentage': (
-            round((submission.marks_awarded / assessment.max_marks) * 100, 1)
-            if submission and submission.marks_awarded is not None and assessment.max_marks
-            else None
-        ),
+        'submission': submission_view,
+        'student_comment': student_comment,
+        'files': files,
+        'result_is_released': result_is_released,
         'submitted_success': request.GET.get('submitted') == '1',
         'rubric': rubric_data,
-        'rubric_results': rubric_results,
         'attachments': attachment_rows,
         'role': 'student',
     }
+    if result_is_released:
+        context['result_summary'] = {
+            'marks_awarded': submission.marks_awarded,
+            'percentage': round((submission.marks_awarded / assessment.max_marks) * 100, 1),
+            'marked_at': submission.marked_at,
+            'overall_feedback': submission.feedback,
+        }
+        result_rows = []
+        results = SubmissionRubricResult.objects.filter(
+            submission=submission,
+            criterion__rubric__assessment=assessment,
+        ).select_related(
+            'criterion', 'performance_level',
+        ).prefetch_related(
+            'criterion__performance_levels',
+        ).order_by('criterion__order', 'criterion_id')
+        for result in results:
+            criterion = result.criterion
+            selected_level = (
+                result.performance_level
+                if result.performance_level and result.performance_level.criterion_id == criterion.id
+                else None
+            )
+            result_rows.append({
+                'criterion_name': criterion.name,
+                'criterion_description': criterion.description,
+                'criterion_weight': criterion.weight_percentage,
+                'criterion_max_marks': criterion.max_marks,
+                'awarded_marks': result.awarded_marks,
+                'feedback': result.feedback,
+                'selected_level': selected_level,
+                'levels': [
+                    {
+                        'name': level.name,
+                        'selected': selected_level is not None and level.id == selected_level.id,
+                    }
+                    for level in criterion.performance_levels.all()
+                ],
+            })
+        context['rubric_results'] = result_rows
     return render(request, 'crp/student/student_assessment_detail.html', context)
 
 @role_required('student')
@@ -3239,8 +3343,15 @@ def student_assessment_submit(request, assessment_id):
         action = request.POST.get('action')
         is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if action == 'save_draft':
-            submission.feedback = request.POST.get('comment', submission.feedback).strip()
-            submission.save()
+            student_comment = request.POST.get('comment', '').strip()
+            comments = submission.marker_comments if isinstance(submission.marker_comments, dict) else {}
+            comments['_student_comment'] = student_comment
+            submission.marker_comments = comments
+            if submission.status == 'draft':
+                submission.feedback = student_comment
+                submission.save(update_fields=['feedback', 'marker_comments', 'updated_at'])
+            else:
+                submission.save(update_fields=['marker_comments', 'updated_at'])
             messages.success(request, "Draft saved.")
             return redirect('crp:student_assessment_submit', assessment_id=assessment.id)
         
@@ -3307,7 +3418,12 @@ def student_assessment_submit(request, assessment_id):
         
         # Handle submission
         if action == 'submit':
-            submission.feedback = request.POST.get('comment', submission.feedback).strip()
+            student_comment = request.POST.get('comment', '').strip()
+            comments = submission.marker_comments if isinstance(submission.marker_comments, dict) else {}
+            comments['_student_comment'] = student_comment
+            submission.marker_comments = comments
+            if submission.status == 'draft':
+                submission.feedback = student_comment
             if assessment.required_submission and submission.files.count() < assessment.required_file_count:
                 messages.error(request, "Please upload at least one file before submitting.")
             else:
@@ -3335,24 +3451,30 @@ def student_assessment_submit(request, assessment_id):
         except (OSError, ValueError):
             size = None
         attachment_rows.append({'attachment': attachment, 'size': size})
+    stored_comments = submission.marker_comments if isinstance(submission.marker_comments, dict) else {}
+    student_comment = stored_comments.get('_student_comment', '')
+    if submission.status == 'draft' and not student_comment:
+        student_comment = submission.feedback
+    result_is_released = bool(
+        submission.status in ('marked', 'returned')
+        and assessment.results_released
+        and submission.marks_awarded is not None
+    )
+    submission_view = {
+        'id': submission.id,
+        'status': submission.status,
+        'status_label': submission.get_status_display(),
+        'submitted_at': submission.submitted_at,
+    }
     context = {
         'student': student,
         'assessment': assessment,
-        'submission': submission,
+        'submission': submission_view,
         'attachments': attachment_rows,
         'editable_submission': not submission or submission.status == 'draft' or request.GET.get('edit') == '1',
-        'submission_percentage': (
-            round((submission.marks_awarded / assessment.max_marks) * 100, 1)
-            if submission and submission.marks_awarded is not None and assessment.max_marks
-            else None
-        ),
+        'student_comment': student_comment,
+        'result_is_released': result_is_released,
         'rubric': rubric_data,
-        'rubric_results': [
-            {'name': criterion['name'], 'result': submission.marker_comments.get(str(criterion.get('id')))}
-            for criterion in (rubric_data or {}).get('criteria', [])
-            if submission.marker_comments and isinstance(submission.marker_comments, dict)
-            and str(criterion.get('id')) in submission.marker_comments
-        ],
         'sub_facts': sub_facts,
         'files': submission.files.all(),
         'role': 'student',

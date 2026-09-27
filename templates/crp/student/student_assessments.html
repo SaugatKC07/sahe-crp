@@ -30,14 +30,16 @@
                 <div class="assessment-facts"><span>Due {{ assess.due_date|date:"d M Y, H:i" }}</span><span>{{ assess.weight }}% weight</span><span>{{ assess.max_marks }} marks</span><span>{{ assess.resource_count }} resource{{ assess.resource_count|pluralize }}</span></div>
             </div>
             <div class="assessment-actions">
+                <span class="assessment-meta">{{ assess.state_label }}</span>
                 <span class="status-badge">{{ assess.status_label }}</span>
-                {% if assess.has_submission and assess.status == 'Marked' and assess.submission_id %}
+                {% if assess.status == 'released' %}
+                    <strong>{{ assess.marks_label }} · {{ assess.percentage|floatformat:"-1" }}%</strong>
                     <a class="btn btn-primary" href="{% url 'crp:student_assessment_detail' assess.assessment_id %}">{{ assess.action_label }}</a>
-                {% elif assess.has_submission and assess.status == 'Awaiting Marking' %}
+                {% elif assess.status == 'awaiting_marking' or assess.status == 'pending_release' %}
                     <a class="btn btn-secondary" href="{% url 'crp:student_assessment_detail' assess.assessment_id %}">{{ assess.action_label }}</a>
-                {% elif assess.has_submission and assess.status == 'Draft Submission' %}
+                {% elif assess.status == 'draft' %}
                     <a class="btn btn-primary" href="{% url 'crp:student_assessment_submit' assess.assessment_id %}">{{ assess.action_label }}</a>
-                {% elif assess.status != 'Late' %}
+                {% elif assess.status != 'late' %}
                     <a class="btn btn-primary" href="{% url 'crp:student_assessment_submit' assess.assessment_id %}">{{ assess.action_label }}</a>
                 {% else %}
                     <a class="btn btn-secondary" href="{% url 'crp:student_assessment_detail' assess.assessment_id %}">View Assignment</a>

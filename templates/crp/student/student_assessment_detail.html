@@ -1,14 +1,109 @@
 {% extends 'crp/student/student_base.html' %}
 {% block title %}{{ assessment.title }} - SAHE CRP{% endblock %}
 {% block page_title %}Assessment{% endblock %}
-{% block extra_css %}<style>.detail-shell{max-width:1120px;margin:auto}.detail-header,.detail-grid{display:grid;gap:16px}.detail-header{grid-template-columns:1fr auto;align-items:start}.detail-grid{grid-template-columns:1.2fr .8fr;margin-top:20px}.panel{background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm)}.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.fact{padding:14px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-accent) 7%,var(--color-surface))}.label,.muted{font-size:11px;color:color-mix(in srgb,var(--color-text) 72%,transparent)}.label{text-transform:uppercase;letter-spacing:.08em}.resource{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--color-divider)}@media(max-width:760px){.detail-header,.detail-grid{grid-template-columns:1fr}.facts{grid-template-columns:repeat(2,1fr)}} </style>{% endblock %}
-{% block content %}<div class="detail-shell">
-{% if submitted_success %}<div class="panel" style="margin-bottom:16px;border-color:var(--c-1)"><h2>Assessment submitted successfully</h2><p class="muted">Your work is now awaiting marking.</p><a class="btn btn-secondary" href="{% url 'crp:student_assessments' %}">Back to Assessments</a></div>{% endif %}
-<div class="detail-header"><div><div class="label" style="color:var(--color-accent)">Assignment</div><h1 style="margin:6px 0 8px">{{ assessment.title }}</h1><div class="muted">{{ assessment.course_code }} · Week {{ assessment.week.week_number }} · {{ assessment.get_assessment_type_display }}</div></div><span class="tag tag-outline">{% if submission %}{{ submission.get_status_display }}{% else %}Open{% endif %}</span></div>
-<div class="facts" style="margin-top:20px"><div class="fact"><div class="label">Due</div><strong>{{ assessment.due_date|date:"d M Y, H:i" }}</strong></div><div class="fact"><div class="label">Weight</div><strong>{{ assessment.weight_percentage }}%</strong></div><div class="fact"><div class="label">Maximum marks</div><strong>{{ assessment.max_marks }}</strong></div><div class="fact"><div class="label">Submission</div><strong>{% if submission %}{{ submission.get_status_display }}{% else %}Not started{% endif %}</strong></div></div>
-<div class="detail-grid"><div>
-<section class="panel"><h2>Assignment description</h2><p style="white-space:pre-line;line-height:1.7">{{ assessment.description }}</p>{% if assessment.instructions %}<h3>Instructions</h3><p style="white-space:pre-line;line-height:1.7">{{ assessment.instructions }}</p>{% endif %}</section>
-{% if attachments %}<section class="panel" style="margin-top:16px"><h2>Assignment resources</h2>{% for resource in attachments %}{% with attachment=resource.attachment %}<div class="resource"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ attachment.original_filename }}{% if resource.size %}<br><span class="muted">{{ resource.size|filesizeformat }}</span>{% endif %}</span><a class="btn btn-secondary" href="{% url 'crp:assessment_attachment_download' attachment.id %}">Download</a></div>{% endwith %}{% endfor %}</section>{% endif %}
-{% if rubric %}<section class="panel" style="margin-top:16px"><h2>{{ rubric.name }}</h2><p class="muted">{{ rubric.description }}</p>{% for criterion in rubric.criteria %}<div class="resource"><span style="flex:1"><strong>{{ criterion.name }}</strong><br><span class="muted">{{ criterion.description }}</span>{% for level in criterion.levels %}<br><span class="muted">{{ level.name }}: {{ level.description }} ({{ level.min_marks }}–{{ level.max_marks }})</span>{% endfor %}</span><strong>{{ criterion.max_marks }} marks · {{ criterion.weight }}%</strong></div>{% endfor %}</section>{% else %}<section class="panel" style="margin-top:16px"><h2>Rubric</h2><p class="muted">No rubric has been provided for this assessment.</p></section>{% endif %}</div>
-<aside><section class="panel"><h2>Submission requirements</h2><p class="muted">Accepted formats</p><p>{% for format in assessment.accepted_formats %}<span class="tag tag-outline">{{ format }}</span> {% endfor %}</p><p class="muted">Up to {{ assessment.max_file_size_mb }} MB per file · {{ assessment.required_file_count }} file{{ assessment.required_file_count|pluralize }} maximum.</p>{% if submission and submission.marks_awarded is not None and assessment.results_released %}<hr><h2>Feedback</h2><p><strong>{{ submission.marks_awarded|floatformat:"-2" }}/{{ assessment.max_marks }}</strong> ({{ submission_percentage }}%)</p>{% if submission.feedback %}<p style="white-space:pre-line">{{ submission.feedback }}</p>{% endif %}{% if submission.marked_at %}<p class="muted">Marked {{ submission.marked_at|date:"d M Y, H:i" }}</p>{% endif %}{% endif %}{% if submission %}<a class="btn btn-primary btn-block" href="{% url 'crp:student_assessment_submit' assessment.id %}">View Submission</a>{% else %}<a class="btn btn-primary btn-block" href="{% url 'crp:student_assessment_submit' assessment.id %}">Start Submission</a>{% endif %}</section></aside></div>
-<a class="btn btn-secondary" style="margin-top:18px" href="{% url 'crp:student_assessments' %}">Back to assessments</a></div>{% endblock %}
+
+{% block extra_css %}
+<style>
+.detail-shell{max-width:1180px;margin:auto}.detail-header,.detail-grid,.result-heading{display:grid;gap:16px}.detail-header{grid-template-columns:1fr auto;align-items:start}.detail-grid{grid-template-columns:minmax(0,1.2fr) minmax(300px,.8fr);margin-top:20px}.panel{background:var(--color-surface);border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-sm)}.panel+.panel{margin-top:16px}.facts,.result-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.facts{margin-top:20px}.fact{padding:14px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--color-accent) 7%,var(--color-surface));min-width:0}.label,.muted{font-size:11px;color:color-mix(in srgb,var(--color-text) 72%,transparent)}.label{text-transform:uppercase;letter-spacing:.08em}.state-card{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px}.state-copy h2{margin:3px 0}.resource,.submission-file{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--color-divider)}.resource:last-child,.submission-file:last-child{border-bottom:0}.file-name{flex:1;min-width:0;overflow-wrap:anywhere}.result-panel{margin-top:20px;border-color:color-mix(in srgb,var(--color-accent) 40%,var(--color-divider))}.result-heading{grid-template-columns:1fr auto;align-items:center}.result-score{text-align:right}.result-score strong{display:block;font:800 clamp(28px,5vw,44px)/1 var(--font-heading)}.result-score span{display:block;color:var(--color-accent);font-size:18px;font-weight:800;margin-top:6px}.rubric-result{padding:20px 0;border-bottom:1px solid var(--color-divider)}.rubric-result:last-of-type{border-bottom:0}.criterion-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}.criterion-heading h3{margin:0}.criterion-mark{font:800 19px var(--font-heading);white-space:nowrap}.level-scale{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.level-chip{border:1px solid var(--color-divider);border-radius:999px;padding:6px 10px;font-size:11px;font-weight:700;color:color-mix(in srgb,var(--color-text) 58%,transparent)}.level-chip.selected{border-color:var(--color-accent);background:var(--color-accent);color:var(--color-bg)}.selected-level,.feedback-box{border-radius:var(--radius-md);padding:14px;margin-top:12px}.selected-level{background:color-mix(in srgb,var(--color-accent) 8%,var(--color-surface))}.selected-level strong{display:block;margin-bottom:5px}.feedback-box{background:color-mix(in srgb,var(--color-text) 4%,var(--color-surface))}.feedback-box p{margin:6px 0 0;white-space:pre-line}.result-total{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-top:18px;padding-top:18px;border-top:2px solid var(--color-divider)}.result-total strong{font:800 22px var(--font-heading)}.comment{white-space:pre-line;overflow-wrap:anywhere}.status-pair{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+@media(max-width:800px){.detail-header,.detail-grid,.result-heading{grid-template-columns:1fr}.facts,.result-facts{grid-template-columns:repeat(2,1fr)}.result-score{text-align:left}.status-pair{justify-content:flex-start}.state-card{align-items:flex-start;flex-direction:column}}
+@media(max-width:480px){.facts,.result-facts{grid-template-columns:1fr}.criterion-heading,.result-total{align-items:flex-start;flex-direction:column}.submission-file{align-items:flex-start;flex-wrap:wrap}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-shell">
+    {% if submitted_success %}
+    <div class="panel" style="margin-bottom:16px;border-color:var(--c-1)">
+        <h2 style="margin-top:0">Assessment submitted successfully</h2>
+        <p class="muted">Your work is now awaiting marking.</p>
+    </div>
+    {% endif %}
+
+    <div class="detail-header">
+        <div>
+            <div class="label" style="color:var(--color-accent)">{{ assessment.get_assessment_type_display }}</div>
+            <h1 style="margin:6px 0 8px">{{ assessment.title }}</h1>
+            <div class="muted">{% if assessment.course %}{{ assessment.course.name }} ({{ assessment.course_code }}){% else %}{{ assessment.course_code }}{% endif %} · Week {{ assessment.week.week_number }}</div>
+        </div>
+        <div class="status-pair">
+            {% if not submission %}<span class="tag tag-outline">Open</span>
+            {% elif submission.status == 'draft' %}<span class="tag tag-outline">Draft Submission</span>
+            {% elif submission.status == 'submitted' %}<span class="tag tag-outline">Submitted</span><span class="tag tag-outline">Awaiting Marking</span>
+            {% elif result_is_released %}<span class="tag tag-outline">Marked</span><span class="tag tag-outline">Results Released</span>
+            {% else %}<span class="tag tag-outline">Marked</span><span class="tag tag-outline">Results Pending Release</span>{% endif %}
+        </div>
+    </div>
+
+    <div class="facts">
+        <div class="fact"><div class="label">Due</div><strong>{{ assessment.due_date|date:"d M Y, H:i" }}</strong></div>
+        <div class="fact"><div class="label">Weight</div><strong>{{ assessment.weight_percentage }}%</strong></div>
+        <div class="fact"><div class="label">Maximum marks</div><strong>{{ assessment.max_marks }}</strong></div>
+        <div class="fact"><div class="label">Submission</div><strong>{% if submission %}{{ submission.status_label }}{% else %}Not started{% endif %}</strong></div>
+    </div>
+
+    {% if submission %}
+    <section class="panel state-card">
+        <div class="state-copy">
+            {% if submission.status == 'draft' %}<div class="label">Draft Submission</div><h2>Continue your draft</h2><p class="muted">Your work has not been submitted for marking.</p>
+            {% elif submission.status == 'submitted' %}<div class="label">Submitted</div><h2>Awaiting Marking</h2><p class="muted">Submitted{% if submission.submitted_at %} {{ submission.submitted_at|date:"d M Y, H:i" }}{% endif %}</p>
+            {% elif result_is_released %}<div class="label">Result</div><h2>Results Released</h2><p class="muted">Your completed marking and feedback are available below.</p>
+            {% else %}<div class="label">Marked</div><h2>Results Pending Release</h2><p class="muted">Marking is complete. Your result will appear here after it is released.</p>{% endif %}
+        </div>
+        {% if submission.status == 'draft' %}<a class="btn btn-primary" href="{% url 'crp:student_assessment_submit' assessment.id %}">Continue Draft</a>
+        {% elif result_is_released %}<a class="btn btn-primary" href="#result">View Results</a>
+        {% else %}<a class="btn btn-secondary" href="{% url 'crp:student_assessment_submit' assessment.id %}">View Submission</a>{% endif %}
+    </section>
+    {% endif %}
+
+    {% if result_is_released %}
+    <section class="panel result-panel" id="result">
+        <div class="result-heading">
+            <div><div class="label" style="color:var(--color-accent)">Result</div><h2 style="margin:6px 0">{{ assessment.title }}</h2><div class="status-pair" style="justify-content:flex-start"><span class="tag tag-outline">Marked</span><span class="tag tag-outline">Results Released</span></div></div>
+            <div class="result-score"><strong>{{ result_summary.marks_awarded|floatformat:"-2" }}/{{ assessment.max_marks }}</strong><span>{{ result_summary.percentage|floatformat:"-1" }}%</span></div>
+        </div>
+        <div class="result-facts" style="margin-top:20px">
+            <div class="fact"><div class="label">Course</div><strong>{{ assessment.course_code }}</strong></div>
+            <div class="fact"><div class="label">Week / type</div><strong>Week {{ assessment.week.week_number }} · {{ assessment.get_assessment_type_display }}</strong></div>
+            <div class="fact"><div class="label">Submitted</div><strong>{{ submission.submitted_at|date:"d M Y, H:i"|default:"Not recorded" }}</strong></div>
+            <div class="fact"><div class="label">Marked</div><strong>{{ result_summary.marked_at|date:"d M Y, H:i"|default:"Not recorded" }}</strong></div>
+        </div>
+    </section>
+
+    {% if rubric_results %}
+    <section class="panel">
+        <div class="label" style="color:var(--color-accent)">Rubric breakdown</div>
+        <h2 style="margin:6px 0 2px">How your work was assessed</h2>
+        {% for result in rubric_results %}
+        <article class="rubric-result">
+            <div class="criterion-heading"><div><h3>{{ result.criterion_name }}</h3>{% if result.criterion_description %}<p class="muted" style="margin:6px 0 0">{{ result.criterion_description }}</p>{% endif %}</div><div class="criterion-mark">{{ result.awarded_marks|floatformat:"-2" }}/{{ result.criterion_max_marks }}</div></div>
+            <div class="muted" style="margin-top:8px">Weight: {{ result.criterion_weight|floatformat:"-2" }}%</div>
+            <div class="level-scale" aria-label="Performance scale for {{ result.criterion_name }}">
+                {% for level in result.levels %}<span class="level-chip{% if level.selected %} selected{% endif %}">{{ level.name }}</span>{% endfor %}
+            </div>
+            {% if result.selected_level %}<div class="selected-level"><strong>{{ result.selected_level.name|upper }}</strong><span>{{ result.selected_level.description|default:"No descriptor was provided for this level." }}</span></div>{% endif %}
+            <div class="feedback-box"><div class="label">Trainer Feedback</div>{% if result.feedback %}<p>{{ result.feedback }}</p>{% else %}<p class="muted">No criterion-specific feedback was provided.</p>{% endif %}</div>
+        </article>
+        {% endfor %}
+        <div class="result-total"><div><div class="label">Total</div><strong>{{ result_summary.percentage|floatformat:"-1" }}%</strong></div><strong>{{ result_summary.marks_awarded|floatformat:"-2" }}/{{ assessment.max_marks }}</strong></div>
+    </section>
+    {% endif %}
+
+    <section class="panel">
+        <div class="label" style="color:var(--color-accent)">Overall Feedback</div>
+        {% if result_summary.overall_feedback %}<p class="comment">{{ result_summary.overall_feedback }}</p>{% else %}<p class="muted">No overall feedback was provided.</p>{% endif %}
+    </section>
+    {% endif %}
+
+    <div class="detail-grid">
+        <div>
+            <section class="panel"><h2>Assignment Information</h2><p class="comment" style="line-height:1.7">{{ assessment.description }}</p>{% if assessment.instructions %}<h3>Instructions</h3><p class="comment" style="line-height:1.7">{{ assessment.instructions }}</p>{% endif %}</section>
+            {% if rubric and not result_is_released %}<section class="panel"><h2>{{ rubric.name }}</h2>{% if rubric.description %}<p class="muted">{{ rubric.description }}</p>{% endif %}{% for criterion in rubric.criteria %}<div class="resource"><span style="flex:1"><strong>{{ criterion.name }}</strong>{% if criterion.description %}<br><span class="muted">{{ criterion.description }}</span>{% endif %}{% for level in criterion.levels %}<br><span class="muted">{{ level.name }}: {{ level.description }} ({{ level.min_marks }}–{{ level.max_marks }})</span>{% endfor %}</span><strong>{{ criterion.max_marks }} marks · {{ criterion.weight|floatformat:"-2" }}%</strong></div>{% endfor %}</section>{% elif not rubric %}<section class="panel"><h2>Rubric</h2><p class="muted">No rubric has been provided for this assessment.</p></section>{% endif %}
+        </div>
+        <aside>
+            {% if submission %}<section class="panel"><h2>Submitted Work</h2>{% if submission.submitted_at %}<p class="muted">Submitted {{ submission.submitted_at|date:"d M Y, H:i" }}</p>{% endif %}{% for file in files %}<div class="submission-file"><i class="bi bi-file-earmark"></i><span class="file-name"><strong>{{ file.file_name }}</strong>{% if file.file_size %}<br><span class="muted">{{ file.file_size }}</span>{% endif %}</span><a class="btn btn-secondary" href="{% url 'crp:student_submission_file_download' file.id %}">Download</a></div>{% empty %}<p class="muted">No submitted files are available.</p>{% endfor %}{% if student_comment %}<h3>Comment to your marker</h3><p class="comment">{{ student_comment }}</p>{% endif %}</section>{% endif %}
+            {% if attachments %}<section class="panel"><h2>Assignment Resources</h2>{% for resource in attachments %}{% with attachment=resource.attachment %}<div class="resource"><i class="bi bi-file-earmark"></i><span class="file-name">{{ attachment.original_filename }}{% if resource.size %}<br><span class="muted">{{ resource.size|filesizeformat }}</span>{% endif %}</span><a class="btn btn-secondary" href="{% url 'crp:assessment_attachment_download' attachment.id %}">Download</a></div>{% endwith %}{% endfor %}</section>{% endif %}
+        </aside>
+    </div>
+    <div class="actions"><a class="btn btn-secondary" href="{% url 'crp:student_assessments' %}">Back to Assessments</a>{% if not submission %}<a class="btn btn-primary" href="{% url 'crp:student_assessment_submit' assessment.id %}">Start Submission</a>{% endif %}</div>
+</div>
+{% endblock %}

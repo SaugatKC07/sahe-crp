@@ -23,7 +23,7 @@
         <div class="fact"><div class="label">Due date</div><strong>{{ assessment.due_date|date:"d M Y, H:i" }}</strong></div>
         <div class="fact"><div class="label">Weight</div><strong>{{ assessment.weight_percentage }}%</strong></div>
         <div class="fact"><div class="label">Maximum marks</div><strong>{{ assessment.max_marks }}</strong></div>
-        <div class="fact"><div class="label">Submission status</div><strong>{% if submission %}{{ submission.get_status_display }}{% else %}Not started{% endif %}</strong></div>
+        <div class="fact"><div class="label">Submission status</div><strong>{% if submission %}{{ submission.status_label }}{% else %}Not started{% endif %}</strong></div>
         <div class="fact"><div class="label">Files</div><strong>{{ files|length }} / {{ assessment.required_file_count }}</strong></div>
     </div>
 
@@ -31,12 +31,11 @@
     <div class="panel" style="margin-top:20px">
         <div class="label" style="color:var(--color-accent)">Submission receipt</div>
         <h2 style="margin:7px 0">Submitted successfully</h2>
-        <p class="muted">Status: Awaiting Marking{% if submission.submitted_at %} · {{ submission.submitted_at|date:"d M Y, H:i" }}{% endif %}</p>
+        <p class="muted">Status: {% if result_is_released %}Results Released{% elif submission.status == 'marked' or submission.status == 'returned' %}Results Pending Release{% else %}Awaiting Marking{% endif %}{% if submission.submitted_at %} · {{ submission.submitted_at|date:"d M Y, H:i" }}{% endif %}</p>
         <h3>Submitted files</h3>
-        {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ file.file_name }}</span><span class="muted">{{ file.file_size }}</span></div>{% empty %}<p class="muted">No files attached.</p>{% endfor %}
-        {% if submission.feedback %}<h3>Comment to your marker</h3><p style="white-space:pre-line">{{ submission.feedback }}</p>{% endif %}
-        {% if submission.status == 'marked' and assessment.results_released %}<hr><h3>Marked result</h3><p><strong>{{ submission.marks_awarded }}/{{ assessment.max_marks }}</strong> · {{ submission_percentage }}%</p>{% if submission.feedback %}<p style="white-space:pre-line">{{ submission.feedback }}</p>{% endif %}{% if submission.marked_at %}<p class="muted">Marked {{ submission.marked_at|date:"d M Y, H:i" }}</p>{% endif %}{% endif %}
-        <div class="actions"><a class="btn btn-secondary" href="{% url 'crp:student_assessments' %}">Back to Assessments</a><a class="btn btn-primary" href="?edit=1">Update Submission</a></div>
+        {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1;min-width:0;overflow-wrap:anywhere">{{ file.file_name }}</span><span class="muted">{{ file.file_size }}</span><a class="btn btn-secondary" href="{% url 'crp:student_submission_file_download' file.id %}">Download</a></div>{% empty %}<p class="muted">No files attached.</p>{% endfor %}
+        {% if student_comment %}<h3>Comment to your marker</h3><p style="white-space:pre-line">{{ student_comment }}</p>{% endif %}
+        <div class="actions"><a class="btn btn-secondary" href="{% url 'crp:student_assessments' %}">Back to Assessments</a>{% if result_is_released %}<a class="btn btn-primary" href="{% url 'crp:student_assessment_detail' assessment.id %}#result">View Results</a>{% else %}<a class="btn btn-primary" href="?edit=1">Update Submission</a>{% endif %}</div>
     </div>
     {% else %}
     <div class="submit-grid">
@@ -58,9 +57,9 @@
                         <input type="file" name="submission_file" id="file-input" style="display:none" data-upload-url="{% url 'crp:student_assessment_submit' assessment.id %}">
                     </div>
                     <div id="upload-feedback" role="status" aria-live="polite" style="margin-top:10px"></div>
-                    {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1">{{ file.file_name }}</span><span class="muted">{{ file.file_type }} · {{ file.file_size }}</span><button type="submit" form="remove-file-{{ file.id }}" class="btn btn-secondary" style="padding:6px 10px">Remove</button></div><form method="post" id="remove-file-{{ file.id }}" style="display:none">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.id }}"></form>{% endfor %}
+                    {% for file in files %}<div class="file-item"><i class="bi bi-file-earmark"></i><span style="flex:1;min-width:0;overflow-wrap:anywhere">{{ file.file_name }}</span><span class="muted">{{ file.file_type }} · {{ file.file_size }}</span><a class="btn btn-secondary" href="{% url 'crp:student_submission_file_download' file.id %}" style="padding:6px 10px">Download</a><button type="submit" form="remove-file-{{ file.id }}" class="btn btn-secondary" style="padding:6px 10px">Remove</button></div><form method="post" id="remove-file-{{ file.id }}" style="display:none">{% csrf_token %}<input type="hidden" name="action" value="delete_file"><input type="hidden" name="file_id" value="{{ file.id }}"></form>{% endfor %}
                     <label style="display:block;margin-top:18px;font-weight:700">Comment to your marker (optional)</label>
-                    <textarea class="input" name="comment" style="width:100%;min-height:110px;margin-top:8px" placeholder="Add any notes for your marker...">{{ submission.feedback }}</textarea>
+                    <textarea class="input" name="comment" style="width:100%;min-height:110px;margin-top:8px" placeholder="Add any notes for your marker...">{{ student_comment }}</textarea>
                     <div class="actions"><button type="submit" name="action" value="save_draft" class="btn btn-secondary">Save Draft</button><button type="button" id="submit-for-marking" class="btn btn-primary">Submit for Marking</button></div>
                 </form>
             </section>

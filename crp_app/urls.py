@@ -134,6 +134,7 @@ urlpatterns = [
     path('student/assessments/', views.student_assessments, name='student_assessments'),
     path('student/assessments/<int:assessment_id>/', views.student_assessment_detail, name='student_assessment_detail'),
     path('student/assessments/<int:assessment_id>/submit/', views.student_assessment_submit, name='student_assessment_submit'),
+    path('student/submission-files/<int:file_id>/download/', views.student_submission_file_download, name='student_submission_file_download'),
     path('student/api/toggle-material/', views.toggle_material_progress, name='toggle_material_progress'),
     path('student/api/toggle-task/', views.toggle_task_completion, name='toggle_task_completion'),
 

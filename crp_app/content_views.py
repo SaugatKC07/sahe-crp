@@ -305,10 +305,98 @@ def rubric_save(request, assessment_id):
 
 @role_required('trainer')
 def trainer_rubrics(request):
-    assessments = Assessment.objects.select_related('course', 'week').filter(
-        course_code__in=_trainer_course_codes(request.user)
-    ).order_by('title')
-    return render(request, 'crp/trainer/trainer_rubrics.html', {'assessments': assessments})
+    """Trainer-scoped rubric management dashboard.
+
+    This is deliberately a presentation query: rubric creation, publication and
+    authorization continue to be handled by the existing builder endpoints.
+    """
+    scoped_assessments = list(
+        Assessment.objects.select_related('course', 'week', 'rubric').prefetch_related(
+            'rubric__criteria',
+        ).filter(
+            course_code__in=_trainer_course_codes(request.user),
+        ).order_by('course_code', 'week__week_number', 'due_date', 'title')
+    )
+
+    assessment_rows = []
+    for assessment in scoped_assessments:
+        rubric = getattr(assessment, 'rubric', None)
+        criteria = list(rubric.criteria.all()) if rubric else []
+        if rubric and rubric.is_published:
+            status = 'published'
+            status_label = 'Published'
+            action_label = 'View / Manage Rubric'
+        elif rubric:
+            status = 'draft'
+            status_label = 'Draft'
+            action_label = 'Continue Editing'
+        else:
+            status = 'not_started'
+            status_label = 'Not Started'
+            action_label = 'Create Rubric'
+        assessment_rows.append({
+            'assessment': assessment,
+            'status': status,
+            'status_label': status_label,
+            'action_label': action_label,
+            'criteria_count': len(criteria),
+            'total_weight': sum((criterion.weight_percentage for criterion in criteria), 0),
+        })
+
+    selected_course = request.GET.get('course', '').strip()
+    selected_week = request.GET.get('week', '').strip()
+    selected_status = request.GET.get('status', 'all').strip().lower()
+    query = request.GET.get('q', '').strip()
+    if selected_status not in {'all', 'published', 'draft', 'not_started'}:
+        selected_status = 'all'
+
+    filtered_rows = assessment_rows
+    if selected_course:
+        filtered_rows = [
+            row for row in filtered_rows
+            if row['assessment'].course_code == selected_course
+        ]
+    if selected_week:
+        filtered_rows = [
+            row for row in filtered_rows
+            if str(row['assessment'].week_id) == selected_week
+        ]
+    if selected_status != 'all':
+        filtered_rows = [row for row in filtered_rows if row['status'] == selected_status]
+    if query:
+        query_lower = query.lower()
+        filtered_rows = [
+            row for row in filtered_rows
+            if query_lower in row['assessment'].title.lower()
+            or query_lower in row['assessment'].course_code.lower()
+            or query_lower in (row['assessment'].course.name if row['assessment'].course else '').lower()
+        ]
+
+    courses = {}
+    weeks = {}
+    for assessment in scoped_assessments:
+        courses[assessment.course_code] = assessment.course.name if assessment.course else assessment.course_code
+        weeks[assessment.week_id] = assessment.week
+    summary = {
+        'total_assessments': len(assessment_rows),
+        'published_rubrics': sum(row['status'] == 'published' for row in assessment_rows),
+        'draft_rubrics': sum(row['status'] == 'draft' for row in assessment_rows),
+        'not_started_rubrics': sum(row['status'] == 'not_started' for row in assessment_rows),
+    }
+    filters_active = bool(selected_course or selected_week or query or selected_status != 'all')
+    return render(request, 'crp/trainer/trainer_rubrics.html', {
+        'assessment_rows': filtered_rows,
+        'summary': summary,
+        'course_options': sorted(courses.items()),
+        'week_options': sorted(weeks.values(), key=lambda week: (week.course.code, week.week_number)),
+        'selected_course': selected_course,
+        'selected_week': selected_week,
+        'selected_status': selected_status,
+        'query': query,
+        'filters_active': filters_active,
+        'has_assessments': bool(assessment_rows),
+        'role': 'trainer',
+    })
 
 
 @role_required('trainer')

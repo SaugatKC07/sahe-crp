@@ -18,7 +18,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Submission details</h5>
                     <p><strong>Status:</strong> {{ submission.get_status_display }}</p>
-                    <p><strong>Submitted:</strong> {{ submission.submitted_at }}</p>
+                    <p><strong>Submitted:</strong> {{ submission.submitted_at|date:"d M Y, H:i" }}</p>
                     <p><strong>Feedback:</strong></p>
                     <div class="border rounded p-3 bg-light">{{ submission.feedback|default:'No feedback yet.' }}</div>
                     {% if files %}
@@ -26,13 +26,24 @@
                         <h6>Files</h6>
                         <ul class="mb-0">
                             {% for file in files %}
-                            <li><a href="{{ file.file.url }}" target="_blank">{{ file.file_name }}</a></li>
+                            <li><a href="{% url 'crp:trainer_submission_file_download' file.id %}" target="_blank">{{ file.file_name }}</a> <span class="text-muted">({{ file.file_type }} · {{ file.file_size }})</span></li>
                             {% endfor %}
                         </ul>
                     </div>
                     {% endif %}
                 </div>
             </div>
+            {% if rubric %}
+            <div class="card shadow-sm border-0 mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">{{ rubric.name }}</h5>
+                    {% if rubric.description %}<p class="text-muted">{{ rubric.description }}</p>{% endif %}
+                    {% for criterion in rubric.criteria.all %}
+                    <div class="border-top py-2"><strong>{{ criterion.name }}</strong> · {{ criterion.max_marks }} marks{% if criterion.description %}<div class="text-muted small">{{ criterion.description }}</div>{% endif %}</div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
         <div class="col-lg-5">
             <div class="card shadow-sm border-0">

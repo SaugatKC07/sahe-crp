@@ -717,9 +717,26 @@ def trainer_submission_detail(request, submission_id):
     context = {
         'submission': submission,
         'files': submission.files.all(),
+        'rubric': getattr(submission.assessment, 'rubric', None),
         'role': 'trainer',
     }
     return render(request, 'crp/trainer/trainer_submission_detail.html', context)
+
+
+@role_required('trainer')
+def trainer_submission_file_download(request, file_id):
+    """Redirect an in-scope trainer to a private submission file URL."""
+    trainer_courses = _get_trainer_courses(request.user)
+    trainer_course_codes = list(trainer_courses.values_list('code', flat=True))
+    submission_file = get_object_or_404(
+        SubmissionFile.objects.select_related('submission__assessment'),
+        id=file_id,
+        submission__student__in=_trainer_students(request.user),
+        submission__status__in=('submitted', 'marked', 'returned'),
+    )
+    if submission_file.submission.assessment.course_code not in trainer_course_codes:
+        raise Http404
+    return redirect(submission_file.file.url)
 
 
 @role_required('trainer')
@@ -1321,7 +1338,11 @@ def trainer_reference_module(request, module):
         'rubrics': ('Rubric Builder', 'Structured criteria, weightings and level descriptors.',
                     Rubric.objects.filter(assessment__in=assessments).prefetch_related('criteria')),
         'marking': ('Marking Queue', 'Rubric-based marking with integrity checks.',
-                    AssessmentSubmission.objects.filter(assessment__in=assessments).select_related('student__user', 'assessment')),
+                    AssessmentSubmission.objects.filter(
+                        assessment__in=assessments,
+                        student_id__in=student_ids,
+                        status='submitted',
+                    ).select_related('student__user', 'assessment').order_by('submitted_at')),
         'attendance': ('Attendance', 'Current attendance for assigned students.', students),
         'analytics': ('Cohort Analytics', 'Performance and engagement for assigned students.', students),
         'risks': ('At Risk', 'Early-warning list from current student records.',
@@ -1366,6 +1387,13 @@ def trainer_reference_module(request, module):
                      'recording_url': getattr(record, 'recording_url', ''),
                      'status': 'Complete' if getattr(record, 'completed', False) else 'Open',
                      'status_class': 'success' if getattr(record, 'completed', False) else 'info'})
+        if module == 'marking':
+            rows[-1].update({
+                'value': 'Awaiting Marking',
+                'status': 'Submitted',
+                'status_class': 'warning',
+                'open_url': reverse('crp:trainer_submission_detail', args=[record.id]),
+            })
     context = {
         'module_title': title, 'module_subtitle': subtitle, 'module': module,
         'summary_cards': [(str(len(rows)), 'Records in scope'), (str(students.count()), 'Assigned students'),

@@ -188,6 +188,41 @@ class StudentAssessmentSubmissionTests(TestCase):
         self.assertIsNotNone(submission.submitted_at)
         self.assertEqual(submission.feedback, 'Final note')
         self.assertContains(self.client.get(response.url), 'Assessment submitted successfully')
+        assessments_page = self.client.get(reverse('crp:student_assessments'))
+        self.assertContains(assessments_page, 'Awaiting Marking')
+        self.assertNotContains(assessments_page, 'Continue Draft')
+
+    def test_submit_for_marking_changes_draft_to_submitted(self):
+        submission = AssessmentSubmission.objects.create(
+            student=self.student, assessment=self.assessment, status='draft',
+        )
+        SubmissionFile.objects.create(
+            submission=submission, file=self._file(), file_name='work.pdf',
+            file_type='PDF', file_size='0.0 MB',
+        )
+        response = self.client.post(
+            reverse('crp:student_assessment_submit', args=[self.assessment.id]),
+            {'action': 'submit', 'comment': 'Ready to mark'},
+        )
+        self.assertEqual(response.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
+        self.assertIsNotNone(submission.submitted_at)
+        self.assertEqual(submission.feedback, 'Ready to mark')
+
+    def test_ajax_upload_preserves_submitted_status(self):
+        submission = AssessmentSubmission.objects.create(
+            student=self.student, assessment=self.assessment, status='submitted',
+            submitted_at=timezone.now(),
+        )
+        response = self.client.post(
+            reverse('crp:student_assessment_submit', args=[self.assessment.id]),
+            {'action': 'upload', 'submission_file': self._file()},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
 
     def test_marked_state_renders_feedback_timestamp_and_rubric_result(self):
         rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric')

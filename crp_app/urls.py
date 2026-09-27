@@ -27,6 +27,7 @@ urlpatterns = [
     path('trainer/assessments/attachments/<int:attachment_id>/remove/', views.trainer_assessment_attachment_remove, name='trainer_assessment_attachment_remove'),
     path('assessments/attachments/<int:attachment_id>/download/', views.assessment_attachment_download, name='assessment_attachment_download'),
     path('trainer/submissions/<int:submission_id>/', views.trainer_submission_detail, name='trainer_submission_detail'),
+    path('trainer/submission-files/<int:file_id>/download/', views.trainer_submission_file_download, name='trainer_submission_file_download'),
     path('trainer/learning-content/', views.trainer_learning_content, name='trainer_learning_content'),
     path('trainer/quizzes/', views.trainer_quizzes, name='trainer_quizzes'),
     path('trainer/quizzes/<int:quiz_id>/', views.trainer_quiz_detail, name='trainer_quiz_detail'),

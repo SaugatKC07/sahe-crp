@@ -1,36 +1,85 @@
 {% extends 'crp/trainer/trainer_base.html' %}
 {% block title %}Rubric Builder{% endblock %}
 {% block page_title %}Rubric Builder{% endblock %}
+
+{% block extra_css %}
+<style>
+.rubric-workspace{max-width:1480px;margin:0 auto;padding-bottom:92px}.rubric-top{display:flex;justify-content:space-between;gap:24px;align-items:flex-start;margin-bottom:22px}.eyebrow,.field-caption{text-transform:uppercase;letter-spacing:.09em;font-size:11px;font-weight:800;color:var(--sahe-primary)}.rubric-top h1{font:800 clamp(25px,4vw,35px)/1.1 var(--font-heading);margin:6px 0 8px}.muted-copy{color:var(--gray-500);margin:0}.assessment-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 18px}.assessment-tab{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid var(--gray-200);border-radius:999px;background:#fff;color:var(--gray-700);font-size:13px;font-weight:700;text-decoration:none}.assessment-tab.active{border-color:var(--sahe-primary);background:var(--sahe-primary-soft);color:var(--sahe-primary-dark)}.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}.summary-card{background:#fff;border:1px solid var(--gray-200);border-radius:14px;padding:16px 18px;box-shadow:0 4px 14px rgba(15,23,42,.04)}.summary-card .value{font:800 26px/1.1 var(--font-heading);margin-top:7px;color:var(--gray-900)}.summary-card.weight-good{border-color:#86efac;background:#f0fdf4}.summary-card.weight-warning{border-color:#fbbf24;background:#fffbeb}.workspace-card{background:#fff;border:1px solid var(--gray-200);border-radius:16px;box-shadow:0 6px 18px rgba(15,23,42,.05)}.workspace-card+.workspace-card{margin-top:16px}.settings-card{padding:22px}.form-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:16px}.form-label{font-size:12px;font-weight:800;color:var(--gray-700)}.form-control,.form-select{border-color:var(--gray-300);min-height:42px}.form-control:focus,.form-select:focus{border-color:var(--sahe-primary);box-shadow:0 0 0 .2rem rgba(43,90,167,.13)}.notice{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:12px;margin-bottom:16px;font-weight:600}.notice.warning{background:#fffbeb;border:1px solid #fde68a;color:#854d0e}.notice.info{background:var(--sahe-primary-soft);border:1px solid #bfdbfe;color:var(--sahe-primary-dark)}.criterion-card{overflow:hidden}.criterion-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:19px 22px;border-bottom:1px solid var(--gray-200);background:linear-gradient(90deg,var(--sahe-primary-soft),#fff)}.criterion-id{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;background:var(--sahe-primary);color:#fff;font-size:12px;font-weight:800;margin-right:10px}.criterion-title{display:flex;align-items:center;font:800 18px var(--font-heading);margin:0}.criterion-body{padding:20px 22px}.criterion-fields{display:grid;grid-template-columns:1.2fr .7fr .7fr .45fr auto;gap:12px;align-items:end}.level-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 11px}.level-heading h3{font:800 15px var(--font-heading);margin:0}.level-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.level-card{border:1px solid var(--gray-200);border-radius:12px;padding:14px;background:var(--gray-50);min-width:0}.level-card .level-title{font:800 14px var(--font-heading);margin-bottom:10px}.level-card .form-control{font-size:13px}.level-card textarea{min-height:92px;resize:vertical}.range-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}.level-actions{display:flex;gap:8px;margin-top:10px}.add-level{border-style:dashed;background:#fff}.add-criterion{padding:22px}.sticky-actions{position:fixed;left:260px;right:0;bottom:0;z-index:20;padding:13px 32px;background:rgba(255,255,255,.94);border-top:1px solid var(--gray-200);backdrop-filter:blur(12px);display:flex;justify-content:flex-end;align-items:center;gap:12px;box-shadow:0 -8px 22px rgba(15,23,42,.06)}.sticky-actions .saved-note{margin-right:auto;color:var(--gray-500);font-size:13px}.btn-compact{white-space:nowrap}.locked-copy{padding:12px 14px;background:var(--gray-50);border-radius:10px;color:var(--gray-500);font-size:13px}
+@media(max-width:1200px){.level-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.criterion-fields{grid-template-columns:1.2fr .7fr .7fr 1fr}}
+@media(max-width:991px){.sticky-actions{left:0;padding:12px 16px}.summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.form-grid,.criterion-fields{grid-template-columns:1fr 1fr}.criterion-fields .criterion-save{grid-column:span 2}}
+@media(max-width:640px){.rubric-top,.criterion-head{flex-direction:column}.summary-grid,.form-grid,.criterion-fields,.level-grid{grid-template-columns:1fr}.criterion-fields .criterion-save{grid-column:auto}.sticky-actions{flex-wrap:wrap}.sticky-actions .saved-note{width:100%;margin-right:0}.sticky-actions .btn{flex:1}.rubric-workspace{padding-bottom:128px}}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div><h2>{{ assessment.title }}</h2><p class="text-muted mb-0">{{ assessment.course_code }} · {{ rubric.is_published|yesno:"Published,Draft" }}</p>
-      <small class="text-muted">Assessment weight: {{ assessment.weight_percentage }}% · Criteria: {{ criteria_count }} · Levels: {{ level_count }} · Due: {{ assessment.due_date|date:"d M Y, H:i" }} · Total weight: {{ total_weight }}%</small></div>
-    <a class="btn btn-outline-secondary" href="{% url 'crp:trainer_assessment_detail' assessment.id %}">Back</a>
-  </div>
-  {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}{% endif %}
-  {% if submissions_exist %}<div class="alert alert-warning">Submissions exist. Structural criterion edits are locked; level descriptions may still be refined.</div>{% endif %}
-  <div class="card mb-4"><div class="card-body">
-    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="rubric">
-      <div class="row g-3"><div class="col-md-6"><label class="form-label">Rubric name</label><input class="form-control" name="name" value="{{ rubric.name }}" required></div>
-      <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description">{{ rubric.description }}</textarea></div>
-      <div class="col-12"><button class="btn btn-secondary">Save draft</button>
-        {% if rubric.is_published %}<button class="btn btn-outline-warning ms-2" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Unpublish</button>
-        {% else %}<button class="btn btn-success ms-2" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Publish rubric</button>{% endif %}
-      </div></div>
+<div class="rubric-workspace">
+  <nav class="assessment-nav" aria-label="Rubric assessments">
+    <a class="assessment-tab" href="{% url 'crp:trainer_rubrics' %}"><i class="bi bi-grid"></i> All rubrics</a>
+    <span class="assessment-tab active" aria-current="page"><i class="bi bi-ui-checks-grid"></i> {{ assessment.title }}</span>
+  </nav>
+
+  <header class="rubric-top">
+    <div><div class="eyebrow">Rubric Builder</div><h1>{{ assessment.title }}</h1><p class="muted-copy">{{ assessment.course_code }} · Due {{ assessment.due_date|date:"d M Y, H:i" }} · {{ rubric.is_published|yesno:"Published,Draft" }}</p></div>
+    <a class="btn btn-outline-secondary" href="{% url 'crp:trainer_assessment_detail' assessment.id %}"><i class="bi bi-arrow-left"></i> Back to assessment</a>
+  </header>
+
+  <section class="summary-grid" aria-label="Rubric summary">
+    <article class="summary-card"><div class="field-caption">Assessment Weight</div><div class="value">{{ assessment.weight_percentage }}%</div></article>
+    <article class="summary-card"><div class="field-caption">Criteria</div><div class="value">{{ criteria_count }}</div></article>
+    <article class="summary-card"><div class="field-caption">Performance Levels</div><div class="value">{{ level_count }}</div></article>
+    <article class="summary-card {% if total_weight == 100 %}weight-good{% else %}weight-warning{% endif %}"><div class="field-caption">Total Rubric Weight</div><div class="value">{{ total_weight|floatformat:"-2" }}%</div><small>{% if total_weight == 100 %}<i class="bi bi-check-circle-fill"></i> Ready to publish{% else %}<i class="bi bi-exclamation-triangle-fill"></i> Must equal 100%{% endif %}</small></article>
+  </section>
+
+  {% if messages %}{% for message in messages %}<div class="notice {% if 'error' in message.tags or 'warning' in message.tags %}warning{% else %}info{% endif %}" role="alert"><i class="bi {% if 'error' in message.tags or 'warning' in message.tags %}bi-exclamation-triangle-fill{% else %}bi-info-circle-fill{% endif %}"></i><span>{{ message }}</span></div>{% endfor %}{% endif %}
+  {% if submissions_exist %}<div class="notice warning" role="alert"><i class="bi bi-lock-fill"></i><span>Submissions exist. Criterion structure and performance-level membership are locked; existing level descriptors can still be refined.</span></div>{% endif %}
+
+  <section class="workspace-card settings-card">
+    <form method="post" id="rubric-settings">{% csrf_token %}<input type="hidden" name="action" value="rubric">
+      <div class="form-grid"><div><label class="form-label" for="rubric-name">Rubric name</label><input id="rubric-name" class="form-control" name="name" value="{{ rubric.name }}" required></div><div><label class="form-label" for="rubric-description">Rubric description</label><textarea id="rubric-description" class="form-control" name="description" rows="2" placeholder="Briefly explain how this rubric is used.">{{ rubric.description }}</textarea></div></div>
     </form>
-  </div></div>
+  </section>
+
+  <section aria-label="Rubric criteria" style="margin-top:16px">
   {% for criterion in criteria %}
-  <div class="card mb-3"><div class="card-body">
-    <div class="d-flex justify-content-between"><h5>{{ criterion.order|add:1 }}. {{ criterion.name }}</h5>
-      {% if not submissions_exist %}<form method="post" action="{% url 'crp:trainer_rubric_criterion_delete' assessment.id criterion.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Delete</button></form>{% endif %}</div>
-    <form method="post" action="{% url 'crp:trainer_rubric_criterion_edit' assessment.id criterion.id %}" class="row g-2 mb-3">{% csrf_token %}<div class="col-md-4"><input class="form-control" name="name" value="{{ criterion.name }}" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" min="1" value="{{ criterion.max_marks }}" required></div><div class="col-md-2"><input class="form-control" name="weight_percentage" type="number" step="0.01" value="{{ criterion.weight_percentage }}" required></div><div class="col-md-3"><input class="form-control" name="description" value="{{ criterion.description }}"></div><div class="col-md-1"><button class="btn btn-outline-secondary">Save</button></div></form>
-    {% for level in criterion.performance_levels.all %}<form method="post" action="{% url 'crp:trainer_rubric_level_edit' assessment.id criterion.id level.id %}" class="row g-2 mb-2">{% csrf_token %}<div class="col-md-2"><input class="form-control" name="name" value="{{ level.name }}" required></div><div class="col-md-2"><input class="form-control" name="min_marks" type="number" step="0.01" value="{{ level.min_marks }}" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" step="0.01" value="{{ level.max_marks }}" required></div><div class="col-md-4"><input class="form-control" name="description" value="{{ level.description }}" required></div><div class="col-md-2"><button class="btn btn-outline-secondary">Save level</button></div></form>{% endfor %}
-    <form method="post" action="{% url 'crp:trainer_rubric_level_create' assessment.id criterion.id %}" class="row g-2 mt-2">{% csrf_token %}
-      <div class="col-md-2"><input class="form-control" name="name" placeholder="Level" required></div><div class="col-md-2"><input class="form-control" name="min_marks" type="number" step="0.01" placeholder="Min" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" step="0.01" placeholder="Max" required></div><div class="col-md-5"><input class="form-control" name="description" placeholder="Descriptor"></div><div class="col-md-1"><button class="btn btn-outline-primary">Add</button></div>
-    </form>
-  </div></div>
-  {% empty %}<p class="text-muted">No criteria yet.</p>{% endfor %}
-  {% if not submissions_exist %}<div class="card"><div class="card-body"><h5>Add criterion</h5><form method="post" action="{% url 'crp:trainer_rubric_criterion_create' assessment.id %}" class="row g-2">{% csrf_token %}<div class="col-md-4"><input class="form-control" name="name" placeholder="Criterion" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" min="1" placeholder="Max marks" required></div><div class="col-md-2"><input class="form-control" name="weight_percentage" type="number" step="0.01" placeholder="Weight %" required></div><div class="col-md-3"><input class="form-control" name="description" placeholder="Description"></div><div class="col-md-1"><button class="btn btn-primary">Add</button></div></form></div></div>{% endif %}
+    <article class="workspace-card criterion-card">
+      <header class="criterion-head"><div><h2 class="criterion-title"><span class="criterion-id">{{ criterion.order|add:1 }}</span>{{ criterion.name }}</h2><p class="muted-copy" style="margin:7px 0 0">{{ criterion.description|default:"No criterion description provided." }}</p></div>{% if not submissions_exist %}<form method="post" action="{% url 'crp:trainer_rubric_criterion_delete' assessment.id criterion.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit"><i class="bi bi-trash"></i> Delete</button></form>{% endif %}</header>
+      <div class="criterion-body">
+        {% if not submissions_exist %}
+        <form method="post" action="{% url 'crp:trainer_rubric_criterion_edit' assessment.id criterion.id %}" class="criterion-fields">{% csrf_token %}
+          <div><label class="form-label" for="criterion-name-{{ criterion.id }}">Criterion name</label><input id="criterion-name-{{ criterion.id }}" class="form-control" name="name" value="{{ criterion.name }}" required></div>
+          <div><label class="form-label" for="criterion-marks-{{ criterion.id }}">Max marks</label><input id="criterion-marks-{{ criterion.id }}" class="form-control" name="max_marks" type="number" min="1" value="{{ criterion.max_marks }}" required></div>
+          <div><label class="form-label" for="criterion-weight-{{ criterion.id }}">Weight %</label><input id="criterion-weight-{{ criterion.id }}" class="form-control" name="weight_percentage" type="number" step="0.01" value="{{ criterion.weight_percentage }}" required></div>
+          <div><label class="form-label" for="criterion-order-{{ criterion.id }}">Order</label><input id="criterion-order-{{ criterion.id }}" class="form-control" name="order" type="number" min="0" value="{{ criterion.order }}" aria-describedby="criterion-order-note-{{ criterion.id }}"><small id="criterion-order-note-{{ criterion.id }}" class="text-muted">0 = first</small></div>
+          <div class="criterion-save"><label class="form-label d-none d-lg-block">&nbsp;</label><button class="btn btn-outline-primary btn-compact w-100" type="submit">Save criterion</button></div>
+          <div style="grid-column:1/-1"><label class="form-label" for="criterion-description-{{ criterion.id }}">Description</label><textarea id="criterion-description-{{ criterion.id }}" class="form-control" name="description" rows="2">{{ criterion.description }}</textarea></div>
+        </form>
+        {% else %}<div class="locked-copy"><i class="bi bi-lock"></i> {{ criterion.max_marks }} maximum marks · {{ criterion.weight_percentage }}% weight · Criterion order {{ criterion.order|add:1 }}</div>{% endif %}
+
+        <div class="level-heading"><div><div class="field-caption">Performance Levels</div><h3>Achievement descriptors and score ranges</h3></div><span class="text-muted small">{{ criterion.performance_levels.count }} level{{ criterion.performance_levels.count|pluralize }}</span></div>
+        <div class="level-grid">
+          {% for level in criterion.performance_levels.all %}
+          <form method="post" action="{% url 'crp:trainer_rubric_level_edit' assessment.id criterion.id level.id %}" class="level-card">{% csrf_token %}
+            <label class="form-label" for="level-name-{{ level.id }}">Level</label><input id="level-name-{{ level.id }}" class="form-control level-title" name="name" value="{{ level.name }}" required>
+            <div class="range-grid"><div><label class="form-label" for="level-min-{{ level.id }}">From</label><input id="level-min-{{ level.id }}" class="form-control" name="min_marks" type="number" step="0.01" value="{{ level.min_marks }}" required></div><div><label class="form-label" for="level-max-{{ level.id }}">To</label><input id="level-max-{{ level.id }}" class="form-control" name="max_marks" type="number" step="0.01" value="{{ level.max_marks }}" required></div></div>
+            <label class="form-label" for="level-description-{{ level.id }}">Descriptor</label><textarea id="level-description-{{ level.id }}" class="form-control" name="description" rows="4" required>{{ level.description }}</textarea><input type="hidden" name="order" value="{{ level.order }}">
+            <div class="level-actions"><button class="btn btn-sm btn-outline-primary flex-grow-1" type="submit">Save</button>{% if not submissions_exist %}<button class="btn btn-sm btn-outline-danger" type="submit" formaction="{% url 'crp:trainer_rubric_level_delete' assessment.id criterion.id level.id %}" aria-label="Delete {{ level.name }} level"><i class="bi bi-trash"></i></button>{% endif %}</div>
+          </form>
+          {% endfor %}
+          {% if not submissions_exist %}
+          <form method="post" action="{% url 'crp:trainer_rubric_level_create' assessment.id criterion.id %}" class="level-card add-level">{% csrf_token %}
+            <div class="level-title"><i class="bi bi-plus-circle"></i> Add level</div><label class="form-label" for="new-level-name-{{ criterion.id }}">Level</label><input id="new-level-name-{{ criterion.id }}" class="form-control" name="name" placeholder="e.g. Advanced" required><div class="range-grid"><div><label class="form-label" for="new-level-min-{{ criterion.id }}">From</label><input id="new-level-min-{{ criterion.id }}" class="form-control" name="min_marks" type="number" step="0.01" required></div><div><label class="form-label" for="new-level-max-{{ criterion.id }}">To</label><input id="new-level-max-{{ criterion.id }}" class="form-control" name="max_marks" type="number" step="0.01" required></div></div><label class="form-label" for="new-level-description-{{ criterion.id }}">Descriptor</label><textarea id="new-level-description-{{ criterion.id }}" class="form-control" name="description" rows="4" required></textarea><button class="btn btn-outline-primary w-100 mt-3" type="submit">Add level</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </article>
+  {% empty %}<section class="workspace-card add-criterion"><div class="field-caption">Start building</div><h2 style="font:800 22px var(--font-heading);margin:6px 0">No criteria yet</h2><p class="muted-copy">Add the first criterion below to create the rubric structure.</p></section>{% endfor %}
+  </section>
+
+  {% if not submissions_exist %}
+  <section class="workspace-card add-criterion" style="margin-top:16px"><div class="field-caption">New criterion</div><h2 style="font:800 20px var(--font-heading);margin:6px 0 16px">Add a criterion</h2><form method="post" action="{% url 'crp:trainer_rubric_criterion_create' assessment.id %}" class="criterion-fields">{% csrf_token %}<div><label class="form-label" for="new-criterion-name">Criterion name</label><input id="new-criterion-name" class="form-control" name="name" required></div><div><label class="form-label" for="new-criterion-marks">Max marks</label><input id="new-criterion-marks" class="form-control" name="max_marks" type="number" min="1" required></div><div><label class="form-label" for="new-criterion-weight">Weight %</label><input id="new-criterion-weight" class="form-control" name="weight_percentage" type="number" step="0.01" required></div><div><label class="form-label" for="new-criterion-order">Order</label><input id="new-criterion-order" class="form-control" name="order" type="number" min="0" value="{{ criteria_count }}"></div><div class="criterion-save"><label class="form-label d-none d-lg-block">&nbsp;</label><button class="btn btn-primary w-100" type="submit"><i class="bi bi-plus-lg"></i> Add criterion</button></div><div style="grid-column:1/-1"><label class="form-label" for="new-criterion-description">Description</label><textarea id="new-criterion-description" class="form-control" name="description" rows="2"></textarea></div></form></section>
+  {% endif %}
 </div>
+
+<div class="sticky-actions" role="region" aria-label="Rubric actions"><span class="saved-note"><i class="bi bi-info-circle"></i> {% if rubric.is_published %}Publishing changes requires saving this rubric as a draft first.{% else %}Save changes before publishing.{% endif %}</span><button class="btn btn-outline-primary" type="submit" form="rubric-settings">Save Draft</button>{% if rubric.is_published %}<button class="btn btn-outline-warning" type="submit" form="rubric-settings" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Unpublish Rubric</button>{% else %}<button class="btn btn-primary" type="submit" form="rubric-settings" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Publish Rubric</button>{% endif %}</div>
 {% endblock %}

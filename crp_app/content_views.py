@@ -5,6 +5,7 @@ import json
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Q
+from django.db.models import Sum
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -13,8 +14,16 @@ from .decorators import get_user_role, role_required
 from .material_uploads import validate_material_upload
 from .models import (
     Assessment, AssessmentSubmission, Cohort, LearningMaterial, LearningWeek,
-    Program, Quiz, QuizQuestion, QuizOption, Rubric, RubricCriterion, Course, Student,
+    Program, Quiz, QuizQuestion, QuizOption, Rubric, RubricCriterion, RubricPerformanceLevel, Course, Student,
     Notification,
+)
+from .rubric_validation import parse_decimal, validate_rubric_structure
+
+DEFAULT_RUBRIC_LEVELS = (
+    ('Developing', 0, 25),
+    ('Competent', 26, 50),
+    ('Proficient', 51, 75),
+    ('Exemplary', 76, 100),
 )
 
 
@@ -294,6 +303,151 @@ def rubric_save(request, assessment_id):
     return redirect('crp:content_management')
 
 
+@role_required('trainer')
+def trainer_rubrics(request):
+    assessments = Assessment.objects.select_related('course', 'week').filter(
+        course_code__in=_trainer_course_codes(request.user)
+    ).order_by('title')
+    return render(request, 'crp/trainer/trainer_rubrics.html', {'assessments': assessments})
+
+
+@role_required('trainer')
+def trainer_rubric_builder(request, assessment_id):
+        assessment = get_object_or_404(Assessment.objects.select_related('week', 'course'), pk=assessment_id)
+        if not _can_manage_assignment_week(request.user, assessment.week):
+            return redirect('crp:trainer_assessments')
+        rubric, _ = Rubric.objects.get_or_create(
+            assessment=assessment, defaults={'name': f'{assessment.title} rubric'}
+        )
+        if request.method == 'POST' and request.POST.get('action') == 'rubric':
+            rubric.name = request.POST.get('name', '').strip()
+            rubric.description = request.POST.get('description', '').strip()
+            if rubric.name:
+                rubric.is_published = False
+                rubric.save()
+                messages.success(request, 'Rubric saved as a draft.')
+            else:
+                messages.error(request, 'A rubric name is required.')
+            return redirect('crp:trainer_rubric_builder', assessment_id=assessment.id)
+        return render(request, 'crp/trainer/trainer_rubric_builder.html', {
+            'assessment': assessment,
+            'rubric': rubric,
+            'criteria': rubric.criteria.prefetch_related('performance_levels').all(),
+            'submissions_exist': assessment.submissions.exists(),
+            'criteria_count': rubric.criteria.count(),
+            'level_count': RubricPerformanceLevel.objects.filter(criterion__rubric=rubric).count(),
+            'total_weight': rubric.criteria.aggregate(total=Sum('weight_percentage'))['total'] or 0,
+        })
+
+
+def _rubric_redirect(rubric):
+        return redirect('crp:trainer_rubric_builder', assessment_id=rubric.assessment_id)
+
+
+@role_required('trainer')
+def trainer_rubric_criterion_save(request, assessment_id, criterion_id=None):
+        rubric = get_object_or_404(Rubric.objects.select_related('assessment__week'), assessment_id=assessment_id)
+        if not _can_manage_assignment_week(request.user, rubric.assessment.week) or request.method != 'POST':
+            return _rubric_redirect(rubric)
+        if rubric.assessment.submissions.exists():
+            messages.error(request, 'Criteria cannot be structurally changed after submissions exist.')
+            return _rubric_redirect(rubric)
+        criterion = get_object_or_404(RubricCriterion, pk=criterion_id, rubric=rubric) if criterion_id else RubricCriterion(rubric=rubric)
+        try:
+            criterion.name = request.POST.get('name', '').strip()
+            criterion.description = request.POST.get('description', '').strip()
+            criterion.max_marks = int(request.POST.get('max_marks') or 0)
+            criterion.weight_percentage = parse_decimal(request.POST.get('weight_percentage') or 0, 'weighting')
+            order_value = request.POST.get('order')
+            criterion.order = int(order_value) if order_value not in (None, '') else criterion.order
+            if criterion_id is None and order_value in (None, ''):
+                criterion.order = rubric.criteria.count()
+            if not criterion.name or criterion.max_marks <= 0:
+                raise ValidationError('Criterion name and positive maximum marks are required.')
+            criterion.save()
+            if criterion_id is None:
+                RubricPerformanceLevel.objects.bulk_create([
+                    RubricPerformanceLevel(
+                        criterion=criterion,
+                        name=name,
+                        description='',
+                        min_marks=min_marks,
+                        max_marks=max_marks,
+                        order=order,
+                    )
+                    for order, (name, min_marks, max_marks) in enumerate(DEFAULT_RUBRIC_LEVELS)
+                ])
+            messages.success(request, 'Criterion saved.')
+        except (ValueError, ValidationError) as exc:
+            messages.error(request, str(exc))
+        return _rubric_redirect(rubric)
+
+
+@role_required('trainer')
+def trainer_rubric_criterion_delete(request, assessment_id, criterion_id):
+        rubric = get_object_or_404(Rubric, assessment_id=assessment_id)
+        criterion = get_object_or_404(RubricCriterion, pk=criterion_id, rubric=rubric)
+        if request.method == 'POST' and not rubric.assessment.submissions.exists() and _can_manage_assignment_week(request.user, rubric.assessment.week):
+            criterion.delete()
+            messages.success(request, 'Criterion removed.')
+        elif rubric.assessment.submissions.exists():
+            messages.error(request, 'Criteria cannot be structurally changed after submissions exist.')
+        return _rubric_redirect(rubric)
+
+
+@role_required('trainer')
+def trainer_rubric_level_save(request, assessment_id, criterion_id, level_id=None):
+        criterion = get_object_or_404(RubricCriterion.objects.select_related('rubric__assessment'), pk=criterion_id, rubric__assessment_id=assessment_id)
+        rubric = criterion.rubric
+        if request.method != 'POST' or not _can_manage_assignment_week(request.user, rubric.assessment.week):
+            return _rubric_redirect(rubric)
+        if rubric.assessment.submissions.exists() and level_id is None:
+            messages.error(request, 'New performance levels cannot be added after submissions exist.')
+            return _rubric_redirect(rubric)
+        level = get_object_or_404(RubricPerformanceLevel, pk=level_id, criterion=criterion) if level_id else RubricPerformanceLevel(criterion=criterion)
+        try:
+            level.name = request.POST.get('name', '').strip()
+            level.description = request.POST.get('description', '').strip()
+            level.min_marks = parse_decimal(request.POST.get('min_marks') or 0, 'minimum marks')
+            level.max_marks = parse_decimal(request.POST.get('max_marks') or 0, 'maximum marks')
+            order_value = request.POST.get('order')
+            level.order = int(order_value) if order_value not in (None, '') else level.order
+            if level_id is None and order_value in (None, ''):
+                level.order = criterion.performance_levels.count()
+            if not level.name or not level.description or level.max_marks < level.min_marks:
+                raise ValidationError('Level name, descriptor, and a valid mark range are required.')
+            level.save()
+            messages.success(request, 'Performance level saved.')
+        except (ValueError, ValidationError) as exc:
+            messages.error(request, str(exc))
+        return _rubric_redirect(rubric)
+
+
+@role_required('trainer')
+def trainer_rubric_level_delete(request, assessment_id, criterion_id, level_id):
+        level = get_object_or_404(RubricPerformanceLevel.objects.select_related('criterion__rubric__assessment'), pk=level_id, criterion_id=criterion_id, criterion__rubric__assessment_id=assessment_id)
+        rubric = level.criterion.rubric
+        if request.method == 'POST' and rubric.assessment.submissions.exists():
+            messages.error(request, 'Performance levels cannot be structurally changed after submissions exist.')
+        elif request.method == 'POST' and _can_manage_assignment_week(request.user, rubric.assessment.week):
+            level.delete()
+            messages.success(request, 'Performance level removed.')
+        return _rubric_redirect(rubric)
+
+
+@role_required('trainer')
+def trainer_rubric_publish(request, assessment_id):
+        rubric = get_object_or_404(Rubric.objects.select_related('assessment'), assessment_id=assessment_id)
+        if request.method == 'POST' and _can_manage_assignment_week(request.user, rubric.assessment.week):
+            try:
+                validate_rubric_structure(rubric)
+                rubric.is_published = not rubric.is_published
+                rubric.published_at = timezone.now() if rubric.is_published else None
+                rubric.save(update_fields=['is_published', 'published_at', 'updated_at'])
+                messages.success(request, 'Rubric published.' if rubric.is_published else 'Rubric unpublished.')
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+        return _rubric_redirect(rubric)
 @role_required('admin')
 def material_create(request):
     if request.method != 'POST':

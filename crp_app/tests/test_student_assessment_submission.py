@@ -17,6 +17,7 @@ from crp_app.models import (
     Registration,
     Rubric,
     RubricCriterion,
+    RubricPerformanceLevel,
     Student,
     SubmissionFile,
 )
@@ -69,6 +70,48 @@ class StudentAssessmentSubmissionTests(TestCase):
     def _file(self, name='work.pdf', content=b'%PDF-1.4 test'):
         return SimpleUploadedFile(name, content, content_type='application/pdf')
 
+    def test_trainer_rubric_builder_creates_criteria_levels_and_rejects_incomplete_publish(self):
+        self.client.force_login(self.trainer_user)
+        builder = reverse('crp:trainer_rubric_builder', args=[self.assessment.id])
+        self.assertEqual(self.client.get(builder).status_code, 200)
+        self.client.post(reverse('crp:trainer_rubric_criterion_create', args=[self.assessment.id]), {
+            'name': 'Quality', 'max_marks': '10', 'weight_percentage': '100',
+        })
+        criterion = RubricCriterion.objects.get(rubric__assessment=self.assessment)
+        self.assertEqual(
+            list(criterion.performance_levels.values_list('name', flat=True)),
+            ['Developing', 'Competent', 'Proficient', 'Exemplary'],
+        )
+        response = self.client.post(reverse('crp:trainer_rubric_publish', args=[self.assessment.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Rubric.objects.get(assessment=self.assessment).is_published)
+        for level in criterion.performance_levels.all():
+            self.client.post(reverse(
+                'crp:trainer_rubric_level_edit',
+                args=[self.assessment.id, criterion.id, level.id],
+            ), {
+                'name': level.name,
+                'min_marks': level.min_marks,
+                'max_marks': level.max_marks,
+                'description': f'{level.name} evidence',
+            })
+        self.client.post(reverse('crp:trainer_rubric_publish', args=[self.assessment.id]))
+        self.assertTrue(Rubric.objects.get(assessment=self.assessment).is_published)
+
+    def test_rubric_structural_edits_are_locked_after_submission(self):
+        self.client.force_login(self.trainer_user)
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric')
+        criterion = RubricCriterion.objects.create(rubric=rubric, name='Quality', max_marks=10, weight_percentage=100)
+        AssessmentSubmission.objects.create(student=self.student, assessment=self.assessment)
+        response = self.client.post(reverse('crp:trainer_rubric_criterion_delete', args=[self.assessment.id, criterion.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(RubricCriterion.objects.filter(pk=criterion.pk).exists())
+        response = self.client.post(reverse('crp:trainer_rubric_level_create', args=[self.assessment.id, criterion.id]), {
+            'name': 'New', 'min_marks': '0', 'max_marks': '10', 'description': 'Descriptor',
+        })
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(RubricPerformanceLevel.objects.filter(criterion=criterion).exists())
+
     def test_no_rubric_and_no_resources_render_compact_state(self):
         response = self.client.get(reverse('crp:student_assessment_submit', args=[self.assessment.id]))
         self.assertContains(response, 'No marking rubric has been provided')
@@ -76,7 +119,7 @@ class StudentAssessmentSubmissionTests(TestCase):
         self.assertNotContains(response, 'Assignment Resources')
 
     def test_rubric_and_resources_render_with_size(self):
-        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric')
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric', is_published=True)
         RubricCriterion.objects.create(
             rubric=rubric, name='Quality', description='Quality of work',
             max_marks=10, weight_percentage=100,
@@ -224,7 +267,7 @@ class StudentAssessmentSubmissionTests(TestCase):
         submission.refresh_from_db()
         self.assertEqual(submission.status, 'submitted')
 
-    def test_marked_state_renders_feedback_timestamp_and_rubric_result(self):
+    def test_marked_state_renders_feedback_without_rubric_result_in_phase_one(self):
         rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric')
         criterion = RubricCriterion.objects.create(
             rubric=rubric, name='Quality', description='Quality',
@@ -241,7 +284,7 @@ class StudentAssessmentSubmissionTests(TestCase):
         self.assertContains(response, '4/100')
         self.assertContains(response, 'Good work')
         self.assertContains(response, 'Marked')
-        self.assertContains(response, 'Meets expectations')
+        self.assertNotContains(response, 'Meets expectations')
 
     def test_unpublished_and_ineligible_assessments_are_denied(self):
         self.assessment.is_published = False

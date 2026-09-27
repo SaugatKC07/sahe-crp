@@ -33,13 +33,24 @@
                     {% endif %}
                 </div>
             </div>
-            {% if rubric %}
+            {% if rubric_active %}
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-body">
                     <h5 class="card-title">{{ rubric.name }}</h5>
                     {% if rubric.description %}<p class="text-muted">{{ rubric.description }}</p>{% endif %}
-                    {% for criterion in rubric.criteria.all %}
-                    <div class="border-top py-2"><strong>{{ criterion.name }}</strong> · {{ criterion.max_marks }} marks{% if criterion.description %}<div class="text-muted small">{{ criterion.description }}</div>{% endif %}</div>
+                    {% for criterion, result in criterion_rows %}
+                    <div class="border-top py-3">
+                        <div class="d-flex justify-content-between"><strong>{{ criterion.name }}</strong><span>{{ criterion.max_marks }} marks</span></div>
+                        {% if criterion.description %}<div class="text-muted small mb-2">{{ criterion.description }}</div>{% endif %}
+                        <div class="small text-muted">
+                            <strong>Performance levels:</strong>
+                            <ul class="mb-0 ps-3">
+                                {% for level in criterion.performance_levels.all %}
+                                <li><strong>{{ level.name }}</strong> — {{ level.min_marks }}–{{ level.max_marks }} marks: {{ level.description }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -49,6 +60,19 @@
             <div class="card shadow-sm border-0">
                 <div class="card-body">
                     <h5 class="card-title">Grade submission</h5>
+                    {% if rubric_active %}
+                    <form method="post" id="rubric-form">
+                        {% csrf_token %}
+                        {% for criterion, result in criterion_rows %}
+                        <div class="mb-3"><label class="form-label">Performance level — {{ criterion.name }}</label><select class="form-select" name="criterion_{{ criterion.id }}_level"><option value="">Select a level</option>{% for level in criterion.performance_levels.all %}<option value="{{ level.id }}" {% if result and result.performance_level_id == level.id %}selected{% endif %}>{{ level.name }} ({{ level.min_marks }}–{{ level.max_marks }})</option>{% endfor %}</select></div>
+                        <div class="mb-3"><label class="form-label">Marks — {{ criterion.name }}</label><input type="number" step="0.01" class="form-control" name="criterion_{{ criterion.id }}_marks" value="{% if result %}{{ result.awarded_marks }}{% endif %}"></div>
+                        <div class="mb-3"><label class="form-label">Feedback</label><textarea class="form-control" name="criterion_{{ criterion.id }}_feedback" rows="2">{% if result %}{{ result.feedback }}{% endif %}</textarea></div>
+                        {% endfor %}
+                        <div class="mb-3"><label class="form-label">Overall feedback</label><textarea class="form-control" name="overall_feedback" rows="3">{{ submission.feedback }}</textarea></div>
+                        <button name="action" value="save_rubric_draft" class="btn btn-outline-primary">Save draft</button>
+                        <button name="action" value="finalize_rubric" class="btn btn-primary">Finalize marking</button>
+                    </form>
+                    {% else %}
                     <form method="post">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="grade" />
@@ -62,6 +86,7 @@
                         </div>
                         <button type="submit" class="btn btn-primary">Save grade</button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
         </div>

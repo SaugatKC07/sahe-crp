@@ -9,7 +9,10 @@
             <h2 class="mb-1">{{ assessment.title }}</h2>
             <p class="text-muted mb-0">{{ assessment.course_code }} · {{ assessment.get_assessment_type_display }}</p>
         </div>
-        <a href="{% url 'crp:trainer_assessments' %}" class="btn btn-outline-secondary">Back</a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'crp:trainer_rubric_builder' assessment.id %}" class="btn btn-primary">Rubric Builder</a>
+            <a href="{% url 'crp:trainer_assessments' %}" class="btn btn-outline-secondary">Back</a>
+        </div>
     </div>
 
     <div class="card shadow-sm border-0 mb-4">

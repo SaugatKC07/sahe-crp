@@ -135,6 +135,9 @@
                 <a href="{% url 'crp:trainer_assessments' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_assessments' or request.resolver_match.url_name == 'trainer_assessment_detail' or request.resolver_match.url_name == 'trainer_submission_detail' %}active{% endif %}">
                     <i class="bi bi-clipboard-check"></i><span>Assignments</span>
                 </a>
+                <a href="{% url 'crp:trainer_rubrics' %}" class="crp-sidebar-item {% if request.resolver_match.url_name == 'trainer_rubrics' or request.resolver_match.url_name == 'trainer_rubric_builder' %}active{% endif %}">
+                    <i class="bi bi-ui-checks-grid"></i><span>Rubric Builder</span>
+                </a>
                 <a href="{% url 'crp:trainer_reference_module' 'marking' %}" class="crp-sidebar-item {% if request.resolver_match.kwargs.module == 'marking' %}active{% endif %}">
                     <i class="bi bi-clipboard-check"></i><span>Marking Queue</span>
                 </a>

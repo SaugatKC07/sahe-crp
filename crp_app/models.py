@@ -897,7 +897,10 @@ class Rubric(models.Model):
     assessment = models.OneToOneField(Assessment, on_delete=models.CASCADE, related_name='rubric')
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
+    is_published = models.BooleanField(default=False)
+    published_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.name} for {self.assessment.title}"
@@ -919,6 +922,24 @@ class RubricCriterion(models.Model):
     class Meta:
         ordering = ['rubric', 'order']
 
+
+class RubricPerformanceLevel(models.Model):
+    """Normalized achievement level belonging to a rubric criterion."""
+    criterion = models.ForeignKey(RubricCriterion, on_delete=models.CASCADE, related_name='performance_levels')
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    min_marks = models.DecimalField(max_digits=7, decimal_places=2, default=0, validators=[MinValueValidator(0)])
+    max_marks = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['criterion', 'order']
+        constraints = [
+            models.UniqueConstraint(fields=['criterion', 'order'], name='unique_rubric_level_order'),
+        ]
+
 class AssessmentSubmission(models.Model):
     """Student assessment submissions"""
     STATUS_CHOICES = [
@@ -933,7 +954,7 @@ class AssessmentSubmission(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     submitted_at = models.DateTimeField(null=True, blank=True)
     marked_at = models.DateTimeField(null=True, blank=True)
-    marks_awarded = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0)])
+    marks_awarded = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True, validators=[MinValueValidator(0)])
     feedback = models.TextField(blank=True)
     turnitin_similarity = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
     ai_detection_score = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(0), MaxValueValidator(100)])
@@ -953,6 +974,26 @@ class AssessmentSubmission(models.Model):
             models.Index(fields=['student', 'status']),
             models.Index(fields=['assessment', 'status']),
         ]
+
+
+class SubmissionRubricResult(models.Model):
+    """Trainer's result for one criterion on one submission."""
+    submission = models.ForeignKey(AssessmentSubmission, on_delete=models.CASCADE, related_name='rubric_results')
+    criterion = models.ForeignKey(RubricCriterion, on_delete=models.PROTECT, related_name='submission_results')
+    performance_level = models.ForeignKey(
+        RubricPerformanceLevel, on_delete=models.PROTECT, null=True, blank=True,
+        related_name='submission_results',
+    )
+    awarded_marks = models.DecimalField(max_digits=7, decimal_places=2, validators=[MinValueValidator(0)])
+    feedback = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['submission', 'criterion'], name='unique_submission_rubric_criterion'),
+        ]
+
 
 class SubmissionFile(models.Model):
     """Files attached to assessment submissions"""

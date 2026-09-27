@@ -1,0 +1,14 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Rubric Builder{% endblock %}
+{% block page_title %}Rubric Builder{% endblock %}
+{% block content %}
+<div class="container py-4"><div class="card"><div class="card-body">
+  <h2 class="mb-3">Choose an assessment</h2>
+  <div class="list-group">{% for assessment in assessments %}
+    <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'crp:trainer_rubric_builder' assessment.id %}">
+      <span>{{ assessment.title }} <small class="text-muted">({{ assessment.course_code }})</small></span>
+      <span class="badge text-bg-light">{% if assessment.rubric.is_published %}Published{% else %}Draft{% endif %}</span>
+    </a>
+  {% empty %}<p class="text-muted mb-0">No assigned assessments.</p>{% endfor %}</div>
+</div></div></div>
+{% endblock %}

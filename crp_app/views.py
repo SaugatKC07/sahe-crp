@@ -18,7 +18,7 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.models import User
 from django.conf import settings
 from datetime import timedelta, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 import json
 import logging
 import random
@@ -31,7 +31,8 @@ from .models import (
     StudentWeekProgress,
     Program, Cohort,
     Quiz, QuizQuestion, QuizOption, QuizAttempt,
-    Assessment, Rubric, RubricCriterion, AssessmentSubmission, SubmissionFile,
+    Assessment, Rubric, RubricCriterion, RubricPerformanceLevel, AssessmentSubmission,
+    SubmissionRubricResult, SubmissionFile,
     Invoice, Payment, ApplicationDocument, ApplicationContract,
     StudentTask, AttendanceRecord, Event, LiveSession, StudentRequest,
     StudentMessageThread, StudentMessage, StudentNote, StudentGroup, StudentGroupMember,
@@ -700,13 +701,76 @@ def trainer_submission_detail(request, submission_id):
         messages.error(request, "You do not have access to this submission.")
         return redirect('crp:trainer_assessments')
 
+    rubric = getattr(submission.assessment, 'rubric', None)
+    rubric_active = rubric is not None and rubric.is_published
+    criteria = list(rubric.criteria.prefetch_related('performance_levels').all()) if rubric_active else []
+    existing_results = {r.criterion_id: r for r in submission.rubric_results.select_related('performance_level')}
+    criterion_rows = [(criterion, existing_results.get(criterion.id)) for criterion in criteria]
     if request.method == 'POST':
         action = request.POST.get('action')
-        if action == 'grade':
+        if rubric_active and action in ('save_rubric_draft', 'finalize_rubric'):
+            results = []
+            total = Decimal('0')
+            errors = []
+            overall_feedback = request.POST.get('overall_feedback', '').strip()
+            for criterion in criteria:
+                raw_level = request.POST.get(f'criterion_{criterion.id}_level', '').strip()
+                raw_marks = request.POST.get(f'criterion_{criterion.id}_marks', '').strip()
+                feedback = request.POST.get(f'criterion_{criterion.id}_feedback', '').strip()
+                if not raw_level and not raw_marks:
+                    if action == 'finalize_rubric':
+                        errors.append(f'Choose a level and marks for {criterion.name}.')
+                    continue
+                try:
+                    level = RubricPerformanceLevel.objects.get(pk=raw_level, criterion=criterion)
+                    marks = Decimal(raw_marks)
+                except (RubricPerformanceLevel.DoesNotExist, InvalidOperation, ValueError):
+                    errors.append(f'Invalid result for {criterion.name}.')
+                    continue
+                if marks < level.min_marks or marks > level.max_marks or marks > criterion.max_marks:
+                    errors.append(f'Marks for {criterion.name} must be between {level.min_marks} and {min(level.max_marks, Decimal(criterion.max_marks))}.')
+                    continue
+                results.append((criterion, level, marks, feedback))
+                total += marks
+            if action == 'finalize_rubric' and len(results) != len(criteria):
+                errors.append('Complete every rubric criterion before finalizing.')
+            if action == 'finalize_rubric' and not errors and total > submission.assessment.max_marks:
+                errors.append(
+                    f'Total rubric marks ({total}) cannot exceed the assessment maximum '
+                    f'of {submission.assessment.max_marks}.'
+                )
+            # Drafts are intentionally incremental: persist every valid row while
+            # reporting invalid or incomplete rows for correction.
+            if action == 'save_rubric_draft' or not errors:
+                for criterion, level, marks, feedback in results:
+                    SubmissionRubricResult.objects.update_or_create(
+                        submission=submission, criterion=criterion,
+                        defaults={'performance_level': level, 'awarded_marks': marks, 'feedback': feedback},
+                    )
+                submission.feedback = overall_feedback
+                if action == 'finalize_rubric':
+                    submission.marks_awarded = total
+                    submission.status = 'marked'
+                    submission.marked_at = timezone.now()
+                    submission.save(update_fields=['marks_awarded', 'status', 'marked_at', 'feedback', 'updated_at'])
+                    messages.success(request, 'Rubric marking finalized.')
+                else:
+                    submission.save(update_fields=['feedback', 'updated_at'])
+                    messages.success(request, 'Rubric draft saved.')
+            for error in errors:
+                messages.error(request, error)
+            return redirect('crp:trainer_submission_detail', submission_id=submission.id)
+        if not rubric_active and action == 'grade':
             marks = request.POST.get('marks_awarded')
             feedback = request.POST.get('feedback', '').strip()
-            if marks not in ('', None):
-                submission.marks_awarded = int(marks)
+            try:
+                parsed_marks = Decimal(marks)
+                if parsed_marks < 0 or parsed_marks > submission.assessment.max_marks:
+                    raise ValueError
+            except (InvalidOperation, TypeError, ValueError):
+                messages.error(request, 'Enter marks within the assessment range.')
+                return redirect('crp:trainer_submission_detail', submission_id=submission.id)
+            submission.marks_awarded = parsed_marks
             submission.feedback = feedback
             submission.status = 'marked'
             submission.marked_at = timezone.now()
@@ -717,7 +781,10 @@ def trainer_submission_detail(request, submission_id):
     context = {
         'submission': submission,
         'files': submission.files.all(),
-        'rubric': getattr(submission.assessment, 'rubric', None),
+        'rubric': rubric,
+        'rubric_active': rubric_active,
+        'criteria': criteria,
+        'criterion_rows': criterion_rows,
         'role': 'trainer',
     }
     return render(request, 'crp/trainer/trainer_submission_detail.html', context)
@@ -3082,7 +3149,7 @@ def student_assessment_detail(request, assessment_id):
     ).first()
     
     rubric_data = None
-    if hasattr(assessment, 'rubric'):
+    if hasattr(assessment, 'rubric') and assessment.rubric.is_published:
         rubric = assessment.rubric
         criteria = rubric.criteria.all().order_by('order')
         
@@ -3094,6 +3161,7 @@ def student_assessment_detail(request, assessment_id):
                 'max_marks': criterion.max_marks,
                 'weight': criterion.weight_percentage,
                 'description': criterion.description,
+                'levels': list(criterion.performance_levels.all()),
             })
         
         rubric_data = {
@@ -3102,11 +3170,6 @@ def student_assessment_detail(request, assessment_id):
             'criteria': rubric_criteria,
         }
     rubric_results = []
-    if submission and submission.marker_comments and rubric_data:
-        for criterion in rubric_data['criteria']:
-            result = submission.marker_comments.get(str(criterion.get('id'))) if isinstance(submission.marker_comments, dict) else None
-            if result is not None:
-                rubric_results.append({'name': criterion['name'], 'result': result})
 
     attachment_rows = []
     for attachment in assessment.attachments.all():
@@ -3151,7 +3214,7 @@ def student_assessment_submit(request, assessment_id):
     )
     
     rubric_data = None
-    if hasattr(assessment, 'rubric'):
+    if hasattr(assessment, 'rubric') and assessment.rubric.is_published:
         rubric = assessment.rubric
         criteria = rubric.criteria.all().order_by('order')
         
@@ -3163,7 +3226,7 @@ def student_assessment_submit(request, assessment_id):
                 'max_marks': criterion.max_marks,
                 'weight': criterion.weight_percentage,
                 'description': criterion.description,
-                'level_descriptions': criterion.level_descriptions,
+                'levels': list(criterion.performance_levels.all()),
             })
         
         rubric_data = {

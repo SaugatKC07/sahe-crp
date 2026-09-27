@@ -1,0 +1,36 @@
+{% extends 'crp/trainer/trainer_base.html' %}
+{% block title %}Rubric Builder{% endblock %}
+{% block page_title %}Rubric Builder{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div><h2>{{ assessment.title }}</h2><p class="text-muted mb-0">{{ assessment.course_code }} · {{ rubric.is_published|yesno:"Published,Draft" }}</p>
+      <small class="text-muted">Assessment weight: {{ assessment.weight_percentage }}% · Criteria: {{ criteria_count }} · Levels: {{ level_count }} · Due: {{ assessment.due_date|date:"d M Y, H:i" }} · Total weight: {{ total_weight }}%</small></div>
+    <a class="btn btn-outline-secondary" href="{% url 'crp:trainer_assessment_detail' assessment.id %}">Back</a>
+  </div>
+  {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>{% endfor %}{% endif %}
+  {% if submissions_exist %}<div class="alert alert-warning">Submissions exist. Structural criterion edits are locked; level descriptions may still be refined.</div>{% endif %}
+  <div class="card mb-4"><div class="card-body">
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="rubric">
+      <div class="row g-3"><div class="col-md-6"><label class="form-label">Rubric name</label><input class="form-control" name="name" value="{{ rubric.name }}" required></div>
+      <div class="col-12"><label class="form-label">Description</label><textarea class="form-control" name="description">{{ rubric.description }}</textarea></div>
+      <div class="col-12"><button class="btn btn-secondary">Save draft</button>
+        {% if rubric.is_published %}<button class="btn btn-outline-warning ms-2" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Unpublish</button>
+        {% else %}<button class="btn btn-success ms-2" formaction="{% url 'crp:trainer_rubric_publish' assessment.id %}">Publish rubric</button>{% endif %}
+      </div></div>
+    </form>
+  </div></div>
+  {% for criterion in criteria %}
+  <div class="card mb-3"><div class="card-body">
+    <div class="d-flex justify-content-between"><h5>{{ criterion.order|add:1 }}. {{ criterion.name }}</h5>
+      {% if not submissions_exist %}<form method="post" action="{% url 'crp:trainer_rubric_criterion_delete' assessment.id criterion.id %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Delete</button></form>{% endif %}</div>
+    <form method="post" action="{% url 'crp:trainer_rubric_criterion_edit' assessment.id criterion.id %}" class="row g-2 mb-3">{% csrf_token %}<div class="col-md-4"><input class="form-control" name="name" value="{{ criterion.name }}" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" min="1" value="{{ criterion.max_marks }}" required></div><div class="col-md-2"><input class="form-control" name="weight_percentage" type="number" step="0.01" value="{{ criterion.weight_percentage }}" required></div><div class="col-md-3"><input class="form-control" name="description" value="{{ criterion.description }}"></div><div class="col-md-1"><button class="btn btn-outline-secondary">Save</button></div></form>
+    {% for level in criterion.performance_levels.all %}<form method="post" action="{% url 'crp:trainer_rubric_level_edit' assessment.id criterion.id level.id %}" class="row g-2 mb-2">{% csrf_token %}<div class="col-md-2"><input class="form-control" name="name" value="{{ level.name }}" required></div><div class="col-md-2"><input class="form-control" name="min_marks" type="number" step="0.01" value="{{ level.min_marks }}" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" step="0.01" value="{{ level.max_marks }}" required></div><div class="col-md-4"><input class="form-control" name="description" value="{{ level.description }}" required></div><div class="col-md-2"><button class="btn btn-outline-secondary">Save level</button></div></form>{% endfor %}
+    <form method="post" action="{% url 'crp:trainer_rubric_level_create' assessment.id criterion.id %}" class="row g-2 mt-2">{% csrf_token %}
+      <div class="col-md-2"><input class="form-control" name="name" placeholder="Level" required></div><div class="col-md-2"><input class="form-control" name="min_marks" type="number" step="0.01" placeholder="Min" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" step="0.01" placeholder="Max" required></div><div class="col-md-5"><input class="form-control" name="description" placeholder="Descriptor"></div><div class="col-md-1"><button class="btn btn-outline-primary">Add</button></div>
+    </form>
+  </div></div>
+  {% empty %}<p class="text-muted">No criteria yet.</p>{% endfor %}
+  {% if not submissions_exist %}<div class="card"><div class="card-body"><h5>Add criterion</h5><form method="post" action="{% url 'crp:trainer_rubric_criterion_create' assessment.id %}" class="row g-2">{% csrf_token %}<div class="col-md-4"><input class="form-control" name="name" placeholder="Criterion" required></div><div class="col-md-2"><input class="form-control" name="max_marks" type="number" min="1" placeholder="Max marks" required></div><div class="col-md-2"><input class="form-control" name="weight_percentage" type="number" step="0.01" placeholder="Weight %" required></div><div class="col-md-3"><input class="form-control" name="description" placeholder="Description"></div><div class="col-md-1"><button class="btn btn-primary">Add</button></div></form></div></div>{% endif %}
+</div>
+{% endblock %}

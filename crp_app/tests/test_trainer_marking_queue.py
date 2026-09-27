@@ -16,6 +16,10 @@ from crp_app.models import (
     Registration,
     Student,
     SubmissionFile,
+    Rubric,
+    RubricCriterion,
+    RubricPerformanceLevel,
+    SubmissionRubricResult,
 )
 
 
@@ -147,3 +151,103 @@ class TrainerMarkingQueueTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.url)
+
+    def test_published_rubric_draft_does_not_mark_submission(self):
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric', is_published=True)
+        criterion = RubricCriterion.objects.create(rubric=rubric, name='Quality', max_marks=10, weight_percentage=100)
+        level = RubricPerformanceLevel.objects.create(
+            criterion=criterion, name='Good', description='Good', min_marks=6, max_marks=10, order=1,
+        )
+        submission = self._submission(self.student, 'submitted')
+        response = self.client.post(reverse('crp:trainer_submission_detail', args=[submission.id]), {
+            'action': 'save_rubric_draft',
+            f'criterion_{criterion.id}_level': level.id,
+            f'criterion_{criterion.id}_marks': '8',
+            f'criterion_{criterion.id}_feedback': 'Good',
+        })
+        self.assertEqual(response.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
+        self.assertEqual(SubmissionRubricResult.objects.get(submission=submission).awarded_marks, 8)
+
+    def test_rubric_draft_persists_valid_subset_and_reports_blank_criterion(self):
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric', is_published=True)
+        first = RubricCriterion.objects.create(rubric=rubric, name='Quality', max_marks=10, weight_percentage=50)
+        second = RubricCriterion.objects.create(rubric=rubric, name='Evidence', max_marks=10, weight_percentage=50, order=1)
+        first_level = RubricPerformanceLevel.objects.create(
+            criterion=first, name='Good', description='Good descriptor', min_marks=6, max_marks=10, order=1,
+        )
+        RubricPerformanceLevel.objects.create(
+            criterion=second, name='Good', description='Good descriptor', min_marks=6, max_marks=10, order=1,
+        )
+        submission = self._submission(self.student, 'submitted')
+        response = self.client.post(
+            reverse('crp:trainer_submission_detail', args=[submission.id]),
+            {
+                'action': 'save_rubric_draft',
+                f'criterion_{first.id}_level': first_level.id,
+                f'criterion_{first.id}_marks': '8',
+                f'criterion_{second.id}_marks': '8',
+            },
+            follow=True,
+        )
+        self.assertContains(response, 'Invalid result for Evidence.')
+        result = SubmissionRubricResult.objects.get(submission=submission, criterion=first)
+        self.assertEqual(result.awarded_marks, 8)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
+
+    def test_rubric_finalize_rejects_total_above_assessment_maximum(self):
+        self.assessment.max_marks = 10
+        self.assessment.save(update_fields=['max_marks'])
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric', is_published=True)
+        criteria = [
+            RubricCriterion.objects.create(rubric=rubric, name=name, max_marks=10, weight_percentage=50, order=index)
+            for index, name in enumerate(('Quality', 'Evidence'))
+        ]
+        levels = [
+            RubricPerformanceLevel.objects.create(
+                criterion=criterion, name='Good', description='Good descriptor', min_marks=0, max_marks=10, order=1,
+            )
+            for criterion in criteria
+        ]
+        submission = self._submission(self.student, 'submitted')
+        data = {'action': 'finalize_rubric'}
+        for criterion, level in zip(criteria, levels):
+            data[f'criterion_{criterion.id}_level'] = level.id
+            data[f'criterion_{criterion.id}_marks'] = '6'
+        response = self.client.post(
+            reverse('crp:trainer_submission_detail', args=[submission.id]),
+            data,
+            follow=True,
+        )
+        self.assertContains(response, 'cannot exceed the assessment maximum')
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
+        self.assertIsNone(submission.marks_awarded)
+        self.assertFalse(SubmissionRubricResult.objects.filter(submission=submission).exists())
+
+    def test_published_rubric_finalize_requires_valid_complete_criteria(self):
+        rubric = Rubric.objects.create(assessment=self.assessment, name='QA rubric', is_published=True)
+        criterion = RubricCriterion.objects.create(rubric=rubric, name='Quality', max_marks=10, weight_percentage=100)
+        level = RubricPerformanceLevel.objects.create(
+            criterion=criterion, name='Good', description='Good', min_marks=6, max_marks=10, order=1,
+        )
+        submission = self._submission(self.student, 'submitted')
+        self.client.post(reverse('crp:trainer_submission_detail', args=[submission.id]), {
+            'action': 'finalize_rubric',
+            f'criterion_{criterion.id}_level': level.id,
+            f'criterion_{criterion.id}_marks': '11',
+        })
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'submitted')
+        self.assertIsNone(submission.marks_awarded)
+        response = self.client.post(reverse('crp:trainer_submission_detail', args=[submission.id]), {
+            'action': 'finalize_rubric',
+            f'criterion_{criterion.id}_level': level.id,
+            f'criterion_{criterion.id}_marks': '8',
+        })
+        self.assertEqual(response.status_code, 302)
+        submission.refresh_from_db()
+        self.assertEqual(submission.status, 'marked')
+        self.assertEqual(submission.marks_awarded, 8)

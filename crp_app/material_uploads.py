@@ -15,7 +15,7 @@ ASSESSMENT_RESOURCE_EXTENSIONS = {
     '.txt', '.zip', '.py', '.js', '.html', '.css', '.json',
 }
 ASSESSMENT_SUBMISSION_CONTENT_TYPES = {
-    '.pdf': {'application/pdf'},
+    '.pdf': {'application/pdf', 'application/x-pdf', 'application/octet-stream'},
     '.doc': {'application/msword', 'application/octet-stream'},
     '.docx': {'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/octet-stream'},
     '.xls': {'application/vnd.ms-excel', 'application/octet-stream'},

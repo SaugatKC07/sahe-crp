@@ -92,11 +92,21 @@ class StudentAssessmentSubmissionTests(TestCase):
         self.assertContains(response, str(attachment.file.size))
 
     def test_saved_draft_reopens_with_file_and_comment(self):
-        self.client.post(
+        response = self.client.post(
             reverse('crp:student_assessment_submit', args=[self.assessment.id]),
             {'action': 'upload', 'submission_file': self._file()},
             HTTP_X_REQUESTED_WITH='XMLHttpRequest',
         )
+        self.assertEqual(response.status_code, 200)
+        self.assertJSONEqual(response.content, {
+            'success': True,
+            'file': {
+                'id': SubmissionFile.objects.get().id,
+                'name': 'work.pdf',
+                'size': '0.0 MB',
+                'type': 'PDF',
+            },
+        })
         self.client.post(
             reverse('crp:student_assessment_submit', args=[self.assessment.id]),
             {'action': 'save_draft', 'comment': 'Draft note'},
@@ -106,6 +116,48 @@ class StudentAssessmentSubmissionTests(TestCase):
         self.assertContains(response, 'Draft')
         self.assertContains(response, 'work.pdf')
         self.assertContains(response, 'Draft note')
+
+    def test_ajax_upload_errors_are_json(self):
+        response = self.client.post(
+            reverse('crp:student_assessment_submit', args=[self.assessment.id]),
+            {'action': 'upload', 'submission_file': self._file('work.docx')},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()['success'], False)
+        self.assertIn('not accepted', response.json()['error'])
+
+    def test_ajax_upload_accepts_docx_mime_type(self):
+        self.assessment.accepted_formats = ['docx']
+        self.assessment.save(update_fields=['accepted_formats'])
+        response = self.client.post(
+            reverse('crp:student_assessment_submit', args=[self.assessment.id]),
+            {
+                'action': 'upload',
+                'submission_file': SimpleUploadedFile(
+                    'work.docx', b'PK fake docx',
+                    content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                ),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+
+    def test_ajax_upload_rejects_oversized_file(self):
+        response = self.client.post(
+            reverse('crp:student_assessment_submit', args=[self.assessment.id]),
+            {
+                'action': 'upload',
+                'submission_file': self._file(
+                    content=b'%PDF-1.4' + b'x' * (self.assessment.max_file_size_mb * 1024 * 1024)
+                ),
+            },
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('5 MB or smaller', response.json()['error'])
+        self.assertFalse(SubmissionFile.objects.exists())
 
     def test_file_removal_is_owned_by_submission(self):
         submission = AssessmentSubmission.objects.create(student=self.student, assessment=self.assessment)

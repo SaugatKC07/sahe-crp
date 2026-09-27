@@ -20,6 +20,7 @@ from django.conf import settings
 from datetime import timedelta, datetime
 from decimal import Decimal
 import json
+import logging
 import random
 import hmac
 
@@ -71,6 +72,8 @@ from .linkedin_coach import (
     build_about, build_headline, completeness_items, profile_data,
     build_job_about, build_job_headline, job_profile_analysis, profile_recommendations,
 )
+
+logger = logging.getLogger(__name__)
 from .achievement_service import (
     calculate_current_streak,
     calculate_student_points,
@@ -3143,6 +3146,7 @@ def student_assessment_submit(request, assessment_id):
     
     if request.method == 'POST':
         action = request.POST.get('action')
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if action == 'save_draft':
             submission.feedback = request.POST.get('comment', submission.feedback).strip()
             submission.save()
@@ -3157,21 +3161,48 @@ def student_assessment_submit(request, assessment_id):
                     uploaded_file, assessment.accepted_formats, assessment.max_file_size_mb
                 )
             except ValidationError as exc:
+                if is_ajax:
+                    return JsonResponse({'success': False, 'error': str(exc)}, status=400)
                 messages.error(request, str(exc))
             else:
                 extension = uploaded_file.name.rsplit('.', 1)[-1].upper() if '.' in uploaded_file.name else ''
                 if submission.files.count() >= assessment.required_file_count:
+                    if is_ajax:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'You may upload up to {assessment.required_file_count} file(s) for this assessment.',
+                        }, status=400)
                     messages.error(request, f'You may upload up to {assessment.required_file_count} file(s) for this assessment.')
                 else:
-                    SubmissionFile.objects.create(
-                        submission=submission,
-                        file=uploaded_file,
-                        file_name=uploaded_file.name,
-                        file_type=extension,
-                        file_size=f"{uploaded_file.size / (1024*1024):.1f} MB"
-                    )
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        return JsonResponse({'success': True})
+                    try:
+                        submission_file = SubmissionFile.objects.create(
+                            submission=submission,
+                            file=uploaded_file,
+                            file_name=uploaded_file.name,
+                            file_type=extension,
+                            file_size=f"{uploaded_file.size / (1024*1024):.1f} MB"
+                        )
+                    except OSError:
+                        logger.exception(
+                            "Student assessment upload failed during storage write",
+                            extra={'assessment_id': assessment.id, 'submission_id': submission.id},
+                        )
+                        if is_ajax:
+                            return JsonResponse({
+                                'success': False,
+                                'error': 'The file could not be saved. Please try again.',
+                            }, status=500)
+                        raise
+                    if is_ajax:
+                        return JsonResponse({
+                            'success': True,
+                            'file': {
+                                'id': submission_file.id,
+                                'name': submission_file.file_name,
+                                'size': submission_file.file_size,
+                                'type': submission_file.file_type,
+                            },
+                        })
                     messages.success(request, f"File '{uploaded_file.name}' uploaded successfully")
 
         if action == 'delete_file':

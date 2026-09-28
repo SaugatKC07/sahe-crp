@@ -4431,89 +4431,48 @@ def cron_sync_jobs(request):
     )
 
 
-@role_required('student')
-def student_jobs(request, recommendations=False):
-    """Student job matching and application tracking"""
-    try:
-        student = request.user.student_profile
-    except Student.DoesNotExist:
-        messages.error(request, "Student profile not found.")
-        return redirect('crp:dashboard')
-    
-    # Get search and filter parameters
-    job_query = request.GET.get('q', '')
-    job_field = request.GET.get('field', 'all').lower()
-    
-    preferences, _ = StudentPreference.objects.get_or_create(student=student)
-    jobs = JobListing.objects.filter(is_active=True).filter(
+def _active_job_listings():
+    """Return listings that are safe to expose in student career workflows."""
+    return JobListing.objects.filter(is_active=True).filter(
         Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now()),
     )
-    
-    # Apply field filter (SQLite doesn't support JSON contains, use alternative)
-    if job_field and job_field != 'all':
-        # Use simpler filtering that works with SQLite
-        filtered_jobs = []
-        for job in jobs:
-            if job_field in job.fields:
-                filtered_jobs.append(job)
-        jobs = JobListing.objects.filter(id__in=[job.id for job in filtered_jobs])
-    
-    # Apply search filter
-    if job_query:
-        jobs = jobs.filter(
-            Q(title__icontains=job_query) |
-            Q(company__icontains=job_query) |
-            Q(skills__icontains=job_query)
-        )
-    
-    jobs = list(jobs.select_related('source').order_by('-posted_date'))
-    
-    # Get student's job applications
-    applications = JobApplication.objects.filter(student=student)
-    saved_jobs = set(applications.filter(status='saved').values_list('job_id', flat=True))
-    applied_jobs = set(applications.filter(status='applied').values_list('job_id', flat=True))
-    
-    # Get student's resume skills for matching display
-    student_skills = []
+
+
+def _student_resume_skills(student):
     try:
-        resume = student.resume
-        student_skills = [skill.lower() for skill in resume.skills]
+        return [str(skill).strip().casefold() for skill in student.resume.skills if str(skill).strip()]
     except Resume.DoesNotExist:
-        pass
-    
-    # Compute matches per student rather than relying on a shared listing score.
+        return []
+
+
+def _job_rows_for_student(jobs, student, preferences, applications, student_skills,
+                          recommendations=False):
+    """Build display rows from the existing student-specific matching service."""
+    applications_by_job = {application.job_id: application for application in applications}
     scored_jobs = [
         (job, recommendation_score(student, job, preferences, student_skills))
         for job in jobs
     ]
+    scored_jobs.sort(key=lambda row: (row[1], row[0].posted_date), reverse=True)
     if recommendations:
-        scored_jobs.sort(key=lambda row: (row[1], row[0].posted_date), reverse=True)
         scored_jobs = [row for row in scored_jobs if row[1] > 0]
-    else:
-        scored_jobs.sort(key=lambda row: (row[1], row[0].posted_date), reverse=True)
 
-    # Prepare job data
-    job_rows = []
+    rows = []
     for job, match in scored_jobs:
-        is_saved = job.id in saved_jobs
-        is_applied = job.id in applied_jobs
-        
-        # Determine status label
-        if is_applied:
-            status_label = 'Applied'
-            status_style = 'background: var(--color-accent); color: var(--color-bg);'
-        elif is_saved:
-            status_label = 'Saved'
-            status_style = 'background: color-mix(in srgb, var(--color-text) 9%, transparent); color: inherit;'
+        application = applications_by_job.get(job.id)
+        if application:
+            status_label = application.get_status_display()
+            status_tone = application.status
+        elif job.fields:
+            status_label = dict(JobListing.FIELD_CHOICES).get(job.fields[0], job.fields[0])
+            status_tone = 'field'
         else:
-            status_label = job.fields[0] if job.fields else 'New'
-            status_style = 'background: color-mix(in srgb, var(--color-text) 9%, transparent); color: inherit;'
-        
-        # Skills matching
-        job_skills = job.skills if job.skills else []
-        matching_skills = [skill for skill in job_skills if skill.lower() in student_skills]
-        
-        job_rows.append({
+            status_label = 'New'
+            status_tone = 'new'
+
+        job_skills = job.skills or []
+        rows.append({
+            'job': job,
             'id': job.id,
             'title': job.title,
             'company': job.company,
@@ -4523,29 +4482,123 @@ def student_jobs(request, recommendations=False):
             'posted': job.posted_date.strftime('%d %b %Y'),
             'expires_at': job.expires_at,
             'status_label': status_label,
-            'status_style': status_style,
-            'is_saved': is_saved,
-            'is_applied': is_applied,
+            'status_tone': status_tone,
+            'is_saved': bool(application and application.status == 'saved'),
+            'is_applied': bool(application and application.status == 'applied'),
             'skills': job_skills,
-            'matching_skills': matching_skills,
+            'matching_skills': [
+                skill for skill in job_skills if str(skill).strip().casefold() in student_skills
+            ],
             'source_name': job.source.name if job.source_id else 'SAHE',
             'apply_url': job.apply_url,
+            'is_remote': job.is_remote,
+            'job_type': job.get_job_type_display(),
         })
-    
-    # Field filter options
-    field_filters = ['all', 'ai', 'data', 'cybersecurity', 'pm', 'accounting', 'hospitality']
-    
+    return rows, applications_by_job
+
+
+def _job_detail_context(student, job, application, preferences, student_skills):
+    job_skills = job.skills or []
+    matching_skills = [
+        skill for skill in job_skills if str(skill).strip().casefold() in student_skills
+    ]
+    missing_skills = [
+        skill for skill in job_skills if str(skill).strip().casefold() not in student_skills
+    ]
+    job_skills_display = [
+        {
+            'label': skill,
+            'is_matching': str(skill).strip().casefold() in student_skills,
+        }
+        for skill in job_skills
+    ]
+
+    if not job_skills:
+        gap_note = ''
+    elif not student_skills:
+        gap_note = 'Add skills to your resume to compare them with this role.'
+    elif missing_skills and matching_skills:
+        gap_note = 'Highlighted skills also appear on your resume.'
+    elif missing_skills:
+        gap_note = 'None of the supplied skills currently appear on your resume.'
+    else:
+        gap_note = 'All supplied skills appear on your resume.'
+
+    if job.apply_url:
+        apply_label = 'Reopen employer listing' if application and application.status == 'applied' else 'Apply now'
+    else:
+        apply_label = 'Application recorded' if application and application.status == 'applied' else 'Record application'
+
+    return {
+        'job': job,
+        'application': application,
+        # Keep the detail header's established listing score; the browser list
+        # continues to use the deterministic, student-specific recommendation score.
+        'job_match': job.match_percentage,
+        'job_skills_display': job_skills_display,
+        'matching_skills': matching_skills,
+        'missing_skills': missing_skills,
+        'gap_note': gap_note,
+        'apply_label': apply_label,
+        'save_label': 'Saved' if application and application.status == 'saved' else 'Save job',
+        'linkedin_url': f"{reverse('crp:student_linkedin')}?job_id={job.id}",
+    }
+
+
+@role_required('student')
+def student_jobs(request, recommendations=False):
+    """Student job discovery using active provider listings and deterministic matching."""
+    try:
+        student = request.user.student_profile
+    except Student.DoesNotExist:
+        messages.error(request, "Student profile not found.")
+        return redirect('crp:dashboard')
+
+    job_query = request.GET.get('q', '').strip()
+    job_field = request.GET.get('field', 'all').lower()
+    preferences, _ = StudentPreference.objects.get_or_create(student=student)
+    jobs = _active_job_listings()
+
+    # SQLite does not support JSON contains consistently, so preserve the active
+    # queryset while resolving the small, fixed field filter in Python.
+    if job_field and job_field != 'all':
+        field_job_ids = [job.id for job in jobs if job_field in (job.fields or [])]
+        jobs = jobs.filter(id__in=field_job_ids)
+
+    if job_query:
+        jobs = jobs.filter(
+            Q(title__icontains=job_query) |
+            Q(company__icontains=job_query) |
+            Q(skills__icontains=job_query)
+        )
+
+    jobs = list(jobs.select_related('source').order_by('-posted_date'))
+    applications = list(JobApplication.objects.filter(student=student))
+    student_skills = _student_resume_skills(student)
+    job_rows, applications_by_job = _job_rows_for_student(
+        jobs, student, preferences, applications, student_skills, recommendations,
+    )
+
+    selected_job = job_rows[0]['job'] if job_rows else None
     context = {
         'student': student,
         'job_query': job_query,
         'job_field': job_field,
-        'field_filters': field_filters,
+        'field_filters': ['all', 'ai', 'data', 'cybersecurity', 'pm', 'accounting', 'hospitality'],
         'job_rows': job_rows,
         'total_jobs': len(job_rows),
         'recommendations': recommendations,
         'recommended_jobs': job_rows[:6],
         'role': 'student',
     }
+    if selected_job:
+        context.update(_job_detail_context(
+            student,
+            selected_job,
+            applications_by_job.get(selected_job.id),
+            preferences,
+            student_skills,
+        ))
     return render(request, 'crp/student/student_jobs.html', context)
 
 
@@ -4610,16 +4663,14 @@ def job_detail_slug(job):
 
 @role_required('student')
 def student_job_detail(request, job_slug):
-    """Detailed view of a specific job"""
+    """Detailed, student-scoped view of an active job and the job browser."""
     try:
         student = request.user.student_profile
     except Student.DoesNotExist:
         messages.error(request, "Student profile not found.")
         return redirect('crp:dashboard')
-    
-    visible_jobs = JobListing.objects.filter(is_active=True).filter(
-        Q(expires_at__isnull=True) | Q(expires_at__gt=timezone.now())
-    )
+
+    visible_jobs = _active_job_listings().select_related('source')
     if job_slug.isdigit():
         job = get_object_or_404(visible_jobs, id=int(job_slug))
     else:
@@ -4630,45 +4681,31 @@ def student_job_detail(request, job_slug):
         if job is None:
             raise Http404
 
-    # Get student's application status
-    application = JobApplication.objects.filter(student=student, job=job).first()
-    
-    # Get student's resume skills for gap analysis
-    student_skills = []
-    try:
-        resume = student.resume
-        student_skills = [skill.lower() for skill in resume.skills]
-    except Resume.DoesNotExist:
-        pass
-    
-    # Skills gap analysis
-    job_skills = job.skills if job.skills else []
-    matching_skills = [skill for skill in job_skills if skill.lower() in student_skills]
-    missing_skills = [skill for skill in job_skills if skill.lower() not in student_skills]
-    
-    # Prepare skill display data
-    job_skills_display = []
-    for skill in job_skills:
-        is_matching = skill.lower() in student_skills
-        job_skills_display.append({
-            'label': skill,
-            'is_matching': is_matching,
-            'style': f'font-size: 11px; padding: 3px 10px; border: 1px solid {"var(--color-accent)" if is_matching else "var(--color-divider)"}; color: {"var(--color-accent)" if is_matching else "inherit"};'
-        })
-    
+    preferences, _ = StudentPreference.objects.get_or_create(student=student)
+    applications = list(JobApplication.objects.filter(student=student))
+    student_skills = _student_resume_skills(student)
+    browser_jobs = list(visible_jobs.order_by('-posted_date'))
+    job_rows, applications_by_job = _job_rows_for_student(
+        browser_jobs, student, preferences, applications, student_skills,
+    )
+
     context = {
         'student': student,
-        'job': job,
-        'application': application,
-        'job_skills_display': job_skills_display,
-        'matching_skills': matching_skills,
-        'missing_skills': missing_skills,
-        'gap_note': f'Highlighted skills are already on your resume — add the rest to lift your match.' if missing_skills else 'All required skills are on your resume!',
-        'apply_label': 'Interest recorded' if application and application.status == 'applied' else 'Record application',
-        'save_label': 'Saved ✓' if application and application.status == 'saved' else 'Save for later',
-        'linkedin_url': f"{reverse('crp:student_linkedin')}?job_id={job.id}",
+        'job_rows': job_rows,
+        'total_jobs': len(job_rows),
+        'job_query': '',
+        'job_field': 'all',
+        'field_filters': ['all', 'ai', 'data', 'cybersecurity', 'pm', 'accounting', 'hospitality'],
+        'recommendations': False,
         'role': 'student',
     }
+    context.update(_job_detail_context(
+        student,
+        job,
+        applications_by_job.get(job.id),
+        preferences,
+        student_skills,
+    ))
     return render(request, 'crp/student/student_job_detail.html', context)
 
 @role_required('student')

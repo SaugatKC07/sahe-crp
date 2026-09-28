@@ -1,0 +1,214 @@
+{% if recommendations %}
+    {% url 'crp:student_job_recommendations' as job_browse_url %}
+{% else %}
+    {% url 'crp:student_jobs' as job_browse_url %}
+{% endif %}
+
+<section class="career-workspace" aria-label="Student job workspace">
+    <aside class="job-browser" aria-label="Job browser">
+        <div class="job-browser-head">
+            <div class="job-browser-heading">
+                <div>
+                    <span class="job-eyebrow">Opportunity finder</span>
+                    <h2>{% if recommendations %}Recommended for you{% else %}Explore jobs{% endif %}</h2>
+                </div>
+                <a class="job-icon-link" href="{% url 'crp:student_job_preferences' %}" aria-label="Edit job preferences" title="Job preferences">
+                    <i class="bi bi-sliders" aria-hidden="true"></i>
+                </a>
+            </div>
+
+            <form class="job-search-form" method="get" action="{{ job_browse_url }}" role="search">
+                <label class="visually-hidden" for="job-search">Search jobs</label>
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <input id="job-search" type="search" name="q" value="{{ job_query }}" placeholder="Search roles, companies, skills">
+                {% if job_field != 'all' %}<input type="hidden" name="field" value="{{ job_field }}">{% endif %}
+                <button type="submit">Search</button>
+            </form>
+
+            <nav class="job-filter-chips" aria-label="Filter jobs by field">
+                {% for field in field_filters %}
+                <a href="{{ job_browse_url }}?field={{ field }}{% if job_query %}&amp;q={{ job_query|urlencode }}{% endif %}"
+                   class="job-filter-chip {% if job_field == field %}active{% endif %}"
+                   {% if job_field == field %}aria-current="true"{% endif %}>
+                    {% if field == 'all' %}All roles{% elif field == 'ai' %}AI{% elif field == 'pm' %}Project management{% else %}{{ field|title }}{% endif %}
+                </a>
+                {% endfor %}
+            </nav>
+
+            <div class="job-result-summary" aria-live="polite">
+                <span>{{ total_jobs }} active role{{ total_jobs|pluralize }}</span>
+                {% if job_query or job_field != 'all' %}<a href="{{ job_browse_url }}">Clear filters</a>{% endif %}
+            </div>
+        </div>
+
+        <div class="job-results" role="list">
+            {% for row in job_rows %}
+            <a class="job-result {% if job and job.id == row.id %}selected{% endif %}"
+               href="{% url 'crp:student_job_detail' row.id %}"
+               role="listitem"
+               {% if job and job.id == row.id %}aria-current="page"{% endif %}>
+                <span class="job-monogram" aria-hidden="true">{{ row.company|first|upper }}</span>
+                <span class="job-result-body">
+                    <span class="job-result-title-row">
+                        <strong>{{ row.title }}</strong>
+                        <i class="bi {% if row.is_saved %}bi-bookmark-fill saved{% else %}bi-bookmark{% endif %}" aria-hidden="true"></i>
+                        {% if row.is_saved %}<span class="visually-hidden">Saved</span>{% endif %}
+                    </span>
+                    <span class="job-result-company">{{ row.company }} · {{ row.location }}</span>
+                    <span class="job-result-tags">
+                        {% if row.is_remote %}<span class="job-mini-tag remote">Remote</span>{% endif %}
+                        <span class="job-mini-tag status-{{ row.status_tone }}">{{ row.status_label }}</span>
+                        <span class="job-result-date">{{ row.posted }}</span>
+                    </span>
+                </span>
+                <span class="job-result-match"><strong>{{ row.match }}%</strong><small>match</small></span>
+            </a>
+            {% empty %}
+            <div class="job-list-empty" role="status">
+                <i class="bi bi-search" aria-hidden="true"></i>
+                <strong>No active roles found</strong>
+                <span>Try a broader search or clear the current field filter.</span>
+                <a href="{{ job_browse_url }}">View all active jobs</a>
+            </div>
+            {% endfor %}
+        </div>
+    </aside>
+
+    <section class="job-focus" id="job-detail" aria-label="Selected job">
+        {% if job %}
+        <article class="job-hero">
+            <div class="job-hero-main">
+                <span class="job-company-mark" aria-hidden="true">{{ job.company|first|upper }}</span>
+                <div class="job-hero-copy">
+                    <h2>{{ job.title }}</h2>
+                    <p>
+                        <strong>{{ job.company }}</strong>
+                        <span aria-hidden="true">·</span> {{ job.location }}
+                        <span aria-hidden="true">·</span> {{ job.get_job_type_display }}
+                        {% if job.is_remote %}<span aria-hidden="true">·</span> Remote{% endif %}
+                    </p>
+                    <div class="job-hero-submeta">
+                        {% if job.salary %}<span>{{ job.salary }}</span>{% endif %}
+                        <span>via {% if job.source %}{{ job.source.name }}{% else %}SAHE{% endif %}</span>
+                        <span>Posted {{ job.posted_date|date:"d M Y" }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="job-hero-actions">
+                <span class="job-match-pill" aria-label="{{ job_match }} percent skill match"><span class="job-match-score">{{ job_match }}% skill match</span></span>
+                <div class="job-action-row">
+                    <form method="post" action="{% url 'crp:student_save_job' job.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="job-button job-button-secondary">
+                            <i class="bi {% if application and application.status == 'saved' %}bi-bookmark-fill{% else %}bi-bookmark{% endif %}" aria-hidden="true"></i>
+                            {{ save_label }}
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'crp:student_apply_job' job.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="job-button job-button-primary">
+                            {{ apply_label }} <i class="bi bi-arrow-up-right" aria-hidden="true"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </article>
+
+        <article class="job-content-card">
+            <header><span class="job-section-icon"><i class="bi bi-card-text" aria-hidden="true"></i></span><h3>About this role</h3></header>
+            <div class="job-description">{{ job.description|linebreaksbr }}</div>
+            <dl class="job-facts">
+                <div><dt>Employment</dt><dd>{{ job.get_job_type_display }}</dd></div>
+                {% if job.is_remote %}<div><dt>Work style</dt><dd>Remote</dd></div>{% endif %}
+                {% if job.salary %}<div><dt>Salary</dt><dd>{{ job.salary }}</dd></div>{% endif %}
+                <div><dt>Location</dt><dd>{{ job.location }}</dd></div>
+                {% if job.application_deadline %}<div><dt>Apply by</dt><dd>{{ job.application_deadline|date:"d M Y" }}</dd></div>{% elif job.expires_at %}<div><dt>Listing expires</dt><dd>{{ job.expires_at|date:"d M Y, H:i" }}</dd></div>{% endif %}
+                <div><dt>Provider</dt><dd>{% if job.source %}{{ job.source.name }}{% else %}SAHE{% endif %}</dd></div>
+            </dl>
+        </article>
+
+        <article class="job-content-card requirements-card">
+            <header><span class="job-section-icon"><i class="bi bi-list-check" aria-hidden="true"></i></span><h3>Requirements</h3></header>
+            {% if job_skills_display %}
+            <ul class="job-requirements">
+                {% for skill in job_skills_display %}
+                <li><i class="bi bi-check2" aria-hidden="true"></i><span>{{ skill.label }}</span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="job-data-note">This provider did not supply structured requirements for the role. Review the description and employer listing for full details.</p>
+            {% endif %}
+        </article>
+        {% else %}
+        <div class="job-detail-empty">
+            <span><i class="bi bi-briefcase" aria-hidden="true"></i></span>
+            <h2>No role selected</h2>
+            <p>Adjust your search to find an active job, then open it for full details and connected career tools.</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <aside class="career-rail" aria-label="Career intelligence">
+        <section class="career-rail-card career-actions-card">
+            <div class="career-rail-heading">
+                <span class="job-eyebrow">Career intelligence</span>
+                <h2>{% if job %}Prepare your application{% else %}Career tools{% endif %}</h2>
+            </div>
+            <div class="career-action-list">
+                {% if job %}
+                <a class="career-action action-teal" href="{% url 'crp:student_tailor_resume' job.id %}">
+                    <i class="bi bi-file-earmark-person" aria-hidden="true"></i><span><strong>Tailor resume</strong><small>Prepare for this role</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+                <a class="career-action action-violet" href="{{ linkedin_url }}">
+                    <i class="bi bi-linkedin" aria-hidden="true"></i><span><strong>Improve LinkedIn</strong><small>Use this job context</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+                <a class="career-action action-blue" href="{% url 'crp:student_resume' %}?job_id={{ job.id }}">
+                    <i class="bi bi-stars" aria-hidden="true"></i><span><strong>Review resume</strong><small>Compare with this role</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+                {% else %}
+                <a class="career-action action-blue" href="{% url 'crp:student_resume' %}">
+                    <i class="bi bi-file-earmark-person" aria-hidden="true"></i><span><strong>Resume builder</strong><small>Build and review your resume</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+                <a class="career-action action-violet" href="{% url 'crp:student_linkedin' %}">
+                    <i class="bi bi-linkedin" aria-hidden="true"></i><span><strong>LinkedIn coach</strong><small>Improve your profile</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+                {% endif %}
+                <a class="career-action action-neutral" href="{% url 'crp:student_interview' %}">
+                    <i class="bi bi-camera-video" aria-hidden="true"></i><span><strong>Mock interview prep</strong><small>General interview practice</small></span><i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </a>
+            </div>
+        </section>
+
+        {% if job %}
+        <section class="career-rail-card">
+            <div class="career-rail-heading compact">
+                <span class="job-eyebrow">Profile comparison</span>
+                <h2>Required skills</h2>
+            </div>
+            {% if job_skills_display %}
+            <div class="job-skill-cloud">
+                {% for skill in job_skills_display %}
+                <span class="job-skill {% if skill.is_matching %}matching{% endif %}">{{ skill.label }}{% if skill.is_matching %}<i class="bi bi-check" aria-hidden="true"></i>{% endif %}</span>
+                {% endfor %}
+            </div>
+            {% if gap_note %}<p class="job-skill-note">{{ gap_note }}</p>{% endif %}
+            {% else %}
+            <p class="job-data-note">No structured skills were supplied by the provider.</p>
+            {% endif %}
+        </section>
+
+        <section class="career-rail-card application-status-card">
+            <div class="career-rail-heading compact">
+                <span class="job-eyebrow">Your activity</span>
+                <h2>Application status</h2>
+            </div>
+            <div class="application-state">
+                <span class="application-state-icon"><i class="bi {% if application and application.status == 'applied' %}bi-check2-circle{% elif application and application.status == 'saved' %}bi-bookmark-check{% else %}bi-circle{% endif %}" aria-hidden="true"></i></span>
+                <span><strong>{% if application %}{{ application.get_status_display }}{% else %}Not yet tracked{% endif %}</strong><small>{% if job.apply_url %}The employer application opens through the provider listing.{% else %}No external application URL was supplied for this listing.{% endif %}</small></span>
+            </div>
+            <a href="{% url 'crp:student_job_applications' %}" class="career-text-link">View my applications <i class="bi bi-arrow-right" aria-hidden="true"></i></a>
+        </section>
+        {% endif %}
+    </aside>
+</section>

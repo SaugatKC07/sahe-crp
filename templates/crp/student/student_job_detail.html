@@ -1,14 +1,8 @@
 {% extends 'crp/student/student_base.html' %}
-{% load static %}
 
 {% block title %}{{ job.title }} · Job Board{% endblock %}
 {% block page_title %}Job Board{% endblock %}
 {% block page_subtitle %}Explore the role and prepare your application{% endblock %}
-
-{% block extra_head %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/student-jobs.css' %}?v=20260928-1">
-{% endblock %}
 
 {% block content %}
 {% include 'crp/student/_student_job_workspace.html' %}

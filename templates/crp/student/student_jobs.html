@@ -1,14 +1,8 @@
 {% extends 'crp/student/student_base.html' %}
-{% load static %}
 
 {% block title %}{% if recommendations %}Recommended Jobs{% else %}Job Board{% endif %} · SAHE CRP{% endblock %}
 {% block page_title %}{% if recommendations %}Recommended Jobs{% else %}Job Board{% endif %}{% endblock %}
 {% block page_subtitle %}Discover roles and use your connected career tools{% endblock %}
-
-{% block extra_head %}
-{{ block.super }}
-<link rel="stylesheet" href="{% static 'css/student-jobs.css' %}?v=20260928-1">
-{% endblock %}
 
 {% block content %}
 {% include 'crp/student/_student_job_workspace.html' %}

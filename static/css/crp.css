@@ -1,46 +1,46 @@
 /* SAHE Brand Colors - Enhanced with Modern Palette (from Ticket Management) */
 :root {
     /* Primary Colors - SAHE Blue (Refined and modern) */
-    --sahe-blue-50: #eff4fb;
-    --sahe-blue-100: #dce7f6;
-    --sahe-blue-200: #bad0ed;
-    --sahe-blue-300: #8eb2e1;
-    --sahe-blue-400: #5d91d3;
-    --sahe-blue-500: #3874c4;
-    --sahe-blue-600: #2b5aa7; /* Main SAHE Blue */
-    --sahe-blue-700: #234888;
-    --sahe-blue-800: #1f3f73;
-    --sahe-blue-900: #1d365f;
+    --sahe-blue-50: #eaf0f8;
+    --sahe-blue-100: #d6e1ef;
+    --sahe-blue-200: #adc3df;
+    --sahe-blue-300: #809fc6;
+    --sahe-blue-400: #527cad;
+    --sahe-blue-500: #2b5f98;
+    --sahe-blue-600: #001f54; /* Official SAHE Navy */
+    --sahe-blue-700: #00183f;
+    --sahe-blue-800: #00132f;
+    --sahe-blue-900: #000d20;
     
     /* Secondary Colors - SAHE Orange/Coral (Sharper contrast) */
-    --sahe-orange-50: #fff5f2;
-    --sahe-orange-100: #ffe8e1;
-    --sahe-orange-200: #ffd1c4;
-    --sahe-orange-300: #ffb19d;
-    --sahe-orange-400: #ff856b;
-    --sahe-orange-500: #fa5c3a; /* Main SAHE Orange */
-    --sahe-orange-600: #ea4120;
-    --sahe-orange-700: #c43217;
-    --sahe-orange-800: #a22c16;
-    --sahe-orange-900: #872816;
+    --sahe-orange-50: #fff2ed;
+    --sahe-orange-100: #ffe3d9;
+    --sahe-orange-200: #ffc6b3;
+    --sahe-orange-300: #f5a084;
+    --sahe-orange-400: #ed805e;
+    --sahe-orange-500: #e36036; /* Official SAHE Orange */
+    --sahe-orange-600: #c94e2a;
+    --sahe-orange-700: #a83e20;
+    --sahe-orange-800: #873219;
+    --sahe-orange-900: #6c2815;
     
-    /* Legacy SAHE Green (kept for compatibility) */
-    --sahe-green: #0f7a5a;
-    --sahe-green-dark: #0a5a42;
-    --sahe-green-light: #1a9a7a;
-    --sahe-green-50: #e8f5f0;
-    --sahe-green-100: #d0ebe3;
-    --sahe-green-200: #a5d0c6;
-    --sahe-green-300: #7ab5a9;
-    --sahe-green-400: #4f9a8c;
-    --sahe-green-500: #247f6f;
-    --sahe-green-600: #0f7a5a;
-    --sahe-green-700: #0a5a42;
-    --sahe-green-800: #084a35;
-    --sahe-green-900: #063a28;
+    /* Legacy names retained for compatibility with existing components. */
+    --sahe-green: #001f54;
+    --sahe-green-dark: #001536;
+    --sahe-green-light: #2b5f98;
+    --sahe-green-50: #eaf0f8;
+    --sahe-green-100: #d6e1ef;
+    --sahe-green-200: #adc3df;
+    --sahe-green-300: #809fc6;
+    --sahe-green-400: #527cad;
+    --sahe-green-500: #2b5f98;
+    --sahe-green-600: #001f54;
+    --sahe-green-700: #00183f;
+    --sahe-green-800: #00132f;
+    --sahe-green-900: #000d20;
     
     /* Accent Colors */
-    --accent-orange: #fa5c3a;
+    --accent-orange: #e36036;
     --accent-pink: #ec4899;
     --accent-yellow: #f59e0b;
     

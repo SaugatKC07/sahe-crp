@@ -1,18 +1,18 @@
 /* SAHE CRP unified UI layer.
    Inspired by the CRP reference prototype and aligned with SAHE SMS patterns. */
 :root {
-    --sahe-canvas: #f7f5f1;
+    --sahe-canvas: #f4f7fb;
     --sahe-surface: #ffffff;
-    --sahe-surface-soft: #f1efeb;
-    --sahe-ink: #191614;
-    --sahe-muted: #6f6a66;
-    --sahe-border: rgba(25, 22, 20, .13);
-    --sahe-primary: #0f7a5a;
-    --sahe-primary-dark: #0a5b43;
-    --sahe-primary-soft: #e8f4ef;
-    --sahe-blue: #2f6df6;
+    --sahe-surface-soft: #edf2f8;
+    --sahe-ink: #10213d;
+    --sahe-muted: #63718a;
+    --sahe-border: rgba(0, 31, 84, .13);
+    --sahe-primary: #001f54;
+    --sahe-primary-dark: #001536;
+    --sahe-primary-soft: #eaf0f8;
+    --sahe-blue: #2b5f98;
     --sahe-amber: #e39411;
-    --sahe-coral: #e2553d;
+    --sahe-coral: #e36036;
     --sahe-violet: #7b5cf0;
     --sahe-teal: #12a3a3;
     --sahe-radius-sm: 10px;

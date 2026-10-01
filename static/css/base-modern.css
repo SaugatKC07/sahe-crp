@@ -5,16 +5,16 @@
 /* CSS Variables - Color Palette */
 :root {
     /* Primary Colors - SAHE Blue (Refined and modern) */
-    --primary-50: #eff4fb;
-    --primary-100: #dce7f6;
-    --primary-200: #bad0ed;
-    --primary-300: #8eb2e1;
-    --primary-400: #5d91d3;
-    --primary-500: #3874c4;
-    --primary-600: #2b5aa7; /* Main SAHE Blue */
-    --primary-700: #234888;
-    --primary-800: #1f3f73;
-    --primary-900: #1d365f;
+    --primary-50: #eaf0f8;
+    --primary-100: #d6e1ef;
+    --primary-200: #adc3df;
+    --primary-300: #809fc6;
+    --primary-400: #527cad;
+    --primary-500: #2b5f98;
+    --primary-600: #001f54; /* Official SAHE Navy */
+    --primary-700: #00183f;
+    --primary-800: #00132f;
+    --primary-900: #000d20;
     
     /* Secondary Colors - SAHE Orange/Coral (Sharper contrast) */
     --secondary-50: #fff5f2;
@@ -22,14 +22,14 @@
     --secondary-200: #ffd1c4;
     --secondary-300: #ffb19d;
     --secondary-400: #ff856b;
-    --secondary-500: #fa5c3a; /* Main SAHE Orange */
-    --secondary-600: #ea4120;
-    --secondary-700: #c43217;
-    --secondary-800: #a22c16;
-    --secondary-900: #872816;
+    --secondary-500: #e36036; /* Official SAHE Orange */
+    --secondary-600: #c94e2a;
+    --secondary-700: #a83e20;
+    --secondary-800: #873219;
+    --secondary-900: #6c2815;
     
     /* Accent Colors */
-    --accent-orange: #fa5c3a;
+    --accent-orange: #e36036;
     --accent-pink: #ec4899;
     --accent-yellow: #f59e0b;
     

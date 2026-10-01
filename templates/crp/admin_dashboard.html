@@ -298,7 +298,7 @@
     new Chart(document.getElementById('capacityChart'), {
         type: 'bar',
         data: { labels: data.labels, datasets: [
-            { label: 'Enrolled', data: data.enrolled, backgroundColor: '#0f7a5a', borderRadius: 7 },
+            { label: 'Enrolled', data: data.enrolled, backgroundColor: '#001f54', borderRadius: 7 },
             { label: 'Capacity', data: data.capacity, backgroundColor: '#d9d5cf', borderRadius: 7 }
         ] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: ink, usePointStyle: true } } }, scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink, precision: 0 }, grid: { color: grid } } } }

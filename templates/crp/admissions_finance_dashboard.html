@@ -175,8 +175,8 @@
     const ink = getComputedStyle(document.documentElement).getPropertyValue('--sahe-ink').trim();
     const grid = getComputedStyle(document.documentElement).getPropertyValue('--sahe-border').trim();
     const common = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: ink, usePointStyle: true } } } };
-    new Chart(document.getElementById('pipelineChart'), { type: 'bar', data: { labels: pipeline.labels, datasets: [{ label: 'Applications', data: pipeline.values, backgroundColor: ['#2f6df6', '#e39411', '#7b5cf0', '#0f7a5a'], borderRadius: 8 }] }, options: { ...common, scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink, precision: 0 }, grid: { color: grid } } } } });
-    new Chart(document.getElementById('financeChart'), { type: 'doughnut', data: { labels: finance.labels, datasets: [{ data: finance.values, backgroundColor: ['#0f7a5a', '#e2553d'], borderWidth: 0, hoverOffset: 6 }] }, options: { ...common, cutout: '72%' } });
+    new Chart(document.getElementById('pipelineChart'), { type: 'bar', data: { labels: pipeline.labels, datasets: [{ label: 'Applications', data: pipeline.values, backgroundColor: ['#2b5f98', '#e39411', '#7b5cf0', '#001f54'], borderRadius: 8 }] }, options: { ...common, scales: { x: { ticks: { color: ink }, grid: { display: false } }, y: { beginAtZero: true, ticks: { color: ink, precision: 0 }, grid: { color: grid } } } } });
+    new Chart(document.getElementById('financeChart'), { type: 'doughnut', data: { labels: finance.labels, datasets: [{ data: finance.values, backgroundColor: ['#001f54', '#e36036'], borderWidth: 0, hoverOffset: 6 }] }, options: { ...common, cutout: '72%' } });
 })();
 </script>
 {% endblock %}

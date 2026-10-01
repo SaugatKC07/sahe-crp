@@ -1,17 +1,17 @@
 /* SAHE CRP robotics learning system
    Presentation-only layer: keeps existing Bootstrap and portal hooks intact. */
 :root {
-    --sahe-canvas: #f3f7f6;
+    --sahe-canvas: #f4f7fb;
     --sahe-surface: #ffffff;
-    --sahe-surface-soft: #e8f0ee;
-    --sahe-ink: #172523;
-    --sahe-muted: #60716d;
-    --sahe-border: rgba(23, 37, 35, .12);
-    --sahe-primary: #0f7a5a;
-    --sahe-primary-dark: #07543f;
-    --sahe-primary-soft: #dff2eb;
-    --sahe-cyan: #1599a3;
-    --sahe-navy: #122a35;
+    --sahe-surface-soft: #eaf0f8;
+    --sahe-ink: #10213d;
+    --sahe-muted: #63718a;
+    --sahe-border: rgba(0, 31, 84, .12);
+    --sahe-primary: #001f54;
+    --sahe-primary-dark: #001536;
+    --sahe-primary-soft: #eaf0f8;
+    --sahe-cyan: #e36036;
+    --sahe-navy: #001f54;
     --sahe-radius-md: 14px;
     --sahe-radius-lg: 20px;
     --sahe-shadow-sm: 0 2px 8px rgba(18, 42, 53, .06);

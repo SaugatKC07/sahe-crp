@@ -134,7 +134,10 @@
             index = event.key === 'ArrowDown' ? Math.min(index + 1, links.length - 1) : Math.max(index - 1, 0);
             if (links[index]) { links[index].classList.add('is-active'); links[index].scrollIntoView({ block: 'nearest' }); }
         } else if (event.key === 'Enter' && active) {
-            window.location.href = active.href;
+            event.preventDefault();
+            event.stopPropagation();
+            closeCommand();
+            window.location.assign(active.href);
         }
     });
 

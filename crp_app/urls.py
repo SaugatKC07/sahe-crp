@@ -127,6 +127,7 @@ urlpatterns = [
     path('student/portal/', views.student_portal_dashboard, name='student_portal'),
     path('student/courses/<int:course_id>/', views.student_course_home, name='student_course_home'),
     path('student/courses/<int:course_id>/weeks/<int:week_id>/', views.student_course_week, name='student_course_week'),
+    path('student/materials/<int:material_id>/resource/', views.student_material_resource, name='student_material_resource'),
     path('student/courses/<int:course_id>/request/', views.request_course_enrollment, name='request_course_enrollment'),
     path('student/learning/', views.student_learning_hub, name='student_learning'),
     path('student/quiz/', views.student_quiz_list, name='student_quiz'),

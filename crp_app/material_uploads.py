@@ -1,15 +1,71 @@
 """Validation shared by all CRP learning-material upload entry points."""
 
 from pathlib import Path
+from urllib.parse import urlparse
+import os
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
 
 
-PDF_EXTENSIONS = {'.pdf'}
-VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mov'}
-PDF_CONTENT_TYPES = {'application/pdf'}
-VIDEO_CONTENT_TYPES = {'video/mp4', 'video/webm', 'video/quicktime'}
+MATERIAL_UPLOAD_RULES = {
+    'pdf': ({'.pdf'}, {'application/pdf', 'application/x-pdf', 'application/octet-stream'}),
+    'document': (
+        {'.doc', '.docx', '.txt'},
+        {
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'application/octet-stream',
+        },
+    ),
+    'presentation': (
+        {'.ppt', '.pptx'},
+        {
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/octet-stream',
+        },
+    ),
+    'spreadsheet': (
+        {'.xls', '.xlsx', '.csv'},
+        {
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/csv',
+            'application/csv',
+            'application/octet-stream',
+        },
+    ),
+    'image': (
+        {'.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg'},
+        {'image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml'},
+    ),
+    'video': (
+        {'.mp4', '.webm', '.mov'},
+        {'video/mp4', 'video/webm', 'video/quicktime', 'application/octet-stream'},
+    ),
+    # These legacy choices remain valid for existing materials and map to the
+    # corresponding modern upload rules.
+    'slides': (
+        {'.ppt', '.pptx'},
+        {
+            'application/vnd.ms-powerpoint',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/octet-stream',
+        },
+    ),
+    'workbook': (
+        {'.xls', '.xlsx', '.csv'},
+        {
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/csv',
+            'application/csv',
+            'application/octet-stream',
+        },
+    ),
+}
 ASSESSMENT_RESOURCE_EXTENSIONS = {
     '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.ppt', '.pptx',
     '.txt', '.zip', '.py', '.js', '.html', '.css', '.json',
@@ -32,20 +88,36 @@ def validate_material_upload(upload, material_type):
     if upload is None:
         return
 
+    if os.environ.get('VERCEL') and not getattr(settings, 'USE_S3', False):
+        raise ValidationError(
+            'Learning material uploads require persistent object storage in production.'
+        )
+    if not upload.name or any(character in upload.name for character in ('/', '\\', '\x00')):
+        raise ValidationError('The uploaded filename is not valid.')
+    if upload.size <= 0:
+        raise ValidationError('Empty files cannot be uploaded.')
+
     extension = Path(upload.name).suffix.lower()
     content_type = (getattr(upload, 'content_type', '') or '').lower()
     max_mb = int(getattr(settings, 'MAX_LEARNING_MATERIAL_UPLOAD_MB', 250))
     if upload.size > max_mb * 1024 * 1024:
         raise ValidationError(f'The uploaded file must be {max_mb} MB or smaller.')
 
-    if material_type == 'pdf':
-        if extension not in PDF_EXTENSIONS or content_type not in PDF_CONTENT_TYPES:
-            raise ValidationError('PDF materials must be valid .pdf files.')
-    elif material_type == 'video':
-        if extension not in VIDEO_EXTENSIONS or content_type not in VIDEO_CONTENT_TYPES:
-            raise ValidationError('Videos must be MP4, WebM, or MOV files.')
-    else:
-        raise ValidationError('Direct uploads are supported for PDF Document and Video Recording materials.')
+    rules = MATERIAL_UPLOAD_RULES.get(material_type)
+    if not rules:
+        raise ValidationError('This resource type does not support direct file uploads.')
+    allowed_extensions, allowed_content_types = rules
+    if extension not in allowed_extensions or (
+        content_type and content_type not in allowed_content_types
+    ):
+        raise ValidationError('The uploaded file type does not match the selected resource type.')
+
+
+def validate_material_url(value):
+    """Only allow explicitly external HTTP(S) material links."""
+    parsed = urlparse(value)
+    if parsed.scheme not in {'http', 'https'} or not parsed.netloc:
+        raise ValidationError('Material links must use a valid HTTP or HTTPS URL.')
 
 
 def validate_assessment_resource_upload(upload):

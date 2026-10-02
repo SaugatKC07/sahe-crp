@@ -24,7 +24,7 @@
                 <span class="badge bg-secondary">{{ week.display_progress.get_status_display }}</span>
                 {% for material in week.materials.all %}
                     {% if material.is_published and not material.is_archived %}
-                        <a href="{{ material.resource_url }}">{{ material.title }}</a>
+                        <a href="{% url 'crp:student_material_resource' material.id %}" target="_blank" rel="noopener">{{ material.title }}</a>
                     {% endif %}
                 {% empty %}
                     <p>No published materials yet.</p>

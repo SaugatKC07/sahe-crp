@@ -703,6 +703,10 @@ class StudentWeekProgress(models.Model):
 class LearningMaterial(models.Model):
     """Individual learning materials within weeks"""
     MATERIAL_TYPES = [
+        ('document', 'Document'),
+        ('presentation', 'Presentation'),
+        ('spreadsheet', 'Spreadsheet'),
+        ('image', 'Image'),
         ('slides', 'Slide Deck'),
         ('pdf', 'PDF Document'),
         ('video', 'Video Recording'),
@@ -713,13 +717,14 @@ class LearningMaterial(models.Model):
 
     week = models.ForeignKey(LearningWeek, on_delete=models.CASCADE, related_name='materials')
     title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
     material_type = models.CharField(max_length=20, choices=MATERIAL_TYPES)
     file_url = models.URLField(blank=True, help_text="URL to the material file")
     file = models.FileField(
         upload_to='learning_materials/%Y/%m/',
         blank=True,
         null=True,
-        help_text='Uploaded PDF or video file',
+        help_text='Uploaded learning material file',
     )
     file_size = models.CharField(max_length=50, blank=True, help_text="e.g., '4.1 MB', '52 min'")
     duration = models.CharField(max_length=50, blank=True, help_text="For videos, e.g., '52 min'")

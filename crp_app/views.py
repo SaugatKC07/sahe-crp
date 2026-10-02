@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.db.models import Q, Count, Sum, Avg
 from django.utils import timezone
 from django.utils.text import slugify
-from django.http import Http404, HttpResponse, JsonResponse, HttpResponseForbidden
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseForbidden
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.urls import reverse, reverse_lazy
@@ -23,6 +23,7 @@ import json
 import logging
 import random
 import hmac
+from pathlib import Path
 
 from .models import (
     Course, Registration, Schedule, Instructor, Room, TimeSlot, Waitlist, Announcement, 
@@ -66,6 +67,7 @@ from .material_uploads import (
     validate_assessment_resource_upload,
     validate_assessment_submission_upload,
     validate_material_upload,
+    validate_material_url,
 )
 from .job_matching import extract_job_requirements, normalize_requirement, recommendation_score
 from .job_sync import sync_job_source
@@ -2034,7 +2036,9 @@ def admin_course_detail(request, course_id):
             week.save(update_fields=fields)
         elif action == 'material_save' and week:
             material = get_object_or_404(LearningMaterial, pk=request.POST.get('material_id'), week=week) if request.POST.get('material_id') else LearningMaterial(week=week)
+            previous_file_name = material.file.name if material.file else None
             material.title = request.POST.get('title', '').strip()
+            material.description = request.POST.get('description', '').strip()
             material.material_type = request.POST.get('material_type', 'other')
             material.file_url = request.POST.get('file_url', '').strip()
             uploaded_file = request.FILES.get('file')
@@ -2045,15 +2049,30 @@ def admin_course_detail(request, course_id):
                 return redirect('crp:admin_course_detail', course_id=course.id)
             if uploaded_file:
                 material.file = uploaded_file
+                material.file_url = ''
+            elif request.POST.get('remove_file') == 'on' and material.file:
+                material.file.delete(save=False)
+                material.file = None
+            if material.file_url:
+                try:
+                    validate_material_url(material.file_url)
+                except ValidationError as error:
+                    messages.error(request, error.messages[0])
+                    return redirect('crp:admin_course_detail', course_id=course.id)
             if not material.file and not material.file_url:
-                messages.error(request, 'Upload a PDF/video or provide a material URL.')
+                messages.error(request, 'Upload a file or provide an external URL.')
                 return redirect('crp:admin_course_detail', course_id=course.id)
             material.order = int(request.POST.get('order') or 0)
             material.is_published = 'is_published' in request.POST
             material.is_archived = 'is_archived' in request.POST
             material.save()
+            if previous_file_name and previous_file_name != material.file.name:
+                material.file.storage.delete(previous_file_name)
         elif action == 'material_delete':
-            get_object_or_404(LearningMaterial, pk=request.POST.get('material_id'), week__course=course).delete()
+            material = get_object_or_404(LearningMaterial, pk=request.POST.get('material_id'), week__course=course)
+            if material.file:
+                material.file.delete(save=False)
+            material.delete()
         elif action == 'quiz_save' and week:
             quiz = get_object_or_404(Quiz, pk=request.POST.get('quiz_id'), week=week) if request.POST.get('quiz_id') else Quiz(week=week)
             quiz.title = request.POST.get('title', '').strip()
@@ -2102,6 +2121,34 @@ def admin_course_detail(request, course_id):
         'material_types': LearningMaterial.MATERIAL_TYPES,
         'assessment_types': Assessment.ASSESSMENT_TYPES,
     })
+
+
+@role_required('student')
+def student_material_resource(request, material_id):
+    """Deliver a published material only within the student's eligible course."""
+    student = get_object_or_404(Student, user=request.user)
+    material = get_object_or_404(
+        LearningMaterial.objects.select_related('week__course'),
+        pk=material_id,
+        is_published=True,
+        is_archived=False,
+        week__in=eligible_weeks(student),
+    )
+    progress = next(
+        (row for row in sync_student_progress(student) if row.week_id == material.week_id),
+        None,
+    )
+    if not progress or progress.status == 'locked':
+        return HttpResponseForbidden("This learning material is not available yet.")
+    if not material.file and material.file_url:
+        return redirect(material.file_url)
+    if not material.file:
+        raise Http404('This learning material is unavailable.')
+    return FileResponse(
+        material.file.open('rb'),
+        as_attachment=False,
+        filename=Path(material.file.name).name,
+    )
 
 
 @role_required('admin')

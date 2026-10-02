@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .decorators import get_user_role, role_required
-from .material_uploads import validate_material_upload
+from .material_uploads import validate_material_upload, validate_material_url
 from .models import (
     Assessment, AssessmentSubmission, Cohort, LearningMaterial, LearningWeek,
     Program, Quiz, QuizQuestion, QuizOption, Rubric, RubricCriterion, RubricPerformanceLevel, Course, Student,
@@ -560,12 +560,19 @@ def material_create(request):
         messages.error(request, error.messages[0])
         return redirect('crp:content_management')
     file_url = request.POST.get('file_url', '').strip()
+    if file_url:
+        try:
+            validate_material_url(file_url)
+        except ValidationError as error:
+            messages.error(request, error.messages[0])
+            return redirect('crp:content_management')
     if not uploaded_file and not file_url:
-        messages.error(request, 'Upload a PDF/video or provide a material URL.')
+        messages.error(request, 'Upload a file or provide an external URL.')
         return redirect('crp:content_management')
     material = LearningMaterial.objects.create(
         week=week,
         title=request.POST.get('title', '').strip(),
+        description=request.POST.get('description', '').strip(),
         material_type=material_type,
         file_url=file_url,
         file=uploaded_file,
